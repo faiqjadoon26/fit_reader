@@ -1,0 +1,36 @@
+# Git installation
+Git/
+
+# Secrets
+encryption.key
+.env
+*.key
+
+# User data
+user_data/
+uploads/
+recorded_rides/
+*.corrupted
+
+# Fit and ride files
+*.fit
+*.har
+*.log
+
+# Images and other files
+*.jpeg
+*.jpg
+*.png
+*.exe
+
+# Other projects
+main.py
+ngrok.exe
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.idea/
+.idea/

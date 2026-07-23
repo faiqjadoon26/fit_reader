@@ -1,0 +1,6 @@
+flask
+fitparse
+pandas
+requests
+gunicorn
+cryptography
