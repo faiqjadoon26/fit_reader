@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ride Summary - {{ ride.filename }}</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f7fafc;
+            padding: 20px;
+            color: #2d3748;
+        }
+        .container { max-width: 1100px; margin: 0 auto; background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
+        .header h1 { font-size: 1.8rem; display: flex; align-items: center; gap: 12px; }
+        .header h1 .icon { font-size: 2.2rem; }
+        .header .type-badge { background: #ebf8ff; color: #2b6cb0; padding: 4px 14px; border-radius: 20px; font-weight: 600; }
+        .actions { display: flex; gap: 12px; }
+        .btn { padding: 8px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: 0.2s; }
+        .btn-print { background: #48bb78; color: white; }
+        .btn-print:hover { background: #38a169; }
+        .btn-back { background: #e2e8f0; color: #2d3748; }
+        .btn-back:hover { background: #cbd5e0; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 16px; margin: 25px 0; }
+        .stat-card { background: #f7fafc; padding: 16px; border-radius: 12px; text-align: center; }
+        .stat-label { font-size: 0.8rem; text-transform: uppercase; color: #718096; font-weight: 600; letter-spacing: 0.3px; }
+        .stat-value { font-size: 1.6rem; font-weight: 700; margin-top: 4px; }
+        .stat-unit { font-size: 0.9rem; color: #718096; }
+        .map-container { height: 350px; border-radius: 12px; overflow: hidden; margin: 20px 0; border: 1px solid #e2e8f0; }
+        .chart-container { margin: 25px 0; padding: 15px; background: #f7fafc; border-radius: 12px; }
+        .chart-container h3 { margin-bottom: 12px; font-size: 1rem; color: #4a5568; }
+        .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .chart-row { grid-template-columns: 1fr; } }
+        .zone-bars { display: flex; height: 30px; border-radius: 8px; overflow: hidden; margin-top: 10px; }
+        .zone-bar { display: flex; align-items: center; justify-content: center; font-size: 0.7rem; color: white; font-weight: 600; }
+        .zone-legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+        .zone-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; }
+        .zone-color { width: 16px; height: 16px; border-radius: 4px; }
+        @media print {
+            .actions { display: none; }
+            .btn-back { display: none; }
+            body { background: white; padding: 0; }
+            .container { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>
+            <span class="icon">{{ ride_type.icon }}</span>
+            {{ ride.filename }}
+            <span class="type-badge">{{ ride_type.name }}</span>
+        </h1>
+        <div class="actions">
+            <button class="btn btn-print" onclick="window.print()">🖨️ Print / PDF</button>
+            <button class="btn btn-back" onclick="window.location.href='/dashboard'">← Back</button>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Distance</div><div class="stat-value">{{ summary.distance_km|default(0) }} <span class="stat-unit">km</span></div></div>
+        <div class="stat-card"><div class="stat-label">Avg Speed</div><div class="stat-value">{{ summary.avg_speed|default(0) }} <span class="stat-unit">km/h</span></div></div>
+        <div class="stat-card"><div class="stat-label">Max Speed</div><div class="stat-value">{{ summary.max_speed|default(0) }} <span class="stat-unit">km/h</span></div></div>
+        <div class="stat-card"><div class="stat-label">Elevation Gain</div><div class="stat-value">{{ summary.elevation_gain|default(0) }} <span class="stat-unit">m</span></div></div>
+        <div class="stat-card"><div class="stat-label">Calories</div><div class="stat-value">{{ summary.total_calories|default(0) }}</div></div>
+        <div class="stat-card"><div class="stat-label">Avg Power</div><div class="stat-value">{{ summary.avg_power|default(0) }} <span class="stat-unit">W</span></div></div>
+        <div class="stat-card"><div class="stat-label">Avg HR</div><div class="stat-value">{{ summary.avg_hr|default('—') }} <span class="stat-unit">bpm</span></div></div>
+        <div class="stat-card"><div class="stat-label">Avg Cadence</div><div class="stat-value">{{ summary.avg_cadence|default(0) }} <span class="stat-unit">rpm</span></div></div>
+    </div>
+
+    {% if route and route|length > 1 %}
+    <div class="map-container" id="map"></div>
+    {% else %}
+    <div class="map-container" style="display:flex; align-items:center; justify-content:center; background:#edf2f7; color:#718096;">
+        No GPS data available
+    </div>
+    {% endif %}
+
+    <div class="chart-row">
+        <div class="chart-container">
+            <h3>⚡ Power Zones</h3>
+            {% if zone_distribution %}
+            <div class="zone-bars">
+                {% for zone in zone_distribution %}
+                <div class="zone-bar" style="width: {{ zone.pct }}%; background: hsl({{ loop.index0 * 20 + 100 }}, 60%, 50%);">
+                    {{ zone.pct }}%
+                </div>
+                {% endfor %}
+            </div>
+            <div class="zone-legend">
+                {% for zone in zone_distribution %}
+                <div class="zone-legend-item">
+                    <span class="zone-color" style="background: hsl({{ loop.index0 * 20 + 100 }}, 60%, 50%);"></span>
+                    {{ zone.zone }} ({{ zone.seconds }}s)
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No power data</p>
+            {% endif %}
+        </div>
+        <div class="chart-container">
+            <h3>📈 Speed & Heart Rate</h3>
+            <canvas id="timeChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Map
+    {% if route and route|length > 1 %}
+    const route = {{ route|tojson }};
+    const map = L.map('map').setView(route[0], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    const polyline = L.polyline(route, { color: '#4299e1', weight: 4 }).addTo(map);
+    map.fitBounds(polyline.getBounds());
+    {% endif %}
+
+    // Time-series chart
+    const streams = {{ streams|tojson }};
+    const timestamps = streams.timestamps || [];
+    const speed = streams.speed || [];
+    const hr = streams.heart_rate || [];
+    const power = streams.power || [];
+
+    if (timestamps.length > 0) {
+        const ctx = document.getElementById('timeChart').getContext('2d');
+        const datasets = [];
+        if (speed.length) {
+            datasets.push({
+                label: 'Speed (km/h)',
+                data: speed,
+                borderColor: '#4299e1',
+                backgroundColor: 'rgba(66,153,225,0.1)',
+                fill: true,
+                tension: 0.3,
+                yAxisID: 'y'
+            });
+        }
+        if (hr.length) {
+            datasets.push({
+                label: 'Heart Rate (bpm)',
+                data: hr,
+                borderColor: '#fc8181',
+                backgroundColor: 'rgba(252,129,129,0.1)',
+                fill: true,
+                tension: 0.3,
+                yAxisID: 'y1'
+            });
+        }
+        if (power.length) {
+            datasets.push({
+                label: 'Power (W)',
+                data: power,
+                borderColor: '#f6ad55',
+                backgroundColor: 'rgba(246,173,85,0.1)',
+                fill: true,
+                tension: 0.3,
+                yAxisID: 'y2'
+            });
+        }
+        new Chart(ctx, {
+            type: 'line',
+            data: { labels: timestamps, datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top' } },
+                scales: {
+                    y: { beginAtZero: true, position: 'left', grid: { drawOnChartArea: false } },
+                    y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } },
+                    y2: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } }
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>
