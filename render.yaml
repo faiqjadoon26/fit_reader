@@ -2,7 +2,7 @@ services:
   - type: web
     name: cycling-dashboard
     env: python
-    pythonVersion: 3.11.0          # <-- THIS is the key – NOT under envVars
+    pythonVersion: 3.11.0          # ← THIS IS THE KEY – NOT under envVars
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
