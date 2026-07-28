@@ -2,11 +2,10 @@ services:
   - type: web
     name: cycling-dashboard
     env: python
+    pythonVersion: 3.11.0          # <-- THIS is the key
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.0
       - key: DATABASE_URL
         fromDatabase:
           name: fit_reader_db
