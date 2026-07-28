@@ -648,5 +648,52 @@ def save_live_ride():
         err = traceback.format_exc()
         return jsonify({"error": str(e), "detail": err}), 500
 
+
+@app.route('/test-db')
+def test_db():
+    """Test database connection"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT version()")
+        version = cur.fetchone()
+        cur.close()
+        conn.close()
+        return jsonify({
+            "status": "✅ Connected to PostgreSQL!",
+            "version": version[0],
+            "database": "PostgreSQL on Render"
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "❌ Connection failed",
+            "error": str(e)
+        }), 500
+
+@app.route('/db-status')
+def db_status():
+    """Check if database tables exist"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public'
+            ORDER BY table_name
+        """)
+        tables = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify({
+            "status": "✅ Database accessible",
+            "tables": [t[0] for t in tables]
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "❌ Error",
+            "error": str(e)
+        }), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
