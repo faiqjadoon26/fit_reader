@@ -3,1341 +3,940 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cycling Dashboard</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <title>Fit Reader - Dashboard</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', sans-serif; background: #0d0d0d; color: #fff; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        nav {
-            background: #111; border-bottom: 1px solid #222;
-            padding: 14px 40px; display: flex; align-items: center;
-            justify-content: space-between; position: sticky; top: 0; z-index: 1000;
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #f5f7fa;
+            color: #2d3748;
+            min-height: 100vh;
         }
-        .nav-logo { font-size: 20px; font-weight: 800; }
-        .nav-logo span { color: #ff4500; }
-        .nav-tabs { display: flex; gap: 4px; }
-        .tab-btn {
-            background: none; border: none; color: #888;
-            padding: 8px 15px; border-radius: 6px; cursor: pointer;
-            font-size: 14px; font-weight: 600; transition: all 0.2s;
+
+        /* Navbar */
+        .navbar {
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 0 2rem;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
-        .tab-btn.active, .tab-btn:hover { background: #1e1e1e; color: #fff; }
-        .tab-btn.active { color: #ff4500; }
-        .nav-right { display: flex; align-items: center; gap: 12px; }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #ff4500; }
-        .username { font-size: 14px; color: #aaa; }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar-brand span {
+            background: #4299e1;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .username {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
         .logout-btn {
-            background: #1e1e1e; color: #aaa; border: 1px solid #333;
-            padding: 7px 14px; border-radius: 6px; cursor: pointer;
-            font-size: 13px; text-decoration: none;
+            color: #718096;
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            transition: all 0.2s;
+            background: #f7fafc;
         }
-        .logout-btn:hover { color: #fff; }
 
-        .main { max-width: 1200px; margin: 0 auto; padding: 30px 40px; }
-        .tab-panel { display: none; }
-        .tab-panel.active { display: block; }
-
-        /* UPLOAD */
-        .upload-box {
-            background: #1a1a1a; border: 2px dashed #ff4500;
-            border-radius: 10px; padding: 40px; text-align: center; margin-bottom: 30px;
+        .logout-btn:hover {
+            background: #fed7d7;
+            color: #e53e3e;
         }
-        .upload-box h3 { font-size: 18px; margin-bottom: 15px; color: #ccc; }
-        .primary-btn {
-            background: #ff4500; color: #fff; border: none;
-            padding: 12px 28px; border-radius: 6px; cursor: pointer;
-            font-weight: 700; font-size: 15px; margin-top: 12px;
-            transition: opacity 0.2s;
-        }
-        .primary-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        input[type=file] { color: #aaa; }
 
-        /* STATS GRID */
+        /* Main Layout */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Activity Type Selector */
+        .activity-selector {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .activity-selector h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #2d3748;
+        }
+
+        .activity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 10px;
+        }
+
+        .activity-btn {
+            padding: 10px 8px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .activity-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .activity-btn.active {
+            border-color: #4299e1;
+            background: #ebf8ff;
+            color: #2b6cb0;
+        }
+
+        .activity-btn .icon {
+            font-size: 1.5rem;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .activity-btn .badge {
+            display: inline-block;
+            background: #ebf8ff;
+            color: #2b6cb0;
+            font-size: 0.7rem;
+            padding: 1px 6px;
+            border-radius: 10px;
+            margin-top: 4px;
+        }
+
+        /* Stats Cards */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 14px; margin-bottom: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
+
         .stat-card {
-            background: #1a1a1a; border-radius: 8px;
-            padding: 18px; text-align: center; border-bottom: 3px solid #ff4500;
-        }
-        .stat-card h4 { color: #555; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
-        .stat-card p { font-size: 26px; font-weight: 800; margin-top: 8px; }
-        .stat-card.calories { border-color: #e91e63; }
-        .stat-card.power { border-color: #9c27b0; }
-        .stat-card.distance { border-color: #2196f3; }
-        .stat-card.temp, .modal-stat.temp { border-color: #26c6da; }
-        .stat-card.hr, .modal-stat.hr { border-color: #ef5350; }
-
-        #map { height: 400px; border-radius: 8px; margin-bottom: 20px; }
-        .chart-box {
-            background: #1a1a1a; border-radius: 8px;
-            border: 1px solid #222; padding: 22px; margin-bottom: 18px;
+            background: white;
+            border-radius: 10px;
+            padding: 1.2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.2s;
         }
 
-        /* POWER ZONES */
-        .zone-bar-wrap { margin-top: 12px; }
-        .zone-row { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
-        .zone-label { width: 130px; font-size: 12px; color: #888; flex-shrink: 0; }
-        .zone-bar-bg { flex: 1; background: #222; border-radius: 4px; height: 14px; overflow: hidden; }
-        .zone-bar-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
-        .zone-pct { width: 40px; text-align: right; font-size: 12px; color: #666; }
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
 
-        /* RIDE LIST */
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .section-header h2 { font-size: 20px; }
-        .rides-list { display: flex; flex-direction: column; gap: 12px; }
+        .stat-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #718096;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin-top: 5px;
+        }
+
+        .stat-unit {
+            font-size: 0.8rem;
+            color: #718096;
+            font-weight: 400;
+        }
+
+        /* Upload Section */
+        .upload-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .upload-section h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-section p {
+            color: #718096;
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .upload-btn-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .upload-btn {
+            background: #4299e1;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .upload-btn:hover {
+            background: #3182ce;
+        }
+
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Ride List */
+        .rides-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .rides-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .rides-header h2 {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .rides-header .ride-count {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .rides-header .filter-badge {
+            background: #ebf8ff;
+            color: #2b6cb0;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .ride-list {
+            display: grid;
+            gap: 10px;
+        }
+
         .ride-item {
-            background: #1a1a1a; border-radius: 8px; padding: 18px 22px;
-            border: 1px solid #222; display: flex; justify-content: space-between;
-            align-items: center; cursor: pointer; transition: border-color 0.2s, transform 0.15s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f7fafc;
+            border-radius: 8px;
+            transition: all 0.2s;
+            border-left: 4px solid #4299e1;
+            cursor: pointer;
         }
-        .ride-item:hover { border-color: #ff4500; transform: translateX(3px); }
-        .ride-item-left h4 { font-size: 15px; margin-bottom: 3px; }
-        .ride-item-left p { color: #555; font-size: 12px; }
-        .ride-stats { display: flex; gap: 20px; align-items: center; }
-        .ride-stat { text-align: center; }
-        .ride-stat span { display: block; font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 1px; }
-        .ride-stat strong { font-size: 16px; }
-        .view-btn {
-            background: #ff4500; color: #fff; border: none;
-            padding: 7px 14px; border-radius: 6px; cursor: pointer;
-            font-size: 12px; font-weight: 600; white-space: nowrap;
-        }
-        .delete-ride-btn {
-            background: #1e1e1e; color: #e57373; border: 1px solid #3a1a1a;
-            padding: 7px 11px; border-radius: 6px; cursor: pointer;
-            font-size: 13px; transition: background 0.2s, border-color 0.2s;
-        }
-        .delete-ride-btn:hover { background: #2a1a1a; border-color: #e57373; }
 
-        /* MODAL */
-        .modal-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.88); z-index: 2000;
-            overflow-y: auto; padding: 30px 20px;
+        .ride-item:hover {
+            background: #edf2f7;
+            transform: translateX(4px);
         }
-        .modal-overlay.open { display: block; }
-        .modal {
-            background: #111; border-radius: 12px; max-width: 1100px;
-            margin: 0 auto; padding: 30px; border: 1px solid #222;
-        }
-        .modal-header {
-            display: flex; justify-content: space-between;
-            align-items: flex-start; margin-bottom: 22px;
-        }
-        .modal-header h2 { font-size: 22px; }
-        .modal-header p { color: #555; font-size: 13px; margin-top: 4px; }
-        .close-btn {
-            background: #1e1e1e; border: 1px solid #333; color: #aaa;
-            width: 36px; height: 36px; border-radius: 6px; cursor: pointer;
-            font-size: 18px; display: flex; align-items: center; justify-content: center;
-        }
-        .close-btn:hover { color: #fff; }
-        #modalMap { height: 360px; border-radius: 8px; margin-bottom: 20px; }
-        .modal-stats {
-            display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 12px; margin-bottom: 20px;
-        }
-        .modal-stat {
-            background: #1a1a1a; border-radius: 8px; padding: 14px;
-            text-align: center; border-bottom: 3px solid #ff4500;
-        }
-        .modal-stat.calories { border-color: #e91e63; }
-        .modal-stat.power { border-color: #9c27b0; }
-        .modal-stat h4 { color: #555; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
-        .modal-stat p { font-size: 22px; font-weight: 800; margin-top: 6px; }
-        .modal-chart { background: #1a1a1a; border-radius: 8px; border: 1px solid #222; padding: 20px; margin-bottom: 14px; }
 
-        /* PROFILE */
-        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .profile-section {
-            background: #1a1a1a; border-radius: 10px; padding: 28px;
-            border: 1px solid #222;
+        .ride-item .ride-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
         }
-        .profile-section h3 { font-size: 16px; margin-bottom: 20px; color: #fff; border-bottom: 1px solid #222; padding-bottom: 12px; }
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 7px; }
-        .form-group input, .form-group select {
-            width: 100%; background: #111; border: 1px solid #333; color: #fff;
-            padding: 10px 14px; border-radius: 6px; font-size: 15px;
-        }
-        .form-group input:focus, .form-group select:focus { outline: none; border-color: #ff4500; }
-        .form-group select option { background: #111; }
-        .sensor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .sensor-check { display: flex; align-items: center; gap: 8px; background: #111; border: 1px solid #333; border-radius: 6px; padding: 10px 14px; cursor: pointer; transition: border-color 0.2s; }
-        .sensor-check:hover { border-color: #ff4500; }
-        .sensor-check input[type=checkbox] { accent-color: #ff4500; width: 16px; height: 16px; }
-        .sensor-check span { font-size: 14px; }
-        .save-btn {
-            background: #ff4500; color: #fff; border: none;
-            padding: 12px 28px; border-radius: 6px; cursor: pointer;
-            font-weight: 700; font-size: 15px; margin-top: 8px; width: 100%;
-        }
-        .save-success { color: #4caf50; font-size: 13px; margin-top: 10px; text-align: center; display: none; }
 
-        /* LEADERBOARD */
-        .leaderboard { width: 100%; border-collapse: collapse; }
-        .leaderboard th {
-            text-align: left; padding: 12px 16px; color: #555;
-            font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
-            border-bottom: 1px solid #222;
+        .ride-item .ride-icon {
+            font-size: 1.5rem;
         }
-        .leaderboard td { padding: 13px 16px; border-bottom: 1px solid #1a1a1a; font-size: 14px; }
-        .leaderboard tr:hover td { background: #1a1a1a; }
 
-        /* DUPLICATE DIALOG */
-        .dialog-overlay {
-            display: none; position: fixed; inset: 0;
-            background: rgba(0,0,0,0.85); z-index: 3000;
-            align-items: center; justify-content: center;
+        .ride-item .ride-name {
+            font-weight: 500;
         }
-        .dialog-overlay.open { display: flex; }
-        .dialog {
-            background: #1a1a1a; border-radius: 10px; padding: 30px;
-            border: 1px solid #333; max-width: 400px; width: 90%; text-align: center;
+
+        .ride-item .ride-type-badge {
+            font-size: 0.7rem;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
         }
-        .dialog h3 { font-size: 18px; margin-bottom: 10px; }
-        .dialog p { color: #888; font-size: 14px; margin-bottom: 24px; line-height: 1.5; }
-        .dialog-btns { display: flex; gap: 12px; justify-content: center; }
-        .btn-secondary {
-            background: #333; color: #fff; border: none;
-            padding: 10px 22px; border-radius: 6px; cursor: pointer; font-size: 14px;
+
+        .ride-item .ride-stats {
+            display: flex;
+            gap: 20px;
+            color: #718096;
+            font-size: 0.85rem;
         }
-        .empty-state { text-align: center; color: #444; padding: 60px; font-size: 15px; }
-        .loading { color: #555; text-align: center; padding: 40px; }
+
+        .ride-item .ride-stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .ride-item .ride-date {
+            color: #a0aec0;
+            font-size: 0.8rem;
+        }
+
+        .ride-item .delete-btn {
+            background: none;
+            border: none;
+            color: #fc8181;
+            cursor: pointer;
+            font-size: 1.2rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .ride-item .delete-btn:hover {
+            background: #fed7d7;
+        }
+
+        .no-rides {
+            text-align: center;
+            padding: 3rem;
+            color: #718096;
+        }
+
+        .no-rides .big-icon {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #718096;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #e2e8f0;
+            border-top-color: #4299e1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #2d3748;
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: #48bb78;
+        }
+
+        .toast.error {
+            background: #fc8181;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0 1rem;
+            }
+            .navbar-brand {
+                font-size: 1.1rem;
+            }
+            .username {
+                display: none;
+            }
+            .main-container {
+                padding: 1rem;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .activity-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            }
+            .ride-item {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            .ride-item .ride-stats {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .activity-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            .activity-btn {
+                font-size: 0.7rem;
+                padding: 6px;
+            }
+            .activity-btn .icon {
+                font-size: 1.2rem;
+            }
+        }
     </style>
 </head>
 <body>
-
-<nav>
-    <div class="nav-logo">🚲 <span>Cycling</span> Dashboard</div>
-    <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('upload', this)">Upload Ride</button>
-        <button class="tab-btn" onclick="switchTab('history', this)">My Rides</button>
-        <button class="tab-btn" onclick="switchTab('club', this)">Club 🏆</button>
-        <button class="tab-btn" onclick="switchTab('profile', this)">⚙️ Profile</button>
-    </div>
-    <div class="nav-right">
-        <img class="avatar" src="{{ user.avatar }}" alt="avatar">
-        <span class="username">{{ user.name }}</span>
-        <a href="/auth/logout" class="logout-btn">Logout</a>
-    </div>
-</nav>
-
-<div class="main">
-
-    <!-- UPLOAD TAB -->
-    <div id="tab-upload" class="tab-panel active">
-        <div class="upload-box">
-            <h3>Upload your .fit Workout File</h3>
-            <input type="file" id="fileInput" accept=".fit">
-            <br>
-            <button class="primary-btn" id="uploadBtn" onclick="startUpload()">Analyze Ride</button>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            🚴 Fit Reader
+            <span>Beta</span>
         </div>
-        <div id="statsSection" style="display:none;">
-            <div class="stats-grid">
-                <div class="stat-card distance"><h4>Distance</h4><p id="distance">-</p></div>
-                <div class="stat-card"><h4>Avg Speed</h4><p id="avgSpeed">-</p></div>
-                <div class="stat-card"><h4>Max Speed</h4><p id="maxSpeed">-</p></div>
-                <div class="stat-card"><h4>Avg Cadence</h4><p id="avgCadence">-</p></div>
-                <div class="stat-card"><h4>Elevation Gain</h4><p id="elevation">-</p></div>
-                <div class="stat-card calories"><h4>Calories</h4><p id="calories">-</p></div>
-                <div class="stat-card power"><h4>Avg Power</h4><p id="avgPower">-</p></div>
-                <div class="stat-card power"><h4>Max Power</h4><p id="maxPower">-</p></div>
-                <div class="stat-card temp" id="tempCardAvg" style="display:none;"><h4>Avg Temp</h4><p id="avgTemp">-</p></div>
-                <div class="stat-card temp" id="tempCardMax" style="display:none;"><h4>Max Temp</h4><p id="maxTemp">-</p></div>
-                <div class="stat-card hr" id="hrCardAvg" style="display:none;"><h4>Avg HR</h4><p id="avgHR">-</p></div>
-                <div class="stat-card hr" id="hrCardMax" style="display:none;"><h4>Max HR</h4><p id="maxHR">-</p></div>
+        <div class="navbar-right">
+            <div class="user-info">
+                <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar">
+                <span class="username">{{ user.name }}</span>
             </div>
-            <div id="map"></div>
-            <div class="chart-box"><div id="speedChart" style="height:220px;"></div></div>
-            <div class="chart-box"><div id="powerChart" style="height:220px;"></div></div>
-            <div class="chart-box"><div id="cadenceChart" style="height:220px;"></div></div>
-            <div class="chart-box"><div id="elevationChart" style="height:220px;"></div></div>
-            <div class="chart-box" id="tempChartBox" style="display:none;"><div id="temperatureChart" style="height:220px;"></div></div>
-            <div class="chart-box" id="hrChartBox" style="display:none;"><div id="heartRateChart" style="height:220px;"></div></div>
-            <div class="chart-box">
-                <div style="font-size:15px;font-weight:600;color:#fff;margin-bottom:16px;">Power Zone Distribution</div>
-                <div id="zoneBarChart" class="zone-bar-wrap"></div>
+            <a href="/auth/logout" class="logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Activity Type Selector -->
+        <div class="activity-selector">
+            <h2>🎯 Select Activity Type</h2>
+            <div class="activity-grid" id="activityGrid">
+                <!-- Will be populated by JavaScript -->
             </div>
         </div>
-    </div>
 
-    <!-- HISTORY TAB -->
-    <div id="tab-history" class="tab-panel">
-        <div class="section-header"><h2>My Ride History</h2></div>
-        <div id="ridesList" class="rides-list"><div class="loading">Loading rides...</div></div>
-    </div>
-
-    <!-- CLUB TAB -->
-    <div id="tab-club" class="tab-panel">
-        <div class="section-header"><h2>Club Leaderboard</h2></div>
-        <div style="background:#1a1a1a;border-radius:8px;border:1px solid #222;overflow:hidden;">
-            <table class="leaderboard">
-                <thead>
-                    <tr>
-                        <th>Rank</th><th>Rider</th><th>Rides</th><th>Best Avg Speed</th>
-                        <th>Top Speed</th><th>Total Elevation</th><th>Total Calories</th><th>Bike</th>
-                    </tr>
-                </thead>
-                <tbody id="leaderboardBody"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
-            </table>
+        <!-- Stats -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-label">Total Activities</div>
+                <div class="stat-value" id="totalRides">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Distance</div>
+                <div class="stat-value" id="totalDistance">- <span class="stat-unit">km</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Elevation</div>
+                <div class="stat-value" id="totalElevation">- <span class="stat-unit">m</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Calories</div>
+                <div class="stat-value" id="totalCalories">-</div>
+            </div>
         </div>
-    </div>
 
-    <!-- PROFILE TAB -->
-    <div id="tab-profile" class="tab-panel">
-        <div id="welcomeBanner" style="display:none; background:linear-gradient(135deg,#1a1a1a,#111); border:1px solid #ff4500; border-radius:10px; padding:24px 28px; margin-bottom:24px;"><div style="display:flex;align-items:flex-start;gap:16px;"><div style="font-size:36px;">👋</div><div><h3 style="font-size:17px;margin-bottom:6px;">Welcome to your Cycling Dashboard!</h3><p style="color:#888;font-size:13px;line-height:1.6;">Before uploading your first ride, fill in your <strong style="color:#ff4500;">weight, bike type, and FTP</strong> so we can calculate accurate calories and power for every ride.</p></div><button onclick="dismissWelcome()" style="margin-left:auto;background:none;border:none;color:#555;font-size:22px;cursor:pointer;flex-shrink:0;">✕</button></div></div>
-        <div class="section-header"><h2>My Profile & Gear</h2></div>
-        <div class="profile-grid">
-            <div class="profile-section">
-                <h3>🧍 Rider Info</h3>
-                <div class="form-group">
-                    <label>Weight (kg)</label>
-                    <input type="number" id="pWeight" placeholder="e.g. 72" min="30" max="200">
-                </div>
-                <div class="form-group">
-                    <label>FTP — Functional Threshold Power (watts)</label>
-                    <input type="number" id="pFTP" placeholder="e.g. 200 (default)" min="50" max="600">
-                </div>
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <h2>📤 Upload Your Activity</h2>
+            <p>Upload FIT files from your GPS device or Strava</p>
+            <div class="upload-btn-wrapper">
+                <button class="upload-btn" id="uploadBtn">
+                    📁 Choose FIT File
+                </button>
+                <input type="file" id="fileInput" accept=".fit" />
             </div>
-            <div class="profile-section">
-                <h3>🚲 Bike Setup</h3>
-                <div class="form-group">
-                    <label>Bike Name</label>
-                    <input type="text" id="pBikeName" placeholder="e.g. Trek Domane SL5">
+            <div id="uploadStatus" style="margin-top: 10px; font-size: 0.9rem; color: #718096;"></div>
+        </div>
+
+        <!-- Rides List -->
+        <div class="rides-section">
+            <div class="rides-header">
+                <div>
+                    <h2>📋 My Activities</h2>
+                    <span class="ride-count" id="rideCount">0 activities</span>
                 </div>
-                <div class="form-group">
-                    <label>Bike Type</label>
-                    <select id="pBikeType">
-                        <option value="">Select type...</option>
-                        <option value="road">Road Bike</option>
-                        <option value="mountain">Mountain Bike</option>
-                        <option value="hybrid">Hybrid / City</option>
-                        <option value="gravel">Gravel Bike</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Bike Computer</label>
-                    <select id="pBikeComputer">
-                        <option value="">Select device...</option>
-                        <option value="garmin">Garmin</option>
-                        <option value="wahoo">Wahoo ELEMNT</option>
-                        <option value="cycplus">Cycplus</option>
-                        <option value="hammerhead">Hammerhead Karoo</option>
-                        <option value="bryton">Bryton</option>
-                        <option value="polar">Polar</option>
-                        <option value="other">Other</option>
-                    </select>
-                </div>
-            </div>
-            <div class="profile-section" style="grid-column: 1 / -1;">
-                <h3>📡 Sensors</h3>
-                <div class="sensor-grid">
-                    <label class="sensor-check"><input type="checkbox" id="sHR" value="heart_rate"><span>❤️ Heart Rate Monitor</span></label>
-                    <label class="sensor-check"><input type="checkbox" id="sPM" value="power_meter"><span>⚡ Power Meter</span></label>
-                    <label class="sensor-check"><input type="checkbox" id="sSC" value="speed_cadence"><span>🔄 Speed & Cadence Sensor</span></label>
-                    <label class="sensor-check"><input type="checkbox" id="sGPS" value="gps"><span>📍 GPS</span></label>
-                </div>
-                <button class="save-btn" onclick="saveProfile()">Save Profile</button>
-                <div class="save-success" id="saveSuccess">✓ Profile saved successfully!</div>
-                <div style="margin-top: 28px; border-top: 1px solid #222; padding-top: 24px;">
-                    <div style="margin-bottom: 12px;">
-                        <div style="font-size:15px; font-weight:600; margin-bottom:6px;">🔄 Sync All Rides</div>
-                        <p style="color:#666; font-size:13px; line-height:1.5;">Re-run power and calorie calculations across all your saved rides using your current profile settings. Useful when you update your weight, FTP, or bike type.</p>
-                    </div>
-                    <button class="save-btn" style="background:#1e1e1e; border:1px solid #ff4500; color:#ff4500;" onclick="recalculateAll()">
-                        🔄 Recalculate Power & Calories for All Rides
+                <div>
+                    <span class="filter-badge" id="filterBadge">All Types</span>
+                    <button onclick="loadRides()" style="background: none; border: none; color: #4299e1; cursor: pointer; font-size: 0.9rem; margin-left: 10px;">
+                        🔄 Refresh
                     </button>
-                    <div id="recalcProgress" style="display:none; margin-top:16px;">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
-                            <span style="font-size:13px; color:#888;" id="recalcStatus">Recalculating...</span>
-                            <span style="font-size:13px; color:#ff4500;" id="recalcCount"></span>
-                        </div>
-                        <div style="background:#222; border-radius:6px; height:8px; overflow:hidden;">
-                            <div id="recalcBar" style="height:100%; background:#ff4500; border-radius:6px; width:0%; transition:width 0.4s ease;"></div>
-                        </div>
-                    </div>
-                    <div id="recalcResult" style="display:none; margin-top:14px; padding:14px 18px; border-radius:8px; font-size:13px; line-height:1.6;"></div>
                 </div>
-
+            </div>
+            <div class="ride-list" id="rideList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading your activities...</p>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- RIDE DETAIL MODAL -->
-<div class="modal-overlay" id="rideModal">
-    <div class="modal">
-        <div class="modal-header">
-            <div><h2 id="modalTitle">Ride Details</h2><p id="modalFilename"></p></div>
-            <button class="close-btn" onclick="closeModal()">✕</button>
-        </div>
-        <div class="modal-stats">
-            <div class="modal-stat distance"><h4>Distance</h4><p id="mDistance">-</p></div>
-            <div class="modal-stat"><h4>Avg Speed</h4><p id="mAvgSpeed">-</p></div>
-            <div class="modal-stat"><h4>Max Speed</h4><p id="mMaxSpeed">-</p></div>
-            <div class="modal-stat"><h4>Elevation</h4><p id="mElevation">-</p></div>
-            <div class="modal-stat calories"><h4>Calories</h4><p id="mCalories">-</p></div>
-            <div class="modal-stat power"><h4>Avg Power</h4><p id="mAvgPower">-</p></div>
-            <div class="modal-stat power"><h4>Max Power</h4><p id="mMaxPower">-</p></div>
-            <div class="modal-stat"><h4>Avg Cadence</h4><p id="mAvgCadence">-</p></div>
-            <div class="modal-stat temp" id="mTempCardAvg" style="display:none;"><h4>Avg Temp</h4><p id="mAvgTemp">-</p></div>
-            <div class="modal-stat temp" id="mTempCardMax" style="display:none;"><h4>Max Temp</h4><p id="mMaxTemp">-</p></div>
-            <div class="modal-stat hr" id="mHrCardAvg" style="display:none;"><h4>Avg HR</h4><p id="mAvgHR">-</p></div>
-            <div class="modal-stat hr" id="mHrCardMax" style="display:none;"><h4>Max HR</h4><p id="mMaxHR">-</p></div>
-        </div>
-        <div id="modalMap"></div>
-        <div class="modal-chart"><div id="mSpeedChart" style="height:200px;"></div></div>
-        <div class="modal-chart"><div id="mPowerChart" style="height:200px;"></div></div>
-        <div class="modal-chart"><div id="mCadenceChart" style="height:200px;"></div></div>
-        <div class="modal-chart"><div id="mElevationChart" style="height:200px;"></div></div>
-        <div class="modal-chart" id="mTempChartBox" style="display:none;"><div id="mTemperatureChart" style="height:200px;"></div></div>
-        <div class="modal-chart" id="mHrChartBox" style="display:none;"><div id="mHeartRateChart" style="height:200px;"></div></div>
-        <div class="modal-chart">
-            <div style="font-size:14px;font-weight:600;color:#fff;margin-bottom:14px;">Power Zone Distribution</div>
-            <div id="mZoneBarChart" class="zone-bar-wrap"></div>
-        </div>
-    </div>
-</div>
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
 
-<!-- DUPLICATE DIALOG -->
-<div class="dialog-overlay" id="dupDialog">
-    <div class="dialog">
-        <h3>⚠️ Duplicate Ride Detected</h3>
-        <p>This file has already been uploaded. Do you want to overwrite the existing ride, or keep both?</p>
-        <div class="dialog-btns">
-            <button class="btn-secondary" onclick="cancelDuplicate()">Cancel</button>
-            <button class="btn-secondary" onclick="confirmUpload(false)">Keep Both</button>
-            <button class="primary-btn" style="margin-top:0;" onclick="confirmUpload(true)">Overwrite</button>
-        </div>
-    </div>
-</div>
+    <script>
+        // ── State ──────────────────────────────────────────────────────────
+        let selectedType = 'all';
+        let rideTypes = [];
+        let allRides = [];
+        let uploadInProgress = false;
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-<script>
-let map, spdChart, pwrChart, cadChart, elvChart, tmpChart, hrChart;
-let mMap, mSpdChart, mPwrChart, mCadChart, mElvChart, mTmpChart, mHrChart;
-let pendingUpload = null;
-
-const ZONE_COLORS = {
-    'Z1 Recovery': '#888888', 'Z2 Endurance': '#4fc3f7',
-    'Z3 Tempo': '#81c784', 'Z4 Threshold': '#ffb74d', 'Z5 VO2 Max': '#e57373'
-};
-
-function switchTab(tab, btn) {
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-' + tab).classList.add('active');
-    btn.classList.add('active');
-    if (tab === 'history') loadHistory();
-    if (tab === 'club') loadClub();
-    if (tab === 'profile') loadProfile();
-}
-
-function buildChart(selector, title, label, data, color, timestamps, height = 220) {
-    const chart = new ApexCharts(document.querySelector(selector), {
-        chart: {
-            type: 'area', height, foreColor: '#888',
-            fontFamily: 'Segoe UI, sans-serif',
-            toolbar: { show: false }, animations: { enabled: false }
-        },
-        dataLabels: { enabled: false, formatter: () => '', style: { fontSize: '0px' }, background: { enabled: false }, dropShadow: { enabled: false } },
-        stroke: { width: 2.5, curve: 'smooth' },
-        fill: { type: 'gradient', gradient: { opacityFrom: 0.35, opacityTo: 0.02, stops: [0, 95] } },
-        series: [{ name: label, data }],
-        xaxis: { categories: timestamps, tickAmount: 8, labels: { style: { colors: '#555', fontSize: '11px' } }, axisBorder: { show: false }, axisTicks: { show: false } },
-        yaxis: { tickAmount: 4, labels: { style: { colors: '#555' }, formatter: v => Math.round(v) } },
-        grid: { borderColor: '#1e1e1e' },
-        title: { text: title, align: 'left', style: { color: '#fff', fontSize: '14px', fontWeight: '600' } },
-        colors: [color],
-        markers: { size: 0, strokeWidth: 0, hover: { size: 5 } },
-        tooltip: { theme: 'dark', shared: false, intersect: false }
-    });
-    chart.render();
-    return chart;
-}
-
-function renderZoneBars(containerId, zones) {
-    const container = document.getElementById(containerId);
-    if (!zones || !zones.length) { container.innerHTML = '<p style="color:#555;font-size:13px;">No power data available</p>'; return; }
-    container.innerHTML = zones.map(z => `
-        <div class="zone-row">
-            <div class="zone-label">${z.zone}</div>
-            <div class="zone-bar-bg">
-                <div class="zone-bar-fill" style="width:${z.pct}%;background:${ZONE_COLORS[z.zone] || '#ff4500'};"></div>
-            </div>
-            <div class="zone-pct">${z.pct}%</div>
-        </div>
-    `).join('');
-}
-
-function initLeafletMap(elementId, coords) {
-    const key = '_lmap_' + elementId;
-    if (window[key]) { window[key].remove(); window[key] = null; }
-    if (!coords || !coords.length) return;
-    const m = L.map(elementId).setView(coords[0], 13);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(m);
-    const poly = L.polyline(coords, { color: '#ff4500', weight: 4 }).addTo(m);
-    m.fitBounds(poly.getBounds());
-    window[key] = m;
-}
-
-function populateStats(summary, elementIds) {
-    const s = summary;
-    const set = (id, val) => { const el = document.getElementById(elementIds[id]); if (el) el.innerText = val; };
-    set('distance', (s.distance_km || 0) + ' km');
-    set('avgSpeed', s.avg_speed + ' km/h');
-    set('maxSpeed', s.max_speed + ' km/h');
-    set('avgCadence', s.avg_cadence + ' RPM');
-    set('elevation', s.elevation_gain + ' m');
-    set('calories', (s.total_calories || 0) + ' kcal');
-    set('avgPower', (s.avg_power || 0) + ' W');
-    set('maxPower', (s.max_power || 0) + ' W');
-    // Temperature — show/hide cards based on data availability
-    const hastemp = s.has_temperature;
-    ['tempCardAvg','tempCardMax','mTempCardAvg','mTempCardMax'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.style.display = hastemp ? 'block' : 'none';
-    });
-    if (hastemp) {
-        set('avgTemp', (s.avg_temp || '—') + ' °C');
-        set('maxTemp', (s.max_temp || '—') + ' °C');
-        set('mAvgTemp', (s.avg_temp || '—') + ' °C');
-        set('mMaxTemp', (s.max_temp || '—') + ' °C');
-    }
-    // Heart rate
-    const hasHR = s.avg_hr != null;
-    ['hrCardAvg','hrCardMax','mHrCardAvg','mHrCardMax'].forEach(id => {
-        const el = document.getElementById(id); if (el) el.style.display = hasHR ? 'block' : 'none';
-    });
-    if (hasHR) {
-        set('avgHR', (s.avg_hr || '—') + ' bpm');
-        set('maxHR', (s.max_hr || '—') + ' bpm');
-        set('mAvgHR', (s.avg_hr || '—') + ' bpm');
-        set('mMaxHR', (s.max_hr || '—') + ' bpm');
-    }
-}
-
-// ── Upload flow with duplicate check ─────────────────────────
-async function startUpload() {
-    const file = document.getElementById('fileInput').files[0];
-    if (!file) return alert('Please select a .fit file first!');
-
-    const btn = document.getElementById('uploadBtn');
-    btn.disabled = true; btn.innerText = 'Checking...';
-
-    const fd = new FormData();
-    fd.append('fitfile', file);
-
-    const res = await fetch('/check-duplicate', { method: 'POST', body: fd });
-    const data = await res.json();
-
-    // Keep the actual File object so we can resend its bytes on confirm
-    pendingUpload = {
-        file: file,
-        duplicate_id: data.duplicate_id
-    };
-
-    btn.disabled = false; btn.innerText = 'Analyze Ride';
-
-    if (data.is_duplicate) {
-        document.getElementById('dupDialog').classList.add('open');
-    } else {
-        await confirmUpload(false);
-    }
-}
-
-function cancelDuplicate() {
-    document.getElementById('dupDialog').classList.remove('open');
-    pendingUpload = null;
-}
-
-async function confirmUpload(overwrite) {
-    document.getElementById('dupDialog').classList.remove('open');
-    if (!pendingUpload) return;
-
-    const btn = document.getElementById('uploadBtn');
-    btn.disabled = true; btn.innerText = 'Analyzing...';
-
-    const fd = new FormData();
-    fd.append('fitfile', pendingUpload.file);
-    if (overwrite && pendingUpload.duplicate_id) {
-        fd.append('overwrite_id', pendingUpload.duplicate_id);
-    }
-
-    const res = await fetch('/upload', { method: 'POST', body: fd });
-    const data = await res.json();
-
-    btn.disabled = false; btn.innerText = 'Analyze Ride';
-    pendingUpload = null;
-
-    if (!res.ok) return alert('Error: ' + data.error);
-
-    populateStats(data.summary, {
-        distance: 'distance', avgSpeed: 'avgSpeed', maxSpeed: 'maxSpeed',
-        avgCadence: 'avgCadence', elevation: 'elevation',
-        calories: 'calories', avgPower: 'avgPower', maxPower: 'maxPower'
-    });
-    document.getElementById('statsSection').style.display = 'block';
-    initLeafletMap('map', data.route);
-
-    if (spdChart) spdChart.destroy();
-    if (pwrChart) pwrChart.destroy();
-    if (cadChart) cadChart.destroy();
-    if (elvChart) elvChart.destroy();
-
-    spdChart = buildChart('#speedChart', 'Speed Profile', 'Speed (km/h)', data.streams.speed, '#fca311', data.streams.timestamps);
-    pwrChart = buildChart('#powerChart', 'Estimated Power', 'Power (W)', data.streams.power, '#ce93d8', data.streams.timestamps);
-    cadChart = buildChart('#cadenceChart', 'Pedaling Cadence', 'Cadence (RPM)', data.streams.cadence, '#00e396', data.streams.timestamps);
-    elvChart = buildChart('#elevationChart', 'Elevation Profile', 'Altitude (m)', data.streams.elevation, '#90a4ae', data.streams.timestamps);
-    if (tmpChart) tmpChart.destroy();
-    const tempBox = document.getElementById('tempChartBox');
-    if (data.streams.temperature && data.streams.temperature.length) {
-        tempBox.style.display = 'block';
-        tmpChart = buildChart('#temperatureChart', 'Temperature', 'Temp (°C)', data.streams.temperature, '#26c6da', data.streams.timestamps);
-    } else { tempBox.style.display = 'none'; }
-    if (hrChart) hrChart.destroy();
-    const hrBox = document.getElementById('hrChartBox');
-    if (data.streams.heart_rate && data.streams.heart_rate.some(v => v > 0)) {
-        hrBox.style.display = 'block';
-        hrChart = buildChart('#heartRateChart', 'Heart Rate', 'BPM', data.streams.heart_rate, '#ef5350', data.streams.timestamps);
-    } else { hrBox.style.display = 'none'; }
-    renderZoneBars('zoneBarChart', data.zone_distribution);
-}
-
-// ── History ───────────────────────────────────────────────────
-async function loadHistory() {
-    const res = await fetch('/my-rides');
-    const rides = await res.json();
-    const container = document.getElementById('ridesList');
-    if (!rides.length) {
-        container.innerHTML = '<div class="empty-state">No rides yet — upload your first .fit file!</div>';
-        return;
-    }
-    container.innerHTML = rides.slice().reverse().map(r => `
-        <div class="ride-item" onclick="openRideDetail(${r.id})">
-            <div class="ride-item-left">
-                <h4>Ride #${r.id}</h4>
-                <p>${r.filename}</p>
-            </div>
-            <div class="ride-stats">
-                <div class="ride-stat"><span>Distance</span><strong>${r.summary.distance_km || '—'} km</strong></div>
-                <div class="ride-stat"><span>Avg Speed</span><strong>${r.summary.avg_speed} km/h</strong></div>
-                <div class="ride-stat"><span>Elevation</span><strong>${r.summary.elevation_gain} m</strong></div>
-                <div class="ride-stat"><span>Calories</span><strong>${r.summary.total_calories || '—'} kcal</strong></div>
-                <div class="ride-stat"><span>Avg Power</span><strong>${r.summary.avg_power || '—'} W</strong></div>
-                <button class="view-btn">View Details →</button>
-                <button class="delete-ride-btn" onclick="event.stopPropagation(); confirmDeleteRide(${r.id}, '${r.filename}')">🗑️</button>
-            </div>
-        </div>
-    `).join('');
-}
-
-async function openRideDetail(rideId) {
-    const res = await fetch(`/ride/${rideId}`);
-    const ride = await res.json();
-    if (!res.ok) return alert('Could not load ride details');
-
-    document.getElementById('modalTitle').innerText = `Ride #${ride.id}`;
-    document.getElementById('modalFilename').innerText = ride.filename;
-    populateStats(ride.summary, {
-        distance: 'mDistance', avgSpeed: 'mAvgSpeed', maxSpeed: 'mMaxSpeed',
-        avgCadence: 'mAvgCadence', elevation: 'mElevation',
-        calories: 'mCalories', avgPower: 'mAvgPower', maxPower: 'mMaxPower'
-    });
-
-    document.getElementById('rideModal').classList.add('open');
-    document.body.style.overflow = 'hidden';
-
-    setTimeout(() => {
-        initLeafletMap('modalMap', ride.route);
-        if (mSpdChart) mSpdChart.destroy();
-        if (mPwrChart) mPwrChart.destroy();
-        if (mCadChart) mCadChart.destroy();
-        if (mElvChart) mElvChart.destroy();
-        mSpdChart = buildChart('#mSpeedChart', 'Speed Profile', 'Speed (km/h)', ride.streams.speed, '#fca311', ride.streams.timestamps, 200);
-        mPwrChart = buildChart('#mPowerChart', 'Estimated Power', 'Power (W)', ride.streams.power, '#ce93d8', ride.streams.timestamps, 200);
-        mCadChart = buildChart('#mCadenceChart', 'Pedaling Cadence', 'Cadence (RPM)', ride.streams.cadence, '#00e396', ride.streams.timestamps, 200);
-        mElvChart = buildChart('#mElevationChart', 'Elevation Profile', 'Altitude (m)', ride.streams.elevation, '#90a4ae', ride.streams.timestamps, 200);
-        if (mTmpChart) mTmpChart.destroy();
-        const mTempBox = document.getElementById('mTempChartBox');
-        if (ride.streams.temperature && ride.streams.temperature.length) {
-            mTempBox.style.display = 'block';
-            mTmpChart = buildChart('#mTemperatureChart', 'Temperature', 'Temp (°C)', ride.streams.temperature, '#26c6da', ride.streams.timestamps, 200);
-        } else { mTempBox.style.display = 'none'; }
-        if (mHrChart) mHrChart.destroy();
-        const mHrBox = document.getElementById('mHrChartBox');
-        if (ride.streams.heart_rate && ride.streams.heart_rate.some(v => v > 0)) {
-            mHrBox.style.display = 'block';
-            mHrChart = buildChart('#mHeartRateChart', 'Heart Rate', 'BPM', ride.streams.heart_rate, '#ef5350', ride.streams.timestamps, 200);
-        } else { mHrBox.style.display = 'none'; }
-        renderZoneBars('mZoneBarChart', ride.zone_distribution);
-    }, 100);
-}
-
-function closeModal() {
-    document.getElementById('rideModal').classList.remove('open');
-    document.body.style.overflow = '';
-}
-document.getElementById('rideModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
-
-// ── Club ──────────────────────────────────────────────────────
-async function loadClub() {
-    const res = await fetch('/club');
-    const riders = await res.json();
-    const tbody = document.getElementById('leaderboardBody');
-    if (!riders.length) {
-        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No club members yet!</td></tr>';
-        return;
-    }
-    const medals = ['🥇', '🥈', '🥉'];
-    tbody.innerHTML = riders.map((r, i) => `
-        <tr>
-            <td>${medals[i] || '#' + (i + 1)}</td>
-            <td>@${r.username}</td>
-            <td>${r.total_rides}</td>
-            <td>${r.best_avg_speed} km/h</td>
-            <td>${r.best_max_speed} km/h</td>
-            <td>${r.total_elevation} m</td>
-            <td>${r.total_calories} kcal</td>
-            <td>${r.bike_type}</td>
-        </tr>
-    `).join('');
-}
-
-// ── Profile ───────────────────────────────────────────────────
-async function loadProfile() {
-    const res = await fetch('/profile');
-    const p = await res.json();
-    if (p.weight) document.getElementById('pWeight').value = p.weight;
-    if (p.ftp) document.getElementById('pFTP').value = p.ftp;
-    if (p.bike_name) document.getElementById('pBikeName').value = p.bike_name;
-    if (p.bike_type) document.getElementById('pBikeType').value = p.bike_type;
-    if (p.bike_computer) document.getElementById('pBikeComputer').value = p.bike_computer;
-    const sensors = p.sensors || [];
-    document.getElementById('sHR').checked = sensors.includes('heart_rate');
-    document.getElementById('sPM').checked = sensors.includes('power_meter');
-    document.getElementById('sSC').checked = sensors.includes('speed_cadence');
-    document.getElementById('sGPS').checked = sensors.includes('gps');
-}
-
-async function saveProfile() {
-    const sensors = [];
-    if (document.getElementById('sHR').checked) sensors.push('heart_rate');
-    if (document.getElementById('sPM').checked) sensors.push('power_meter');
-    if (document.getElementById('sSC').checked) sensors.push('speed_cadence');
-    if (document.getElementById('sGPS').checked) sensors.push('gps');
-
-    const profile = {
-        weight: document.getElementById('pWeight').value,
-        ftp: document.getElementById('pFTP').value,
-        bike_name: document.getElementById('pBikeName').value,
-        bike_type: document.getElementById('pBikeType').value,
-        bike_computer: document.getElementById('pBikeComputer').value,
-        sensors
-    };
-
-    await fetch('/profile', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profile)
-    });
-
-    const msg = document.getElementById('saveSuccess');
-    msg.style.display = 'block';
-    setTimeout(() => msg.style.display = 'none', 3000);
-}
-
-// ── First-time profile check ──────────────────────────────────
-async function checkFirstTimeUser() {
-    try {
-        const res = await fetch('/profile');
-        const profile = await res.json();
-        const isEmpty = !profile.weight && !profile.bike_type && !profile.ftp;
-        if (isEmpty) {
-            const profileBtn = document.querySelectorAll('.tab-btn')[3];
-            switchTab('profile', profileBtn);
-            document.getElementById('welcomeBanner').style.display = 'block';
-        }
-    } catch(e) { console.log('Profile check failed', e); }
-}
-
-function dismissWelcome() {
-    document.getElementById('welcomeBanner').style.display = 'none';
-}
-
-// Run on page load
-checkFirstTimeUser();
-
-
-// ── Recalculate all rides ─────────────────────────────────────
-async function recalculateAll() {
-    const weight = document.getElementById('pWeight').value;
-    const bikeType = document.getElementById('pBikeType').value;
-    if (!weight || !bikeType) {
-        alert('Please fill in your weight and bike type first, then save your profile.');
-        return;
-    }
-
-    // Save profile first to make sure latest values are used
-    await saveProfile();
-
-    const progressEl = document.getElementById('recalcProgress');
-    const barEl = document.getElementById('recalcBar');
-    const statusEl = document.getElementById('recalcStatus');
-    const countEl = document.getElementById('recalcCount');
-    const resultEl = document.getElementById('recalcResult');
-
-    progressEl.style.display = 'block';
-    resultEl.style.display = 'none';
-    barEl.style.width = '0%';
-    statusEl.innerText = 'Recalculating rides...';
-    countEl.innerText = '';
-
-    // Animate bar while waiting
-    let pct = 0;
-    const ticker = setInterval(() => {
-        pct = Math.min(pct + 2, 85);
-        barEl.style.width = pct + '%';
-    }, 100);
-
-    try {
-        const res = await fetch('/recalculate-all', { method: 'POST' });
-        const data = await res.json();
-
-        clearInterval(ticker);
-        barEl.style.width = '100%';
-
-        if (!res.ok) {
-            statusEl.innerText = 'Error';
-            resultEl.style.display = 'block';
-            resultEl.style.background = '#2a1a1a';
-            resultEl.style.border = '1px solid #e57373';
-            resultEl.innerHTML = '❌ ' + data.error;
-            return;
+        // ── Activity Types ─────────────────────────────────────────────────
+        async function loadRideTypes() {
+            try {
+                const response = await fetch('/ride-types');
+                rideTypes = await response.json();
+                renderActivityButtons();
+            } catch (error) {
+                console.error('Failed to load ride types:', error);
+            }
         }
 
-        statusEl.innerText = 'Done!';
-        countEl.innerText = `${data.updated} updated`;
+        function renderActivityButtons() {
+            const grid = document.getElementById('activityGrid');
+            grid.innerHTML = '';
+            
+            // "All" button
+            const allBtn = document.createElement('button');
+            allBtn.className = `activity-btn ${selectedType === 'all' ? 'active' : ''}`;
+            allBtn.innerHTML = `
+                <span class="icon">📊</span>
+                All
+            `;
+            allBtn.onclick = () => selectType('all');
+            grid.appendChild(allBtn);
 
-        let html = `✅ <strong>${data.updated} ride${data.updated !== 1 ? 's' : ''} recalculated</strong> with your latest profile.`;
-        if (data.skipped > 0) {
-            html += `<br><span style="color:#ffb74d;">⚠️ ${data.skipped} ride${data.skipped !== 1 ? 's' : ''} skipped</span> — .fit files not found on disk.`;
+            // Type buttons
+            rideTypes.forEach(type => {
+                const btn = document.createElement('button');
+                btn.className = `activity-btn ${selectedType === type.id ? 'active' : ''}`;
+                btn.innerHTML = `
+                    <span class="icon">${type.icon}</span>
+                    ${type.name}
+                    <span class="badge" id="badge-${type.id}">0</span>
+                `;
+                btn.onclick = () => selectType(type.id);
+                grid.appendChild(btn);
+            });
         }
-        if (data.errors.length > 0) {
-            html += '<br><span style="color:#666; font-size:12px;">' + data.errors.join('<br>') + '</span>';
+
+        function selectType(typeId) {
+            selectedType = typeId;
+            
+            // Update active state
+            document.querySelectorAll('.activity-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const buttons = document.querySelectorAll('.activity-btn');
+            const index = typeId === 'all' ? 0 : rideTypes.findIndex(t => t.id === typeId) + 1;
+            if (buttons[index]) {
+                buttons[index].classList.add('active');
+            }
+
+            // Update filter badge
+            const filterBadge = document.getElementById('filterBadge');
+            if (typeId === 'all') {
+                filterBadge.textContent = 'All Types';
+            } else {
+                const type = rideTypes.find(t => t.id === typeId);
+                filterBadge.textContent = `${type.icon} ${type.name}`;
+            }
+
+            // Reload rides with filter
+            loadRides();
         }
 
-        resultEl.style.display = 'block';
-        resultEl.style.background = data.skipped === 0 ? '#0d2a0d' : '#1a1a0d';
-        resultEl.style.border = '1px solid ' + (data.skipped === 0 ? '#4caf50' : '#ffb74d');
-        resultEl.innerHTML = html;
+        // ── Stats ──────────────────────────────────────────────────────────
+        function updateStats(rides) {
+            let totalRides = rides.length;
+            let totalDistance = 0;
+            let totalElevation = 0;
+            let totalCalories = 0;
 
-        setTimeout(() => { progressEl.style.display = 'none'; }, 2000);
+            rides.forEach(ride => {
+                const summary = ride.summary || {};
+                totalDistance += summary.distance_km || 0;
+                totalElevation += summary.elevation_gain || 0;
+                totalCalories += summary.total_calories || 0;
+            });
 
-    } catch(e) {
-        clearInterval(ticker);
-        statusEl.innerText = 'Failed';
-        resultEl.style.display = 'block';
-        resultEl.style.background = '#2a1a1a';
-        resultEl.style.border = '1px solid #e57373';
-        resultEl.innerHTML = '❌ Request failed: ' + e.message;
-    }
-}
+            document.getElementById('totalRides').textContent = totalRides;
+            document.getElementById('totalDistance').innerHTML = `${totalDistance.toFixed(1)} <span class="stat-unit">km</span>`;
+            document.getElementById('totalElevation').innerHTML = `${totalElevation.toFixed(0)} <span class="stat-unit">m</span>`;
+            document.getElementById('totalCalories').textContent = Math.round(totalCalories);
 
+            // Update ride count
+            document.getElementById('rideCount').textContent = `${totalRides} activities`;
+        }
 
-// ── Delete ride ───────────────────────────────────────────────
-let pendingDeleteId = null;
+        // ── Rides ──────────────────────────────────────────────────────────
+        async function loadRides() {
+            const rideList = document.getElementById('rideList');
+            rideList.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading your activities...</p>
+                </div>
+            `;
 
-function confirmDeleteRide(rideId, filename) {
-    pendingDeleteId = rideId;
-    document.getElementById('deleteDialogMsg').innerHTML =
-        `Are you sure you want to delete <strong>${filename}</strong>?<br><span style="color:#e57373;">This will also remove the .fit file from disk and cannot be undone.</span>`;
-    document.getElementById('deleteDialog').classList.add('open');
-}
-
-function cancelDelete() {
-    pendingDeleteId = null;
-    document.getElementById('deleteDialog').classList.remove('open');
-}
-
-async function executeDelete() {
-    if (!pendingDeleteId) return;
-    document.getElementById('deleteDialog').classList.remove('open');
-
-    const res = await fetch(`/ride/${pendingDeleteId}`, { method: 'DELETE' });
-    const data = await res.json();
-    pendingDeleteId = null;
-
-    if (!res.ok) return alert('Error deleting ride: ' + data.error);
-
-    // Refresh the rides list
-    loadHistory();
-}
-
-
-// ── Live Ride Recording ───────────────────────────────────────
-let liveMap = null, livePolyline = null;
-let recInterval = null, recSeconds = 0;
-let isRecording = false;
-let recordedPoints = [];
-let gpsWatchId = null;
-let lastLat = null, lastLng = null, totalDistKm = 0;
-let btDevice = null, btHR = 0, btCadence = 0;
-
-let liveMarker = null;
-let accuracyCircle = null;
-
-function openRecordingOverlay() {
-    document.getElementById('recordingOverlay').style.display = 'flex';
-    document.getElementById('recordingOverlay').style.flexDirection = 'column';
-    if (!liveMap) {
-        setTimeout(() => {
-            liveMap = L.map('liveMap', { zoomControl: false }).setView([43.8561, -79.3370], 16);
-            L.control.zoom({ position: 'topright' }).addTo(liveMap);
-
-            // Dark map tiles
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(liveMap);
-
-            // Route polyline
-            livePolyline = L.polyline([], { color: '#e53935', weight: 5, opacity: 0.9 }).addTo(liveMap);
-
-            // Track manual panning so we don't fight the user
-            liveMap.on('dragstart', () => { liveMap._userPanned = true; });
-
-            // Rider location marker — pulsing dot
-            const riderIcon = L.divIcon({
-                className: '',
-                html: `<div style="
-                    width:18px; height:18px;
-                    background:#e53935; border-radius:50%;
-                    border:3px solid #fff;
-                    box-shadow:0 0 0 4px rgba(229,57,53,0.35);
-                    animation:riderPulse 1.5s ease-in-out infinite;
-                "></div>
-                <style>
-                @keyframes riderPulse {
-                    0%   { box-shadow: 0 0 0 0 rgba(229,57,53,0.5); }
-                    70%  { box-shadow: 0 0 0 12px rgba(229,57,53,0); }
-                    100% { box-shadow: 0 0 0 0 rgba(229,57,53,0); }
+            try {
+                let url = '/my-rides';
+                if (selectedType !== 'all') {
+                    url += `?type=${selectedType}`;
                 }
-                </style>`,
-                iconSize: [18, 18],
-                iconAnchor: [9, 9]
+                
+                const response = await fetch(url);
+                allRides = await response.json();
+                
+                // Update badge counts
+                updateBadgeCounts();
+                
+                // Update stats
+                updateStats(allRides);
+                
+                // Render rides
+                renderRides(allRides);
+            } catch (error) {
+                console.error('Failed to load rides:', error);
+                rideList.innerHTML = `
+                    <div class="no-rides">
+                        <span class="big-icon">❌</span>
+                        <p>Failed to load activities</p>
+                        <button onclick="loadRides()" style="margin-top: 10px; padding: 8px 20px; background: #4299e1; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                            Retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function renderRides(rides) {
+            const rideList = document.getElementById('rideList');
+            
+            if (rides.length === 0) {
+                rideList.innerHTML = `
+                    <div class="no-rides">
+                        <span class="big-icon">🏃</span>
+                        <p>No activities found</p>
+                        <p style="font-size: 0.9rem; margin-top: 5px;">Upload your first FIT file to get started!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            rideList.innerHTML = '';
+            rides.forEach(ride => {
+                const summary = ride.summary || {};
+                const rideType = rideTypes.find(t => t.id === ride.ride_type) || { icon: '🚴', name: 'Cycling' };
+                
+                const div = document.createElement('div');
+                div.className = 'ride-item';
+                div.style.borderLeftColor = rideTypes.find(t => t.id === ride.ride_type)?.color || '#4299e1';
+                div.innerHTML = `
+                    <div class="ride-info">
+                        <span class="ride-icon">${rideType.icon}</span>
+                        <span class="ride-name">${ride.filename || 'Unnamed Ride'}</span>
+                        <span class="ride-type-badge" style="background: ${rideTypes.find(t => t.id === ride.ride_type)?.color || '#4299e1'}20; color: ${rideTypes.find(t => t.id === ride.ride_type)?.color || '#4299e1'}">
+                            ${rideType.name}
+                        </span>
+                        <div class="ride-stats">
+                            <span>📏 ${summary.distance_km || 0} km</span>
+                            <span>⛰️ ${summary.elevation_gain || 0} m</span>
+                            <span>⚡ ${summary.avg_speed || 0} km/h</span>
+                            <span>🔥 ${summary.total_calories || 0} cal</span>
+                        </div>
+                        <span class="ride-date">${ride.ride_date ? new Date(ride.ride_date).toLocaleDateString() : 'Unknown date'}</span>
+                    </div>
+                    <button class="delete-btn" onclick="deleteRide(${ride.id})" title="Delete this activity">🗑️</button>
+                `;
+                div.onclick = (e) => {
+                    if (e.target.closest('.delete-btn')) return;
+                    viewRide(ride.id);
+                };
+                rideList.appendChild(div);
+            });
+        }
+
+        function updateBadgeCounts() {
+            // Count rides by type
+            const counts = {};
+            allRides.forEach(ride => {
+                const type = ride.ride_type || 'cycling';
+                counts[type] = (counts[type] || 0) + 1;
             });
 
-            liveMarker = L.marker([43.8561, -79.3370], { icon: riderIcon, zIndexOffset: 1000 }).addTo(liveMap);
-            accuracyCircle = L.circle([43.8561, -79.3370], {
-                radius: 10, color: '#e53935', fillColor: '#e53935',
-                fillOpacity: 0.08, weight: 1, opacity: 0.3
-            }).addTo(liveMap);
-
-            // Try to get initial location immediately
-            if ('geolocation' in navigator) {
-                navigator.geolocation.getCurrentPosition(pos => {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-                    liveMap.setView([lat, lng], 16);
-                    liveMarker.setLatLng([lat, lng]);
-                    accuracyCircle.setLatLng([lat, lng]);
-                    accuracyCircle.setRadius(pos.coords.accuracy || 10);
-                    document.getElementById('gpsStatus').innerText = `📍 GPS: locked`;
-                    document.getElementById('gpsStatus').style.color = '#4caf50';
-                }, null, { enableHighAccuracy: true });
-            }
-        }, 100);
-    } else {
-        // Already initialized — refresh size in case overlay was hidden
-        setTimeout(() => liveMap.invalidateSize(), 150);
-    }
-}
-
-function closeRecordingOverlay() {
-    if (isRecording) {
-        if (!confirm('You are still recording! Stop and discard this ride?')) return;
-        stopRecording(true);
-    }
-    document.getElementById('recordingOverlay').style.display = 'none';
-}
-
-function toggleRecording() {
-    if (!isRecording) startRecording();
-    else stopRecording(false);
-}
-
-function startRecording() {
-    isRecording = true;
-    recordedPoints = [];
-    recSeconds = 0;
-    totalDistKm = 0;
-    lastLat = null; lastLng = null;
-
-    document.getElementById('recBtn').innerText = '⏹ Stop Ride';
-    document.getElementById('recBtn').style.background = '#333';
-    document.getElementById('recStatusLabel').innerText = 'Recording...';
-    document.getElementById('recStatusLabel').style.color = '#4caf50';
-    document.getElementById('floatRecordBtn').innerText = '⏹';
-
-    // Timer
-    recInterval = setInterval(() => {
-        recSeconds++;
-        const h = String(Math.floor(recSeconds/3600)).padStart(2,'0');
-        const m = String(Math.floor((recSeconds%3600)/60)).padStart(2,'0');
-        const s = String(recSeconds%60).padStart(2,'0');
-        document.getElementById('recTimer').innerText = `${h}:${m}:${s}`;
-    }, 1000);
-
-    // GPS
-    if ('geolocation' in navigator) {
-        gpsWatchId = navigator.geolocation.watchPosition(pos => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            const alt = pos.coords.altitude || 0;
-            const accSpeed = pos.coords.speed ? pos.coords.speed * 3.6 : 0;
-
-            // Distance
-            if (lastLat !== null) {
-                const R = 6371;
-                const dLat = (lat - lastLat) * Math.PI / 180;
-                const dLon = (lng - lastLng) * Math.PI / 180;
-                const a = Math.sin(dLat/2)**2 + Math.cos(lastLat*Math.PI/180) * Math.cos(lat*Math.PI/180) * Math.sin(dLon/2)**2;
-                totalDistKm += R * 2 * Math.asin(Math.sqrt(a));
-            }
-            lastLat = lat; lastLng = lng;
-
-            document.getElementById('liveSpeed').innerHTML = `${accSpeed.toFixed(1)} <span style="font-size:12px;">km/h</span>`;
-            document.getElementById('liveDistance').innerHTML = `${totalDistKm.toFixed(2)} <span style="font-size:12px;">km</span>`;
-            document.getElementById('liveElevation').innerHTML = `${Math.round(alt)} <span style="font-size:12px;">m</span>`;
-            document.getElementById('gpsStatus').innerText = `📍 GPS: ${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-            document.getElementById('gpsStatus').style.color = '#4caf50';
-
-            // Move rider marker and accuracy circle
-            liveMarker.setLatLng([lat, lng]);
-            accuracyCircle.setLatLng([lat, lng]);
-            accuracyCircle.setRadius(pos.coords.accuracy || 10);
-
-            // Pan map to keep rider centered, but only if not manually panned
-            if (!liveMap._userPanned) {
-                liveMap.setView([lat, lng], liveMap.getZoom());
-            }
-            livePolyline.addLatLng([lat, lng]);
-
-            recordedPoints.push({
-                timestamp: new Date().toISOString().substring(11, 19),
-                lat, lng,
-                altitude: alt,
-                speed_kmh: parseFloat(accSpeed.toFixed(1)),
-                heart_rate: btHR,
-                cadence: btCadence
+            // Update badges
+            rideTypes.forEach(type => {
+                const badge = document.getElementById(`badge-${type.id}`);
+                if (badge) {
+                    badge.textContent = counts[type.id] || 0;
+                }
             });
-        }, err => {
-            document.getElementById('gpsStatus').innerText = '📍 GPS: error - ' + err.message;
-            document.getElementById('gpsStatus').style.color = '#e53935';
-        }, { enableHighAccuracy: true, maximumAge: 1000 });
-    }
-}
+        }
 
-function stopRecording(discard) {
-    isRecording = false;
-    clearInterval(recInterval);
-    if (gpsWatchId !== null) navigator.geolocation.clearWatch(gpsWatchId);
+        // ── Upload ─────────────────────────────────────────────────────────
+        document.getElementById('fileInput').addEventListener('change', async function(e) {
+            const file = this.files[0];
+            if (!file) return;
 
-    document.getElementById('recBtn').innerText = '▶ Start Ride';
-    document.getElementById('recBtn').style.background = '#e53935';
-    document.getElementById('recStatusLabel').innerText = 'Ready to Record';
-    document.getElementById('recStatusLabel').style.color = '#e53935';
-    document.getElementById('floatRecordBtn').innerText = '🔴';
+            if (uploadInProgress) {
+                showToast('Upload already in progress', 'error');
+                return;
+            }
 
-    if (!discard && recordedPoints.length > 5) {
-        openReviewModal();
-    }
-}
+            // Check file type
+            if (!file.name.toLowerCase().endsWith('.fit')) {
+                showToast('Please select a .FIT file', 'error');
+                this.value = '';
+                return;
+            }
 
-// ── Bluetooth Sensors ─────────────────────────────────────────
-async function connectBluetooth() {
-    if (!navigator.bluetooth) {
-        alert('Web Bluetooth is only supported in Chrome on Android/desktop. Not available on iOS.');
-        return;
-    }
-    try {
-        document.getElementById('btBtn').innerText = 'Searching...';
-        const device = await navigator.bluetooth.requestDevice({
-            acceptAllDevices: true,
-            optionalServices: [
-                'heart_rate',
-                '00001816-0000-1000-8000-00805f9b34fb' // Cycling Speed & Cadence
-            ]
-        });
-        btDevice = device;
-        const server = await device.gatt.connect();
+            uploadInProgress = true;
+            const uploadBtn = document.getElementById('uploadBtn');
+            const statusDiv = document.getElementById('uploadStatus');
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '⏳ Uploading...';
+            statusDiv.textContent = 'Checking for duplicates...';
 
-        // Try Heart Rate
-        try {
-            const hrService = await server.getPrimaryService('heart_rate');
-            const hrChar = await hrService.getCharacteristic('heart_rate_measurement');
-            await hrChar.startNotifications();
-            hrChar.addEventListener('characteristicvaluechanged', e => {
-                const flags = e.target.value.getUint8(0);
-                btHR = flags & 0x01 ? e.target.value.getUint16(1, true) : e.target.value.getUint8(1);
-                document.getElementById('liveHR').innerHTML = `${btHR} <span style="font-size:12px;">bpm</span>`;
-                document.getElementById('hrStatus').innerText = `❤️ HR: ${btHR} bpm`;
-                document.getElementById('hrStatus').style.color = '#ef5350';
-            });
-        } catch(e) { console.log('No HR service:', e.message); }
+            try {
+                // Check for duplicate
+                const formData = new FormData();
+                formData.append('fitfile', file);
+                
+                const checkResponse = await fetch('/check-duplicate', {
+                    method: 'POST',
+                    body: formData
+                });
+                const checkResult = await checkResponse.json();
 
-        // Try Cadence
-        try {
-            const cscService = await server.getPrimaryService('00001816-0000-1000-8000-00805f9b34fb');
-            const cscChar = await cscService.getCharacteristic('00002a5b-0000-1000-8000-00805f9b34fb');
-            await cscChar.startNotifications();
-            let lastCrankRev = 0, lastCrankTime = 0;
-            cscChar.addEventListener('characteristicvaluechanged', e => {
-                const flags = e.target.value.getUint8(0);
-                if (flags & 0x02) {
-                    const crankRev = e.target.value.getUint16(3, true);
-                    const crankTime = e.target.value.getUint16(5, true);
-                    if (lastCrankTime > 0 && crankTime !== lastCrankTime) {
-                        const timeDiff = (crankTime - lastCrankTime) / 1024;
-                        const revDiff = crankRev - lastCrankRev;
-                        btCadence = Math.round((revDiff / timeDiff) * 60);
-                        document.getElementById('liveCadence').innerHTML = `${btCadence} <span style="font-size:12px;">rpm</span>`;
-                        document.getElementById('cadStatus').innerText = `🔄 Cadence: ${btCadence} rpm`;
-                        document.getElementById('cadStatus').style.color = '#00e396';
+                let overwrite = false;
+                if (checkResult.is_duplicate) {
+                    statusDiv.textContent = '⚠️ Duplicate file detected!';
+                    const userConfirmed = confirm(
+                        `This file has already been uploaded (ID: ${checkResult.duplicate_id}).\n\nDo you want to overwrite it?`
+                    );
+                    if (userConfirmed) {
+                        overwrite = true;
+                        statusDiv.textContent = 'Overwriting existing ride...';
+                    } else {
+                        statusDiv.textContent = 'Upload cancelled';
+                        uploadInProgress = false;
+                        uploadBtn.disabled = false;
+                        uploadBtn.textContent = '📁 Choose FIT File';
+                        this.value = '';
+                        return;
                     }
-                    lastCrankRev = crankRev;
-                    lastCrankTime = crankTime;
                 }
-            });
-        } catch(e) { console.log('No CSC service:', e.message); }
 
-        document.getElementById('btBtn').innerText = `✅ ${device.name || 'Sensor'} Connected`;
-        document.getElementById('btBtn').style.color = '#4caf50';
-    } catch(e) {
-        document.getElementById('btBtn').innerText = '📡 Connect Sensors';
-        if (e.name !== 'NotFoundError') alert('Bluetooth error: ' + e.message);
-    }
-}
+                // Upload with ride type
+                const uploadFormData = new FormData();
+                uploadFormData.append('fitfile', file);
+                uploadFormData.append('ride_type', selectedType === 'all' ? 'cycling' : selectedType);
+                if (overwrite && checkResult.duplicate_id) {
+                    uploadFormData.append('overwrite_id', checkResult.duplicate_id);
+                }
 
-// ── Review Modal ──────────────────────────────────────────────
-function openReviewModal() {
-    document.getElementById('recordingOverlay').style.display = 'none';
-    document.getElementById('reviewModal').style.display = 'block';
+                statusDiv.textContent = 'Uploading and parsing...';
 
-    const pts = recordedPoints;
-    const speeds = pts.map(p => p.speed_kmh);
-    const hrs = pts.map(p => p.heart_rate).filter(h => h > 30 && h < 220);
-    const cads = pts.map(p => p.cadence).filter(c => c > 0);
-    const elevs = pts.map(p => p.altitude || 0);
-    const elGain = elevs.reduce((acc, e, i) => i > 0 ? acc + Math.max(0, e - elevs[i-1]) : acc, 0);
+                const uploadResponse = await fetch('/upload', {
+                    method: 'POST',
+                    body: uploadFormData
+                });
+                const result = await uploadResponse.json();
 
-    const h = String(Math.floor(recSeconds/3600)).padStart(2,'0');
-    const m = String(Math.floor((recSeconds%3600)/60)).padStart(2,'0');
-    const s = String(recSeconds%60).padStart(2,'0');
-
-    document.getElementById('rvDistance').innerText = totalDistKm.toFixed(2) + ' km';
-    document.getElementById('rvDuration').innerText = `${h}:${m}:${s}`;
-    document.getElementById('rvAvgSpeed').innerText = (speeds.reduce((a,b)=>a+b,0)/speeds.length).toFixed(1) + ' km/h';
-    document.getElementById('rvMaxSpeed').innerText = Math.max(...speeds).toFixed(1) + ' km/h';
-    document.getElementById('rvAvgHR').innerText = hrs.length ? Math.round(hrs.reduce((a,b)=>a+b,0)/hrs.length) + ' bpm' : '—';
-    document.getElementById('rvAvgCadence').innerText = cads.length ? Math.round(cads.reduce((a,b)=>a+b,0)/cads.length) + ' rpm' : '—';
-    document.getElementById('rvElevation').innerText = Math.round(elGain) + ' m';
-    // Rough calorie estimate
-    const avgPwr = speeds.reduce((a,b)=>a+b,0)/speeds.length * 15;
-    document.getElementById('rvCalories').innerText = Math.round(avgPwr * recSeconds / 4184) + ' kcal';
-
-    // Review map
-    setTimeout(() => {
-        const existingMap = window._reviewMap;
-        if (existingMap) existingMap.remove();
-        const route = pts.filter(p => p.lat).map(p => [p.lat, p.lng]);
-        if (route.length > 0) {
-            const rMap = L.map('reviewMap').setView(route[0], 14);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(rMap);
-            const poly = L.polyline(route, { color: '#ff4500', weight: 4 }).addTo(rMap);
-            rMap.fitBounds(poly.getBounds());
-            window._reviewMap = rMap;
-        }
-    }, 100);
-}
-
-async function saveRecordedRide() {
-    const btn = document.querySelector('#reviewModal button:last-child');
-    btn.innerText = 'Saving...';
-    btn.disabled = true;
-
-    try {
-        const res = await fetch('/save-live-ride', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ points: recordedPoints, duration_seconds: recSeconds })
+                if (uploadResponse.ok) {
+                    const typeInfo = rideTypes.find(t => t.id === selectedType) || { name: 'Activity' };
+                    showToast(`✅ ${typeInfo.name} uploaded successfully!`, 'success');
+                    statusDiv.textContent = '✅ Upload complete!';
+                    
+                    // Reload rides
+                    await loadRides();
+                    
+                    // Reset file input
+                    this.value = '';
+                } else {
+                    showToast(`❌ Upload failed: ${result.error || 'Unknown error'}`, 'error');
+                    statusDiv.textContent = `❌ Error: ${result.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showToast('❌ Upload failed. Check console for details.', 'error');
+                statusDiv.textContent = '❌ Upload failed';
+            } finally {
+                uploadInProgress = false;
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '📁 Choose FIT File';
+                if (statusDiv.textContent.includes('failed')) {
+                    // Keep error message
+                } else if (!statusDiv.textContent.includes('complete')) {
+                    statusDiv.textContent = 'Ready to upload';
+                }
+            }
         });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error);
 
-        document.getElementById('reviewModal').style.display = 'none';
-        recordedPoints = [];
-        alert('✅ Ride saved! Check My Rides tab.');
-    } catch(e) {
-        alert('Error saving ride: ' + e.message);
-        btn.innerText = '💾 Save Ride';
-        btn.disabled = false;
-    }
-}
+        // ── Delete Ride ────────────────────────────────────────────────────
+        async function deleteRide(rideId) {
+            if (!confirm('Are you sure you want to delete this activity?')) return;
 
-function discardRide() {
-    if (!confirm('Discard this ride? This cannot be undone.')) return;
-    document.getElementById('reviewModal').style.display = 'none';
-    recordedPoints = [];
-}
+            try {
+                const response = await fetch(`/ride/${rideId}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
 
+                if (response.ok) {
+                    showToast('🗑️ Activity deleted successfully', 'success');
+                    await loadRides();
+                } else {
+                    showToast(`❌ Failed to delete: ${result.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast('❌ Failed to delete activity', 'error');
+            }
+        }
 
-function recenterMap() {
-    if (liveMap && liveMarker) {
-        liveMap._userPanned = false;
-        liveMap.setView(liveMarker.getLatLng(), liveMap.getZoom());
-    }
-}
+        // ── View Ride ──────────────────────────────────────────────────────
+        function viewRide(rideId) {
+            // You can implement a detailed ride view modal here
+            // For now, just show a toast with the ID
+            showToast(`📊 Viewing ride #${rideId} (details coming soon)`, 'success');
+            // window.location.href = `/ride/${rideId}`;
+        }
 
-// Track if user manually panned the map
-if (typeof liveMap !== 'undefined' && liveMap) {
-    liveMap.on('dragstart', () => { liveMap._userPanned = true; });
-}
+        // ── Toast ──────────────────────────────────────────────────────────
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
 
-</script>
+        // ── Load Stats by Type ────────────────────────────────────────────
+        async function loadStatsByType() {
+            try {
+                const response = await fetch('/stats/by-type');
+                const stats = await response.json();
+                console.log('Stats by type:', stats);
+                // You can display these stats in a chart or table
+            } catch (error) {
+                console.error('Failed to load stats by type:', error);
+            }
+        }
 
-<!-- DELETE CONFIRM DIALOG -->
-<div class="dialog-overlay" id="deleteDialog">
-    <div class="dialog">
-        <h3>🗑️ Delete Ride</h3>
-        <p id="deleteDialogMsg" style="color:#888; font-size:14px; margin-bottom:24px; line-height:1.5;"></p>
-        <div class="dialog-btns">
-            <button class="btn-secondary" onclick="cancelDelete()">Cancel</button>
-            <button class="primary-btn" style="margin-top:0; background:#e57373;" onclick="executeDelete()">Delete Ride</button>
-        </div>
-    </div>
-</div>
+        // ── Init ───────────────────────────────────────────────────────────
+        async function init() {
+            await loadRideTypes();
+            await loadRides();
+            await loadStatsByType();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(() => {
+                loadRides();
+            }, 30000);
+        }
 
-
-<!-- FLOATING RECORD BUTTON -->
-<button id="floatRecordBtn" onclick="openRecordingOverlay()" title="Record a Live Ride" style="
-    position: fixed; bottom: 30px; right: 30px; z-index: 1500;
-    width: 62px; height: 62px; border-radius: 50%;
-    background: #e53935; color: #fff; border: none;
-    font-size: 26px; cursor: pointer;
-    box-shadow: 0 4px 20px rgba(229,57,53,0.5);
-    transition: transform 0.2s, box-shadow 0.2s;
-    display: flex; align-items: center; justify-content: center;
-" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">🔴</button>
-
-<!-- RECORDING OVERLAY -->
-<div id="recordingOverlay" style="display:none; position:fixed; inset:0; background:#0d0d0d; z-index:2500; flex-direction:column;">
-
-    <!-- OVERLAY NAV -->
-    <div style="background:#111; border-bottom:1px solid #222; padding:14px 24px; display:flex; align-items:center; justify-content:space-between;">
-        <div style="font-size:18px; font-weight:800;">🔴 <span id="recStatusLabel" style="color:#e53935;">Ready to Record</span></div>
-        <div id="recTimer" style="font-size:22px; font-weight:800; font-family:monospace; color:#fff;">00:00:00</div>
-        <div style="display:flex; gap:8px;">
-            <button onclick="recenterMap()" title="Re-center on my location" style="background:#1e1e1e; border:1px solid #333; color:#4caf50; padding:8px 14px; border-radius:6px; cursor:pointer; font-size:14px;">🎯 Re-center</button>
-            <button onclick="closeRecordingOverlay()" style="background:#1e1e1e; border:1px solid #333; color:#aaa; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:14px;">✕ Close</button>
-        </div>
-    </div>
-
-    <!-- LIVE STATS BAR -->
-    <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:0; background:#111; border-bottom:1px solid #222;">
-        <div style="padding:14px; text-align:center; border-right:1px solid #222;">
-            <div style="font-size:10px; color:#555; text-transform:uppercase; letter-spacing:1px;">Speed</div>
-            <div id="liveSpeed" style="font-size:24px; font-weight:800; color:#fca311;">0.0 <span style="font-size:12px;">km/h</span></div>
-        </div>
-        <div style="padding:14px; text-align:center; border-right:1px solid #222;">
-            <div style="font-size:10px; color:#555; text-transform:uppercase; letter-spacing:1px;">Heart Rate</div>
-            <div id="liveHR" style="font-size:24px; font-weight:800; color:#ef5350;">-- <span style="font-size:12px;">bpm</span></div>
-        </div>
-        <div style="padding:14px; text-align:center; border-right:1px solid #222;">
-            <div style="font-size:10px; color:#555; text-transform:uppercase; letter-spacing:1px;">Cadence</div>
-            <div id="liveCadence" style="font-size:24px; font-weight:800; color:#00e396;">-- <span style="font-size:12px;">rpm</span></div>
-        </div>
-        <div style="padding:14px; text-align:center; border-right:1px solid #222;">
-            <div style="font-size:10px; color:#555; text-transform:uppercase; letter-spacing:1px;">Distance</div>
-            <div id="liveDistance" style="font-size:24px; font-weight:800; color:#2196f3;">0.00 <span style="font-size:12px;">km</span></div>
-        </div>
-        <div style="padding:14px; text-align:center;">
-            <div style="font-size:10px; color:#555; text-transform:uppercase; letter-spacing:1px;">Elevation</div>
-            <div id="liveElevation" style="font-size:24px; font-weight:800; color:#90a4ae;">0 <span style="font-size:12px;">m</span></div>
-        </div>
-    </div>
-
-    <!-- LIVE MAP -->
-    <div id="liveMap" style="flex:1; min-height:0;"></div>
-
-    <!-- SENSOR STATUS -->
-    <div style="background:#111; border-top:1px solid #222; padding:10px 24px; display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
-        <span style="font-size:12px; color:#555;">SENSORS:</span>
-        <span id="gpsStatus" style="font-size:12px; color:#555;">📍 GPS: waiting...</span>
-        <span id="hrStatus" style="font-size:12px; color:#555;">❤️ HR: not connected</span>
-        <span id="cadStatus" style="font-size:12px; color:#555;">🔄 Cadence: not connected</span>
-        <div style="margin-left:auto; display:flex; gap:10px;">
-            <button onclick="connectBluetooth()" id="btBtn" style="background:#1e1e1e; border:1px solid #333; color:#aaa; padding:8px 16px; border-radius:6px; cursor:pointer; font-size:13px;">📡 Connect Sensors</button>
-            <button onclick="toggleRecording()" id="recBtn" style="background:#e53935; color:#fff; border:none; padding:10px 28px; border-radius:6px; cursor:pointer; font-size:15px; font-weight:700;">▶ Start Ride</button>
-        </div>
-    </div>
-</div>
-
-<!-- RIDE REVIEW MODAL -->
-<div id="reviewModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:3000; overflow-y:auto; padding:30px 20px;">
-    <div style="background:#111; border-radius:12px; max-width:900px; margin:0 auto; padding:30px; border:1px solid #222;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:24px;">
-            <div>
-                <h2 style="font-size:22px; margin-bottom:4px;">Review Your Ride</h2>
-                <p style="color:#555; font-size:13px;">Check your stats before saving</p>
-            </div>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px;">
-            <div style="background:#1a1a1a; border-radius:8px; padding:16px; text-align:center; border-bottom:3px solid #ff4500;">
-                <div style="font-size:10px; color:#555; text-transform:uppercase; letter-spacing:1px;">Distance</div>
-                <div id="rvDistance" style="font-size:26px; font-weight:800; margin-top:6px;">-</div>
-            </div>
-            <div style="background:#1a1a1a; border-radius:8px; padding:16px; text-align:center; border-bottom:3px solid #ff4500;">
-                <div style="font-size:10px; color:#555; text-transform:uppercase; letter-spacing:1px;">Duration</div>
-                <div id="rvDuration" style="font-size:26px; font-weight:800; margin-top:6px;">-</div>
-            </div>
-            <div style="background:#1a1a1a; border-radius:8px; padding:16px; text-align:center; border-bottom:3px solid #ff4500;">
-                <div style="font-size:10px; color:#555; text-transform:uppercase; letter-spacing:1px;">Avg Speed</div>
-                <div id="rvAvgSpeed" style="font-size:26px; font-weight:800; margin-top:6px;">-</div>
-            </div>
-            <div style="background:#1a1a1a; border-radius:8px; padding:16px; text-align:center; border-bottom:3px solid #ff4500;">
-                <div style="font-size:10px; color:#555; text-transform:uppercase; letter-spacing:1px;">Max Speed</div>
-                <div id="rvMaxSpeed" style="font-size:26px; font-weight:800; margin-top:6px;">-</div>
-            </div>
-            <div style="background:#1a1a1a; border-radius:8px; padding:16px; text-align:center; border-bottom:3px solid #e91e63;">
-                <div style="font-size:10px; color:#555; text-transform:uppercase; letter-spacing:1px;">Calories</div>
-                <div id="rvCalories" style="font-size:26px; font-weight:800; margin-top:6px;">-</div>
-            </div>
-            <div style="background:#1a1a1a; border-radius:8px; padding:16px; text-align:center; border-bottom:3px solid #ef5350;">
-                <div style="font-size:10px; color:#555; text-transform:uppercase; letter-spacing:1px;">Avg HR</div>
-                <div id="rvAvgHR" style="font-size:26px; font-weight:800; margin-top:6px;">-</div>
-            </div>
-            <div style="background:#1a1a1a; border-radius:8px; padding:16px; text-align:center; border-bottom:3px solid #00e396;">
-                <div style="font-size:10px; color:#555; text-transform:uppercase; letter-spacing:1px;">Avg Cadence</div>
-                <div id="rvAvgCadence" style="font-size:26px; font-weight:800; margin-top:6px;">-</div>
-            </div>
-            <div style="background:#1a1a1a; border-radius:8px; padding:16px; text-align:center; border-bottom:3px solid #90a4ae;">
-                <div style="font-size:10px; color:#555; text-transform:uppercase; letter-spacing:1px;">Elevation</div>
-                <div id="rvElevation" style="font-size:26px; font-weight:800; margin-top:6px;">-</div>
-            </div>
-        </div>
-        <div id="reviewMap" style="height:300px; border-radius:8px; margin-bottom:24px;"></div>
-        <div style="display:flex; gap:12px; justify-content:flex-end;">
-            <button onclick="discardRide()" style="background:#1e1e1e; border:1px solid #333; color:#aaa; padding:12px 24px; border-radius:6px; cursor:pointer; font-size:14px;">🗑️ Discard Ride</button>
-            <button onclick="saveRecordedRide()" style="background:#ff4500; color:#fff; border:none; padding:12px 28px; border-radius:6px; cursor:pointer; font-size:15px; font-weight:700;">💾 Save Ride</button>
-        </div>
-    </div>
-</div>
-
+        // Start the app
+        init();
+    </script>
 </body>
 </html>
