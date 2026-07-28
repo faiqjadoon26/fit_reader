@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Fit Reader - Dashboard</title>
     <style>
         * {
@@ -18,7 +18,7 @@
             min-height: 100vh;
         }
 
-        /* Navbar */
+        /* ── Navbar ───────────────────────────────────────────── */
         .navbar {
             background: white;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
@@ -87,14 +87,14 @@
             color: #e53e3e;
         }
 
-        /* Main Layout */
+        /* ── Main Layout ──────────────────────────────────────── */
         .main-container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 2rem;
         }
 
-        /* Activity Type Selector */
+        /* ── Activity Selector ────────────────────────────────── */
         .activity-selector {
             background: white;
             border-radius: 12px;
@@ -127,6 +127,7 @@
             font-size: 0.85rem;
             font-weight: 500;
             color: #4a5568;
+            position: relative;
         }
 
         .activity-btn:hover {
@@ -156,7 +157,7 @@
             margin-top: 4px;
         }
 
-        /* Stats Cards */
+        /* ── Stats ────────────────────────────────────────────── */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -198,7 +199,7 @@
             font-weight: 400;
         }
 
-        /* Upload Section */
+        /* ── Upload ───────────────────────────────────────────── */
         .upload-section {
             background: white;
             border-radius: 12px;
@@ -260,7 +261,7 @@
             cursor: not-allowed;
         }
 
-        /* Ride List */
+        /* ── Rides List ───────────────────────────────────────── */
         .rides-section {
             background: white;
             border-radius: 12px;
@@ -311,6 +312,8 @@
             transition: all 0.2s;
             border-left: 4px solid #4299e1;
             cursor: pointer;
+            flex-wrap: wrap;
+            gap: 8px;
         }
 
         .ride-item:hover {
@@ -323,6 +326,7 @@
             align-items: center;
             gap: 15px;
             flex-wrap: wrap;
+            flex: 1;
         }
 
         .ride-item .ride-icon {
@@ -331,6 +335,7 @@
 
         .ride-item .ride-name {
             font-weight: 500;
+            word-break: break-word;
         }
 
         .ride-item .ride-type-badge {
@@ -346,6 +351,7 @@
             gap: 20px;
             color: #718096;
             font-size: 0.85rem;
+            flex-wrap: wrap;
         }
 
         .ride-item .ride-stats span {
@@ -359,18 +365,38 @@
             font-size: 0.8rem;
         }
 
-        .ride-item .delete-btn {
-            background: none;
-            border: none;
-            color: #fc8181;
-            cursor: pointer;
-            font-size: 1.2rem;
-            padding: 4px 8px;
-            border-radius: 4px;
-            transition: background 0.2s;
+        .ride-item .actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
         }
 
-        .ride-item .delete-btn:hover {
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 4px;
+            transition: background 0.2s;
+            color: #718096;
+        }
+        .action-btn:hover {
+            background: #edf2f7;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            font-size: 1.1rem;
+            cursor: pointer;
+            padding: 4px 6px;
+            border-radius: 4px;
+            transition: background 0.2s;
+            color: #fc8181;
+        }
+        .delete-btn:hover {
             background: #fed7d7;
         }
 
@@ -386,7 +412,6 @@
             margin-bottom: 1rem;
         }
 
-        /* Loading */
         .loading {
             text-align: center;
             padding: 2rem;
@@ -407,7 +432,7 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Toast Notification */
+        /* ── Toast ────────────────────────────────────────────── */
         .toast {
             position: fixed;
             bottom: 20px;
@@ -421,6 +446,7 @@
             opacity: 0;
             transition: all 0.3s;
             z-index: 1000;
+            max-width: 90%;
         }
 
         .toast.show {
@@ -436,7 +462,7 @@
             background: #fc8181;
         }
 
-        /* Responsive */
+        /* ── Responsive ───────────────────────────────────────── */
         @media (max-width: 768px) {
             .navbar {
                 padding: 0 1rem;
@@ -457,11 +483,18 @@
                 grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
             }
             .ride-item {
-                flex-wrap: wrap;
-                gap: 8px;
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .ride-item .ride-info {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 6px;
+            }
+            .ride-item .actions {
+                justify-content: flex-end;
             }
             .ride-item .ride-stats {
-                flex-wrap: wrap;
                 gap: 10px;
             }
         }
@@ -484,6 +517,7 @@
     </style>
 </head>
 <body>
+
     <!-- Navbar -->
     <nav class="navbar">
         <div class="navbar-brand">
@@ -492,7 +526,7 @@
         </div>
         <div class="navbar-right">
             <div class="user-info">
-                <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar">
+                <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar" />
                 <span class="username">{{ user.name }}</span>
             </div>
             <a href="/auth/logout" class="logout-btn">Logout</a>
@@ -501,11 +535,12 @@
 
     <!-- Main Content -->
     <div class="main-container">
+
         <!-- Activity Type Selector -->
         <div class="activity-selector">
             <h2>🎯 Select Activity Type</h2>
             <div class="activity-grid" id="activityGrid">
-                <!-- Will be populated by JavaScript -->
+                <!-- populated by JS -->
             </div>
         </div>
 
@@ -563,11 +598,13 @@
                 </div>
             </div>
         </div>
+
     </div>
 
     <!-- Toast -->
     <div class="toast" id="toast"></div>
 
+    <!-- ─── JavaScript ────────────────────────────────────────── -->
     <script>
         // ── State ──────────────────────────────────────────────────────────
         let selectedType = 'all';
@@ -583,13 +620,14 @@
                 renderActivityButtons();
             } catch (error) {
                 console.error('Failed to load ride types:', error);
+                showToast('❌ Failed to load activity types', 'error');
             }
         }
 
         function renderActivityButtons() {
             const grid = document.getElementById('activityGrid');
             grid.innerHTML = '';
-            
+
             // "All" button
             const allBtn = document.createElement('button');
             allBtn.className = `activity-btn ${selectedType === 'all' ? 'active' : ''}`;
@@ -616,16 +654,11 @@
 
         function selectType(typeId) {
             selectedType = typeId;
-            
             // Update active state
-            document.querySelectorAll('.activity-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
+            document.querySelectorAll('.activity-btn').forEach(btn => btn.classList.remove('active'));
             const buttons = document.querySelectorAll('.activity-btn');
             const index = typeId === 'all' ? 0 : rideTypes.findIndex(t => t.id === typeId) + 1;
-            if (buttons[index]) {
-                buttons[index].classList.add('active');
-            }
+            if (buttons[index]) buttons[index].classList.add('active');
 
             // Update filter badge
             const filterBadge = document.getElementById('filterBadge');
@@ -648,18 +681,16 @@
             let totalCalories = 0;
 
             rides.forEach(ride => {
-                const summary = ride.summary || {};
-                totalDistance += summary.distance_km || 0;
-                totalElevation += summary.elevation_gain || 0;
-                totalCalories += summary.total_calories || 0;
+                const s = ride.summary || {};
+                totalDistance += s.distance_km || 0;
+                totalElevation += s.elevation_gain || 0;
+                totalCalories += s.total_calories || 0;
             });
 
             document.getElementById('totalRides').textContent = totalRides;
             document.getElementById('totalDistance').innerHTML = `${totalDistance.toFixed(1)} <span class="stat-unit">km</span>`;
             document.getElementById('totalElevation').innerHTML = `${totalElevation.toFixed(0)} <span class="stat-unit">m</span>`;
             document.getElementById('totalCalories').textContent = Math.round(totalCalories);
-
-            // Update ride count
             document.getElementById('rideCount').textContent = `${totalRides} activities`;
         }
 
@@ -678,16 +709,15 @@
                 if (selectedType !== 'all') {
                     url += `?type=${selectedType}`;
                 }
-                
                 const response = await fetch(url);
                 allRides = await response.json();
-                
+
                 // Update badge counts
                 updateBadgeCounts();
-                
+
                 // Update stats
                 updateStats(allRides);
-                
+
                 // Render rides
                 renderRides(allRides);
             } catch (error) {
@@ -696,7 +726,7 @@
                     <div class="no-rides">
                         <span class="big-icon">❌</span>
                         <p>Failed to load activities</p>
-                        <button onclick="loadRides()" style="margin-top: 10px; padding: 8px 20px; background: #4299e1; color: white; border: none; border-radius: 6px; cursor: pointer;">
+                        <button onclick="loadRides()" style="margin-top:10px;padding:8px 20px;background:#4299e1;color:#fff;border:none;border-radius:6px;cursor:pointer;">
                             Retry
                         </button>
                     </div>
@@ -706,13 +736,12 @@
 
         function renderRides(rides) {
             const rideList = document.getElementById('rideList');
-            
             if (rides.length === 0) {
                 rideList.innerHTML = `
                     <div class="no-rides">
                         <span class="big-icon">🏃</span>
                         <p>No activities found</p>
-                        <p style="font-size: 0.9rem; margin-top: 5px;">Upload your first FIT file to get started!</p>
+                        <p style="font-size:0.9rem;margin-top:5px;">Upload your first FIT file to get started!</p>
                     </div>
                 `;
                 return;
@@ -721,16 +750,17 @@
             rideList.innerHTML = '';
             rides.forEach(ride => {
                 const summary = ride.summary || {};
-                const rideType = rideTypes.find(t => t.id === ride.ride_type) || { icon: '🚴', name: 'Cycling' };
-                
+                const rideType = rideTypes.find(t => t.id === ride.ride_type) || { icon: '🚴', name: 'Cycling', color: '#4299e1' };
+
                 const div = document.createElement('div');
                 div.className = 'ride-item';
                 div.style.borderLeftColor = rideTypes.find(t => t.id === ride.ride_type)?.color || '#4299e1';
+
                 div.innerHTML = `
                     <div class="ride-info">
                         <span class="ride-icon">${rideType.icon}</span>
                         <span class="ride-name">${ride.filename || 'Unnamed Ride'}</span>
-                        <span class="ride-type-badge" style="background: ${rideTypes.find(t => t.id === ride.ride_type)?.color || '#4299e1'}20; color: ${rideTypes.find(t => t.id === ride.ride_type)?.color || '#4299e1'}">
+                        <span class="ride-type-badge" style="background: ${rideType.color}20; color: ${rideType.color};">
                             ${rideType.name}
                         </span>
                         <div class="ride-stats">
@@ -741,30 +771,30 @@
                         </div>
                         <span class="ride-date">${ride.ride_date ? new Date(ride.ride_date).toLocaleDateString() : 'Unknown date'}</span>
                     </div>
-                    <button class="delete-btn" onclick="deleteRide(${ride.id})" title="Delete this activity">🗑️</button>
+                    <div class="actions">
+                        <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})" title="Download .fit file">⬇️</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})" title="Share to Instagram Story">📸</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})" title="View summary">📊</button>
+                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})" title="Delete">🗑️</button>
+                    </div>
                 `;
-                div.onclick = (e) => {
-                    if (e.target.closest('.delete-btn')) return;
-                    viewRide(ride.id);
-                };
+
+                // Click on the whole card goes to summary
+                div.onclick = () => viewSummary(ride.id);
+
                 rideList.appendChild(div);
             });
         }
 
         function updateBadgeCounts() {
-            // Count rides by type
             const counts = {};
             allRides.forEach(ride => {
                 const type = ride.ride_type || 'cycling';
                 counts[type] = (counts[type] || 0) + 1;
             });
-
-            // Update badges
             rideTypes.forEach(type => {
                 const badge = document.getElementById(`badge-${type.id}`);
-                if (badge) {
-                    badge.textContent = counts[type.id] || 0;
-                }
+                if (badge) badge.textContent = counts[type.id] || 0;
             });
         }
 
@@ -778,7 +808,6 @@
                 return;
             }
 
-            // Check file type
             if (!file.name.toLowerCase().endsWith('.fit')) {
                 showToast('Please select a .FIT file', 'error');
                 this.value = '';
@@ -793,10 +822,10 @@
             statusDiv.textContent = 'Checking for duplicates...';
 
             try {
-                // Check for duplicate
+                // Check duplicate
                 const formData = new FormData();
                 formData.append('fitfile', file);
-                
+
                 const checkResponse = await fetch('/check-duplicate', {
                     method: 'POST',
                     body: formData
@@ -822,7 +851,7 @@
                     }
                 }
 
-                // Upload with ride type
+                // Upload
                 const uploadFormData = new FormData();
                 uploadFormData.append('fitfile', file);
                 uploadFormData.append('ride_type', selectedType === 'all' ? 'cycling' : selectedType);
@@ -842,11 +871,7 @@
                     const typeInfo = rideTypes.find(t => t.id === selectedType) || { name: 'Activity' };
                     showToast(`✅ ${typeInfo.name} uploaded successfully!`, 'success');
                     statusDiv.textContent = '✅ Upload complete!';
-                    
-                    // Reload rides
                     await loadRides();
-                    
-                    // Reset file input
                     this.value = '';
                 } else {
                     showToast(`❌ Upload failed: ${result.error || 'Unknown error'}`, 'error');
@@ -854,30 +879,35 @@
                 }
             } catch (error) {
                 console.error('Upload error:', error);
-                showToast('❌ Upload failed. Check console for details.', 'error');
+                showToast('❌ Upload failed. Check console.', 'error');
                 statusDiv.textContent = '❌ Upload failed';
             } finally {
                 uploadInProgress = false;
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = '📁 Choose FIT File';
-                if (statusDiv.textContent.includes('failed')) {
-                    // Keep error message
-                } else if (!statusDiv.textContent.includes('complete')) {
-                    statusDiv.textContent = 'Ready to upload';
-                }
             }
         });
 
-        // ── Delete Ride ────────────────────────────────────────────────────
+        // ── Actions ────────────────────────────────────────────────────────
+        function downloadRide(rideId) {
+            window.location.href = `/download/${rideId}`;
+        }
+
+        function shareRide(rideId) {
+            window.open(`/share/${rideId}`, '_blank');
+        }
+
+        function viewSummary(rideId) {
+            window.open(`/ride-summary/${rideId}`, '_blank');
+        }
+
         async function deleteRide(rideId) {
             if (!confirm('Are you sure you want to delete this activity?')) return;
-
             try {
                 const response = await fetch(`/ride/${rideId}`, {
                     method: 'DELETE'
                 });
                 const result = await response.json();
-
                 if (response.ok) {
                     showToast('🗑️ Activity deleted successfully', 'success');
                     await loadRides();
@@ -890,52 +920,26 @@
             }
         }
 
-        // ── View Ride ──────────────────────────────────────────────────────
-        function viewRide(rideId) {
-            // You can implement a detailed ride view modal here
-            // For now, just show a toast with the ID
-            showToast(`📊 Viewing ride #${rideId} (details coming soon)`, 'success');
-            // window.location.href = `/ride/${rideId}`;
-        }
-
         // ── Toast ──────────────────────────────────────────────────────────
         function showToast(message, type = 'info') {
             const toast = document.getElementById('toast');
             toast.textContent = message;
             toast.className = `toast ${type}`;
             toast.classList.add('show');
-            
             clearTimeout(toast._timeout);
             toast._timeout = setTimeout(() => {
                 toast.classList.remove('show');
             }, 4000);
         }
 
-        // ── Load Stats by Type ────────────────────────────────────────────
-        async function loadStatsByType() {
-            try {
-                const response = await fetch('/stats/by-type');
-                const stats = await response.json();
-                console.log('Stats by type:', stats);
-                // You can display these stats in a chart or table
-            } catch (error) {
-                console.error('Failed to load stats by type:', error);
-            }
-        }
-
         // ── Init ───────────────────────────────────────────────────────────
         async function init() {
             await loadRideTypes();
             await loadRides();
-            await loadStatsByType();
-            
             // Auto-refresh every 30 seconds
-            setInterval(() => {
-                loadRides();
-            }, 30000);
+            setInterval(loadRides, 30000);
         }
 
-        // Start the app
         init();
     </script>
 </body>
