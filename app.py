@@ -7,58 +7,116 @@ import requests
 import hashlib
 import traceback
 from functools import wraps
+import psycopg2
+from psycopg2.extras import Json
+from datetime import datetime
+import math
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'cycling_dashboard_secret_2024_xk9_fallback')
 
-import base64
-from cryptography.fernet import Fernet
+# ── Database Connection ───────────────────────────────────────
+def get_db_connection():
+    """Get PostgreSQL connection with SSL for Render"""
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        raise ValueError("DATABASE_URL environment variable not set!")
+    
+    conn = psycopg2.connect(database_url, sslmode='require')
+    return conn
 
-# ── Load from environment variables (never hardcode secrets) ──
-GITHUB_CLIENT_ID     = os.environ.get('GITHUB_CLIENT_ID', 'Ov23liWJVdZ4Ks6PYBie')
-GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET', '8cf5d28c8996348ce7e2ca91bd89f0b5e7046de2')
+def init_db():
+    """Create tables if they don't exist"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Create users table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            username VARCHAR(100) PRIMARY KEY,
+            github_name VARCHAR(200),
+            avatar_url TEXT,
+            email VARCHAR(200),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            profile JSONB DEFAULT '{}'::jsonb
+        )
+    """)
+    
+    # Create rides table with ride_type column
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS rides (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(100) REFERENCES users(username) ON DELETE CASCADE,
+            filename VARCHAR(255) NOT NULL,
+            file_hash VARCHAR(64) NOT NULL,
+            ride_type VARCHAR(50) DEFAULT 'cycling',
+            ride_date TIMESTAMP,
+            summary JSONB NOT NULL,
+            streams JSONB NOT NULL,
+            zone_distribution JSONB NOT NULL,
+            route JSONB,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(username, file_hash)
+        )
+    """)
+    
+    # Check if ride_type column exists (for existing databases)
+    cur.execute("""
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='rides' AND column_name='ride_type'
+    """)
+    if not cur.fetchone():
+        cur.execute("""
+            ALTER TABLE rides ADD COLUMN ride_type VARCHAR(50) DEFAULT 'cycling'
+        """)
+        print("[DB] Added ride_type column to existing table")
+    
+    # Create indexes
+    cur.execute("""
+        CREATE INDEX IF NOT EXISTS idx_rides_username ON rides(username);
+        CREATE INDEX IF NOT EXISTS idx_rides_date ON rides(ride_date);
+        CREATE INDEX IF NOT EXISTS idx_rides_type ON rides(ride_type);
+    """)
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+    print("[DB] Database initialized successfully!")
+
+# ── GitHub OAuth ──────────────────────────────────────────────
+GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID')
+GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
 GITHUB_AUTH_URL = 'https://github.com/login/oauth/authorize'
 GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
-GITHUB_API_URL   = 'https://api.github.com/user'
+GITHUB_API_URL = 'https://api.github.com/user'
 
 UPLOAD_FOLDER = 'uploads'
-DATA_FOLDER   = 'user_data'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-os.makedirs(DATA_FOLDER, exist_ok=True)
 
-# ── Encryption setup ──────────────────────────────────────────
-# On first run, generates a key and saves it. On Render, set
-# ENCRYPTION_KEY env var to the value from encryption.key file.
-def get_encryption_key():
-    key_from_env = os.environ.get('ENCRYPTION_KEY')
-    if key_from_env:
-        return key_from_env.encode()
-    key_file = 'encryption.key'
-    if os.path.exists(key_file):
-        with open(key_file, 'rb') as f:
-            return f.read()
-    key = Fernet.generate_key()
-    with open(key_file, 'wb') as f:
-        f.write(key)
-    print(f"[SECURITY] Generated new encryption key. Copy this to ENCRYPTION_KEY env var on Render:\n{key.decode()}")
-    return key
+# ── Valid Ride Types ──────────────────────────────────────────
+VALID_RIDE_TYPES = [
+    'cycling', 'running', 'swimming', 'hiking', 'walking', 
+    'skiing', 'snowboarding', 'kayaking', 'rowing', 'yoga', 
+    'strength', 'elliptical'
+]
 
-ENCRYPTION_KEY = get_encryption_key()
-fernet = Fernet(ENCRYPTION_KEY)
+RIDE_TYPES_INFO = [
+    {"id": "cycling", "name": "Cycling", "icon": "🚴", "color": "#3498db"},
+    {"id": "running", "name": "Running", "icon": "🏃", "color": "#e74c3c"},
+    {"id": "swimming", "name": "Swimming", "icon": "🏊", "color": "#2ecc71"},
+    {"id": "hiking", "name": "Hiking", "icon": "🥾", "color": "#f39c12"},
+    {"id": "walking", "name": "Walking", "icon": "🚶", "color": "#27ae60"},
+    {"id": "skiing", "name": "Skiing", "icon": "⛷️", "color": "#8e44ad"},
+    {"id": "snowboarding", "name": "Snowboarding", "icon": "🏂", "color": "#3498db"},
+    {"id": "kayaking", "name": "Kayaking", "icon": "🚣", "color": "#1abc9c"},
+    {"id": "rowing", "name": "Rowing", "icon": "🚣‍♂️", "color": "#16a085"},
+    {"id": "yoga", "name": "Yoga", "icon": "🧘", "color": "#9b59b6"},
+    {"id": "strength", "name": "Strength", "icon": "💪", "color": "#e67e22"},
+    {"id": "elliptical", "name": "Elliptical", "icon": "🚶", "color": "#2c3e50"}
+]
 
-
-def encrypt_data(data: dict) -> bytes:
-    """Encrypt a dict to bytes."""
-    json_bytes = json.dumps(data).encode('utf-8')
-    return fernet.encrypt(json_bytes)
-
-
-def decrypt_data(encrypted_bytes: bytes) -> dict:
-    """Decrypt bytes back to a dict."""
-    json_bytes = fernet.decrypt(encrypted_bytes)
-    return json.loads(json_bytes.decode('utf-8'))
-
-
+# ── Decorators ────────────────────────────────────────────────
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -67,78 +125,224 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
+# ── Database Helper Functions ────────────────────────────────
+def get_user_profile(username):
+    """Get user profile from database"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT profile FROM users WHERE username = %s", (username,))
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+    return result[0] if result else {}
 
-def get_user_file(username):
-    return os.path.join(DATA_FOLDER, f'{username}.json')
+def save_user_profile(username, profile):
+    """Save user profile to database"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE users 
+        SET profile = %s 
+        WHERE username = %s
+    """, (Json(profile), username))
+    conn.commit()
+    cur.close()
+    conn.close()
 
+def create_or_update_user(username, name, avatar, email):
+    """Create or update user in database"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO users (username, github_name, avatar_url, email)
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (username) 
+        DO UPDATE SET 
+            github_name = EXCLUDED.github_name,
+            avatar_url = EXCLUDED.avatar_url,
+            email = EXCLUDED.email
+    """, (username, name, avatar, email))
+    conn.commit()
+    cur.close()
+    conn.close()
 
-def get_profile_file(username):
-    return os.path.join(DATA_FOLDER, f'{username}_profile.json')
+def get_user_rides(username, ride_type=None):
+    """Get all rides for a user, optionally filtered by type"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    if ride_type:
+        cur.execute("""
+            SELECT id, filename, file_hash, ride_type, summary, streams, zone_distribution, route, ride_date, created_at
+            FROM rides 
+            WHERE username = %s AND ride_type = %s
+            ORDER BY ride_date DESC, created_at DESC
+        """, (username, ride_type))
+    else:
+        cur.execute("""
+            SELECT id, filename, file_hash, ride_type, summary, streams, zone_distribution, route, ride_date, created_at
+            FROM rides 
+            WHERE username = %s 
+            ORDER BY ride_date DESC, created_at DESC
+        """, (username,))
+    
+    rides = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    return [{
+        "id": r[0],
+        "filename": r[1],
+        "file_hash": r[2],
+        "ride_type": r[3],
+        "summary": r[4],
+        "streams": r[5],
+        "zone_distribution": r[6],
+        "route": r[7],
+        "ride_date": r[8].isoformat() if r[8] else None,
+        "created_at": r[9].isoformat() if r[9] else None
+    } for r in rides]
 
-
-def load_user_rides(username):
-    path = get_user_file(username)
-    if os.path.exists(path):
+def save_user_ride(username, ride_data, ride_type='cycling'):
+    """Save a ride to database with ride type"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Validate ride type
+    if ride_type not in VALID_RIDE_TYPES:
+        ride_type = 'cycling'
+    
+    # Try to get ride date from timestamp
+    ride_date = None
+    timestamps = ride_data.get('streams', {}).get('timestamps', [])
+    if timestamps:
         try:
-            with open(path, 'rb') as f:
-                raw = f.read()
-            # Try decrypting first
-            try:
-                data = decrypt_data(raw)
-                return data.get('rides', []) if isinstance(data, dict) else []
-            except Exception:
-                # Fallback: try reading as plain JSON (old unencrypted files)
-                try:
-                    data = json.loads(raw.decode('utf-8'))
-                    rides = data if isinstance(data, list) else []
-                    # Re-save as encrypted
-                    save_user_rides(username, rides)
-                    return rides
-                except Exception:
-                    import shutil
-                    shutil.move(path, path + '.corrupted')
-                    return []
-        except Exception:
-            return []
-    return []
+            ride_date = datetime.fromisoformat(timestamps[0])
+        except:
+            ride_date = datetime.now()
+    else:
+        ride_date = datetime.now()
+    
+    cur.execute("""
+        INSERT INTO rides (username, filename, file_hash, ride_type, ride_date, summary, streams, zone_distribution, route)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (username, file_hash) 
+        DO UPDATE SET 
+            filename = EXCLUDED.filename,
+            ride_type = EXCLUDED.ride_type,
+            ride_date = EXCLUDED.ride_date,
+            summary = EXCLUDED.summary,
+            streams = EXCLUDED.streams,
+            zone_distribution = EXCLUDED.zone_distribution,
+            route = EXCLUDED.route
+        RETURNING id
+    """, (
+        username,
+        ride_data['filename'],
+        ride_data['file_hash'],
+        ride_type,
+        ride_date,
+        Json(ride_data['summary']),
+        Json(ride_data['streams']),
+        Json(ride_data['zone_distribution']),
+        Json(ride_data.get('route', []))
+    ))
+    
+    ride_id = cur.fetchone()[0]
+    conn.commit()
+    cur.close()
+    conn.close()
+    return ride_id
 
+def delete_user_ride(username, ride_id):
+    """Delete a ride from database"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM rides WHERE username = %s AND id = %s RETURNING filename", (username, ride_id))
+    result = cur.fetchone()
+    conn.commit()
+    cur.close()
+    conn.close()
+    return result[0] if result else None
 
-def save_user_rides(username, rides):
-    encrypted = encrypt_data({"rides": rides})
-    with open(get_user_file(username), 'wb') as f:
-        f.write(encrypted)
+def get_all_users_stats(ride_type=None):
+    """Get stats for all users, optionally filtered by ride type"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    if ride_type and ride_type in VALID_RIDE_TYPES:
+        cur.execute("""
+            SELECT 
+                u.username,
+                COUNT(r.id) as total_rides,
+                COALESCE(MAX((r.summary->>'avg_speed')::float), 0) as best_avg_speed,
+                COALESCE(MAX((r.summary->>'max_speed')::float), 0) as best_max_speed,
+                COALESCE(SUM((r.summary->>'elevation_gain')::float), 0) as total_elevation,
+                COALESCE(SUM((r.summary->>'total_calories')::float), 0) as total_calories,
+                r.ride_type
+            FROM users u
+            LEFT JOIN rides r ON u.username = r.username
+            WHERE r.id IS NOT NULL AND r.ride_type = %s
+            GROUP BY u.username, r.ride_type
+            ORDER BY best_avg_speed DESC
+        """, (ride_type,))
+    else:
+        cur.execute("""
+            SELECT 
+                u.username,
+                COUNT(r.id) as total_rides,
+                COALESCE(MAX((r.summary->>'avg_speed')::float), 0) as best_avg_speed,
+                COALESCE(MAX((r.summary->>'max_speed')::float), 0) as best_max_speed,
+                COALESCE(SUM((r.summary->>'elevation_gain')::float), 0) as total_elevation,
+                COALESCE(SUM((r.summary->>'total_calories')::float), 0) as total_calories,
+                r.ride_type
+            FROM users u
+            LEFT JOIN rides r ON u.username = r.username
+            WHERE r.id IS NOT NULL
+            GROUP BY u.username, r.ride_type
+            ORDER BY best_avg_speed DESC
+        """)
+    
+    results = cur.fetchall()
+    cur.close()
+    conn.close()
+    
+    return [{
+        "username": r[0],
+        "total_rides": r[1],
+        "best_avg_speed": round(r[2], 1),
+        "best_max_speed": round(r[3], 1),
+        "total_elevation": round(r[4], 1),
+        "total_calories": round(r[5], 0),
+        "ride_type": r[6]
+    } for r in results]
 
+def get_stats_by_type(username):
+    """Get stats grouped by ride type for a user"""
+    rides = get_user_rides(username)
+    
+    stats = {}
+    for ride in rides:
+        ride_type = ride.get('ride_type', 'cycling')
+        if ride_type not in stats:
+            stats[ride_type] = {
+                "count": 0,
+                "total_distance": 0,
+                "total_elevation": 0,
+                "total_calories": 0,
+                "total_time": 0
+            }
+        summary = ride.get('summary', {})
+        stats[ride_type]["count"] += 1
+        stats[ride_type]["total_distance"] += summary.get('distance_km', 0)
+        stats[ride_type]["total_elevation"] += summary.get('elevation_gain', 0)
+        stats[ride_type]["total_calories"] += summary.get('total_calories', 0)
+    
+    return stats
 
-def load_profile(username):
-    path = get_profile_file(username)
-    if os.path.exists(path):
-        try:
-            with open(path, 'rb') as f:
-                raw = f.read()
-            try:
-                return decrypt_data(raw)
-            except Exception:
-                # Fallback: plain JSON (old files)
-                try:
-                    profile = json.loads(raw.decode('utf-8'))
-                    save_profile(username, profile)
-                    return profile
-                except Exception:
-                    return {}
-        except Exception:
-            return {}
-    return {}
-
-
-def save_profile(username, profile):
-    encrypted = encrypt_data(profile)
-    with open(get_profile_file(username), 'wb') as f:
-        f.write(encrypted)
-
-
+# ── Core Functions ────────────────────────────────────────────
 def get_file_hash(data):
     return hashlib.md5(data).hexdigest()
-
 
 def calculate_calories_and_power(df, profile):
     weight = float(profile.get('weight', 75))
@@ -160,7 +364,6 @@ def calculate_calories_and_power(df, profile):
     total_calories = round(float(calories_series.sum()), 0)
     return [float(x) for x in power.tolist()], int(total_calories)
 
-
 def get_power_zones(ftp=200):
     return [
         {'zone': 'Z1 Recovery',  'min': 0,          'max': ftp * 0.55},
@@ -169,7 +372,6 @@ def get_power_zones(ftp=200):
         {'zone': 'Z4 Threshold', 'min': ftp * 0.90, 'max': ftp * 1.05},
         {'zone': 'Z5 VO2 Max',   'min': ftp * 1.05, 'max': 9999},
     ]
-
 
 def classify_power_zones(power_list, ftp=200):
     zones = get_power_zones(ftp)
@@ -181,7 +383,6 @@ def classify_power_zones(power_list, ftp=200):
                 break
     total = sum(zone_time.values()) or 1
     return [{'zone': k, 'seconds': v, 'pct': round(v / total * 100, 1)} for k, v in zone_time.items()]
-
 
 def parse_ride(file_path, profile):
     fitfile = FitFile(file_path)
@@ -219,7 +420,7 @@ def parse_ride(file_path, profile):
     else:
         df['cadence'] = 0.0
 
-    # Temperature — BEFORE lat/lng dropna
+    # Temperature
     if 'temperature' in df.columns:
         df['temperature'] = pd.to_numeric(df['temperature'], errors='coerce').ffill().fillna(0)
         has_temperature = bool((df['temperature'] != 0).any())
@@ -227,7 +428,7 @@ def parse_ride(file_path, profile):
         df['temperature'] = 0.0
         has_temperature = False
 
-    # Heart rate — BEFORE lat/lng dropna
+    # Heart rate
     if 'heart_rate' in df.columns:
         df['heart_rate'] = pd.to_numeric(df['heart_rate'], errors='coerce').fillna(0)
         has_hr = bool((df['heart_rate'] > 0).any())
@@ -276,29 +477,29 @@ def parse_ride(file_path, profile):
     ftp = float(profile.get('ftp', 200))
     zone_distribution = classify_power_zones(power_list, ftp)
 
-    # Summary stats on FULL dataset
+    # Summary stats
     valid_cadence = df['cadence'][df['cadence'] > 0]
     valid_hr = df['heart_rate'][(df['heart_rate'] > 30) & (df['heart_rate'] < 220)] if has_hr else pd.Series([], dtype=float)
     valid_temp = df['temperature'][df['temperature'] != 0] if has_temperature else pd.Series([], dtype=float)
 
     summary = {
-        "max_speed":       round(float(df['speed_kmh'].max()), 1),
-        "avg_speed":       round(float(df['speed_kmh'].mean()), 1),
-        "avg_cadence":     round(float(valid_cadence.mean()), 1) if len(valid_cadence) > 0 else 0,
-        "elevation_gain":  round(total_climbing, 1),
-        "total_calories":  total_calories,
-        "avg_power":       avg_power,
-        "max_power":       max_power,
-        "distance_km":     total_distance,
-        "avg_hr":          round(float(valid_hr.mean()), 0) if len(valid_hr) > 0 else None,
-        "max_hr":          round(float(valid_hr.max()), 0) if len(valid_hr) > 0 else None,
-        "avg_temp":        round(float(valid_temp.mean()), 1) if len(valid_temp) > 0 else None,
-        "max_temp":        round(float(valid_temp.max()), 1) if len(valid_temp) > 0 else None,
+        "max_speed": round(float(df['speed_kmh'].max()), 1),
+        "avg_speed": round(float(df['speed_kmh'].mean()), 1),
+        "avg_cadence": round(float(valid_cadence.mean()), 1) if len(valid_cadence) > 0 else 0,
+        "elevation_gain": round(total_climbing, 1),
+        "total_calories": total_calories,
+        "avg_power": avg_power,
+        "max_power": max_power,
+        "distance_km": total_distance,
+        "avg_hr": round(float(valid_hr.mean()), 0) if len(valid_hr) > 0 else None,
+        "max_hr": round(float(valid_hr.max()), 0) if len(valid_hr) > 0 else None,
+        "avg_temp": round(float(valid_temp.mean()), 1) if len(valid_temp) > 0 else None,
+        "max_temp": round(float(valid_temp.max()), 1) if len(valid_temp) > 0 else None,
         "has_temperature": has_temperature,
-        "has_hr":          has_hr,
+        "has_hr": has_hr,
     }
 
-    # Downsample to 300 points for charts
+    # Downsample for charts
     MAX_POINTS = 300
     if len(df) > MAX_POINTS:
         step = max(1, len(df) // MAX_POINTS)
@@ -314,77 +515,81 @@ def parse_ride(file_path, profile):
     return {
         "summary": summary,
         "streams": {
-            "timestamps":  timestamps,
-            "speed":       [round(float(x), 1) for x in df_ds['speed_kmh'].tolist()],
-            "cadence":     [int(float(x)) for x in df_ds['cadence'].tolist()],
-            "elevation":   [round(float(x), 1) for x in df_ds['elevation'].tolist()],
-            "power":       [round(float(x), 1) for x in power_ds],
+            "timestamps": timestamps,
+            "speed": [round(float(x), 1) for x in df_ds['speed_kmh'].tolist()],
+            "cadence": [int(float(x)) for x in df_ds['cadence'].tolist()],
+            "elevation": [round(float(x), 1) for x in df_ds['elevation'].tolist()],
+            "power": [round(float(x), 1) for x in power_ds],
             "temperature": [round(float(x), 1) for x in df_ds['temperature'].tolist()] if has_temperature else [],
-            "heart_rate":  [int(float(x)) for x in df_ds['heart_rate'].tolist()] if has_hr else [],
+            "heart_rate": [int(float(x)) for x in df_ds['heart_rate'].tolist()] if has_hr else [],
         },
         "zone_distribution": zone_distribution,
         "route": map_route
     }
 
-
-# ── Auth ──────────────────────────────────────────────────────
+# ── Routes ─────────────────────────────────────────────────────
 @app.route('/')
 def index():
     if 'user' in session:
         return redirect(url_for('dashboard'))
     return render_template('index.html')
 
-
 @app.route('/auth/login')
 def auth_login():
     return redirect(f'{GITHUB_AUTH_URL}?client_id={GITHUB_CLIENT_ID}&scope=read:user')
-
 
 @app.route('/auth/callback')
 def auth_callback():
     code = request.args.get('code')
     if not code:
         return redirect(url_for('index'))
+    
     token_response = requests.post(GITHUB_TOKEN_URL, data={
         'client_id': GITHUB_CLIENT_ID,
         'client_secret': GITHUB_CLIENT_SECRET,
         'code': code
     }, headers={'Accept': 'application/json'})
+    
     token_data = token_response.json()
     access_token = token_data.get('access_token')
     if not access_token:
         return redirect(url_for('index'))
+    
     user_response = requests.get(GITHUB_API_URL, headers={
         'Authorization': f'token {access_token}', 'Accept': 'application/json'
     })
     user_data = user_response.json()
+    
+    username = user_data.get('login')
+    name = user_data.get('name') or username
+    avatar = user_data.get('avatar_url')
+    email = user_data.get('email', '')
+    
+    create_or_update_user(username, name, avatar, email)
+    
     session['user'] = {
-        'username': user_data.get('login'),
-        'name':     user_data.get('name') or user_data.get('login'),
-        'avatar':   user_data.get('avatar_url'),
-        'email':    user_data.get('email')
+        'username': username,
+        'name': name,
+        'avatar': avatar,
+        'email': email
     }
     return redirect(url_for('dashboard'))
-
 
 @app.route('/auth/logout')
 def auth_logout():
     session.clear()
     return redirect(url_for('index'))
 
-
 @app.route('/dashboard')
 @login_required
 def dashboard():
     return render_template('dashboard.html', user=session['user'])
 
-
-# ── Profile ───────────────────────────────────────────────────
+# ── Profile Routes ────────────────────────────────────────────
 @app.route('/profile', methods=['GET'])
 @login_required
 def get_profile():
-    return jsonify(load_profile(session['user']['username']))
-
+    return jsonify(get_user_profile(session['user']['username']))
 
 @app.route('/profile', methods=['POST'])
 @login_required
@@ -392,26 +597,82 @@ def update_profile():
     data = request.get_json()
     allowed = ['weight', 'bike_type', 'bike_computer', 'sensors', 'ftp', 'bike_name']
     profile = {k: data[k] for k in allowed if k in data}
-    save_profile(session['user']['username'], profile)
+    save_user_profile(session['user']['username'], profile)
     return jsonify({"status": "saved"})
 
+# ── Ride Type Routes ──────────────────────────────────────────
+@app.route('/ride-types')
+def get_ride_types():
+    """Get list of available ride types"""
+    return jsonify(RIDE_TYPES_INFO)
 
-# ── Rides ─────────────────────────────────────────────────────
+@app.route('/rides/filter/<ride_type>')
+@login_required
+def get_rides_by_type(ride_type):
+    """Get rides filtered by type"""
+    if ride_type not in VALID_RIDE_TYPES:
+        return jsonify({"error": "Invalid ride type"}), 400
+    
+    rides = get_user_rides(session['user']['username'], ride_type)
+    return jsonify([{
+        "id": r["id"],
+        "filename": r["filename"],
+        "ride_type": r["ride_type"],
+        "summary": r["summary"]
+    } for r in rides])
+
+@app.route('/ride/<int:ride_id>', methods=['PUT'])
+@login_required
+def update_ride_type(ride_id):
+    """Update ride type"""
+    data = request.get_json()
+    ride_type = data.get('ride_type')
+    
+    if ride_type not in VALID_RIDE_TYPES:
+        return jsonify({"error": "Invalid ride type"}), 400
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        UPDATE rides 
+        SET ride_type = %s 
+        WHERE username = %s AND id = %s
+        RETURNING id
+    """, (ride_type, session['user']['username'], ride_id))
+    
+    if cur.fetchone():
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"status": "updated", "ride_type": ride_type})
+    else:
+        conn.rollback()
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Ride not found"}), 404
+
+@app.route('/stats/by-type')
+@login_required
+def stats_by_type():
+    """Get stats grouped by ride type"""
+    return jsonify(get_stats_by_type(session['user']['username']))
+
+# ── Ride Routes ───────────────────────────────────────────────
 @app.route('/check-duplicate', methods=['POST'])
 @login_required
 def check_duplicate():
     file = request.files.get('fitfile')
     if not file:
         return jsonify({"error": "No file"}), 400
+    
     file_bytes = file.read()
     file_hash = get_file_hash(file_bytes)
-    rides = load_user_rides(session['user']['username'])
+    rides = get_user_rides(session['user']['username'])
     duplicate = next((r for r in rides if r.get('file_hash') == file_hash), None)
     return jsonify({
         "is_duplicate": duplicate is not None,
         "duplicate_id": duplicate.get('id') if duplicate else None,
     })
-
 
 @app.route('/upload', methods=['POST'])
 @login_required
@@ -421,33 +682,41 @@ def upload_file():
         if not file:
             return jsonify({"error": "No file uploaded"}), 400
 
+        # Get ride type from form data
+        ride_type = request.form.get('ride_type', 'cycling')
+        if ride_type not in VALID_RIDE_TYPES:
+            ride_type = 'cycling'
+
         overwrite_id = request.form.get('overwrite_id')
         filename = file.filename
         file_bytes = file.read()
         file_hash = get_file_hash(file_bytes)
 
+        if overwrite_id:
+            delete_user_ride(session['user']['username'], int(overwrite_id))
+
         final_path = os.path.join(UPLOAD_FOLDER, filename)
         with open(final_path, 'wb') as f:
             f.write(file_bytes)
 
-        profile = load_profile(session['user']['username'])
+        profile = get_user_profile(session['user']['username'])
         stats = parse_ride(final_path, profile)
 
-        rides = load_user_rides(session['user']['username'])
-        if overwrite_id:
-            rides = [r for r in rides if str(r.get('id')) != str(overwrite_id)]
-
-        new_id = max((r.get('id', 0) for r in rides), default=0) + 1
-        rides.append({
-            "id":               new_id,
-            "filename":         filename,
-            "file_hash":        file_hash,
-            "summary":          stats["summary"],
-            "streams":          stats["streams"],
-            "zone_distribution":stats["zone_distribution"],
-            "route":            stats["route"]
-        })
-        save_user_rides(session['user']['username'], rides)
+        ride_data = {
+            "filename": filename,
+            "file_hash": file_hash,
+            "summary": stats["summary"],
+            "streams": stats["streams"],
+            "zone_distribution": stats["zone_distribution"],
+            "route": stats["route"]
+        }
+        
+        ride_id = save_user_ride(session['user']['username'], ride_data, ride_type)
+        
+        # Add ride_type and id to response
+        stats["ride_type"] = ride_type
+        stats["id"] = ride_id
+        
         return jsonify(stats)
 
     except Exception as e:
@@ -457,53 +726,53 @@ def upload_file():
         return jsonify({"error": f"Failed to parse file: {str(e)}",
                         "detail": err}), 500
 
-
 @app.route('/my-rides')
 @login_required
 def my_rides():
-    rides = load_user_rides(session['user']['username'])
+    """Get all rides with type info"""
+    ride_type = request.args.get('type')
+    if ride_type and ride_type not in VALID_RIDE_TYPES:
+        return jsonify({"error": "Invalid ride type"}), 400
+    
+    rides = get_user_rides(session['user']['username'], ride_type)
     return jsonify([{
-        "id":       r.get("id"),
-        "filename": r.get("filename"),
-        "summary":  r.get("summary")
+        "id": r["id"],
+        "filename": r["filename"],
+        "ride_type": r["ride_type"],
+        "summary": r["summary"]
     } for r in rides])
-
 
 @app.route('/ride/<int:ride_id>')
 @login_required
 def get_ride(ride_id):
-    rides = load_user_rides(session['user']['username'])
+    rides = get_user_rides(session['user']['username'])
     ride = next((r for r in rides if r.get('id') == ride_id), None)
     if not ride:
         return jsonify({"error": "Ride not found"}), 404
     return jsonify(ride)
 
-
 @app.route('/ride/<int:ride_id>', methods=['DELETE'])
 @login_required
 def delete_ride(ride_id):
-    username = session['user']['username']
-    rides = load_user_rides(username)
-    ride = next((r for r in rides if r.get('id') == ride_id), None)
-    if not ride:
-        return jsonify({"error": "Ride not found"}), 404
-    file_path = os.path.join(UPLOAD_FOLDER, ride.get('filename', ''))
-    if os.path.exists(file_path):
-        os.remove(file_path)
-    rides = [r for r in rides if r.get('id') != ride_id]
-    save_user_rides(username, rides)
+    filename = delete_user_ride(session['user']['username'], ride_id)
+    if filename:
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
     return jsonify({"status": "deleted", "id": ride_id})
-
 
 @app.route('/recalculate-all', methods=['POST'])
 @login_required
 def recalculate_all():
     username = session['user']['username']
-    profile = load_profile(username)
-    rides = load_user_rides(username)
+    profile = get_user_profile(username)
+    rides = get_user_rides(username)
+    
     if not profile.get('weight') or not profile.get('bike_type'):
         return jsonify({"error": "Please set your weight and bike type in Profile first"}), 400
+    
     results = {"updated": 0, "skipped": 0, "errors": []}
+    
     for ride in rides:
         file_path = os.path.join(UPLOAD_FOLDER, ride.get('filename', ''))
         if not os.path.exists(file_path):
@@ -512,42 +781,31 @@ def recalculate_all():
             continue
         try:
             stats = parse_ride(file_path, profile)
-            ride['summary'] = stats['summary']
-            ride['streams'] = stats['streams']
-            ride['zone_distribution'] = stats['zone_distribution']
-            ride['route'] = stats['route']
+            ride_data = {
+                "filename": ride['filename'],
+                "file_hash": ride['file_hash'],
+                "summary": stats["summary"],
+                "streams": stats["streams"],
+                "zone_distribution": stats["zone_distribution"],
+                "route": stats["route"]
+            }
+            save_user_ride(username, ride_data, ride.get('ride_type', 'cycling'))
             results["updated"] += 1
         except Exception as e:
             results["skipped"] += 1
             results["errors"].append(f"Ride #{ride.get('id')}: {str(e)}")
-    save_user_rides(username, rides)
+    
     return jsonify(results)
-
 
 @app.route('/club')
 @login_required
 def club():
-    all_riders = []
-    for filename in os.listdir(DATA_FOLDER):
-        if filename.endswith('.json') and not filename.endswith('_profile.json'):
-            username = filename.replace('.json', '')
-            rides = load_user_rides(username)
-            profile = load_profile(username)
-            if rides:
-                best_ride = max(rides, key=lambda r: r.get('summary', {}).get('avg_speed', 0))
-                all_riders.append({
-                    'username':       username,
-                    'total_rides':    len(rides),
-                    'best_avg_speed': best_ride.get('summary', {}).get('avg_speed', 0),
-                    'best_max_speed': max(r.get('summary', {}).get('max_speed', 0) for r in rides),
-                    'total_elevation':round(sum(r.get('summary', {}).get('elevation_gain', 0) for r in rides), 1),
-                    'total_calories': round(sum(r.get('summary', {}).get('total_calories', 0) for r in rides), 0),
-                    'bike_type':      profile.get('bike_type', '—')
-                })
-    all_riders.sort(key=lambda x: x['best_avg_speed'], reverse=True)
-    return jsonify(all_riders)
-
-
+    """Get club stats with optional ride type filter"""
+    ride_type = request.args.get('type')
+    if ride_type and ride_type not in VALID_RIDE_TYPES:
+        return jsonify({"error": "Invalid ride type"}), 400
+    
+    return jsonify(get_all_users_stats(ride_type))
 
 @app.route('/save-live-ride', methods=['POST'])
 @login_required
@@ -561,7 +819,12 @@ def save_live_ride():
         if len(points) < 2:
             return jsonify({"error": "Not enough data points"}), 400
 
-        profile = load_profile(session['user']['username'])
+        # Get ride type from request
+        ride_type = data.get('ride_type', 'cycling')
+        if ride_type not in VALID_RIDE_TYPES:
+            ride_type = 'cycling'
+
+        profile = get_user_profile(session['user']['username'])
         weight = float(profile.get('weight', 75))
 
         # Build streams from recorded points
@@ -570,12 +833,8 @@ def save_live_ride():
         hr_list = [int(p.get('heart_rate', 0)) for p in points]
         cadence_list = [int(p.get('cadence', 0)) for p in points]
         route = [[float(p['lat']), float(p['lng'])] for p in points if p.get('lat') and p.get('lng')]
-
-        # Elevation from GPS altitude if available
         elevation_list = [float(p.get('altitude', 0)) for p in points]
 
-        # Calculate distance from GPS points
-        import math
         total_dist = 0.0
         for i in range(1, len(points)):
             p1, p2 = points[i-1], points[i]
@@ -586,12 +845,9 @@ def save_live_ride():
                 a = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
                 total_dist += 6371 * 2 * math.asin(math.sqrt(a))
 
-        # Elevation gain
         elev_diffs = [max(0, elevation_list[i] - elevation_list[i-1]) for i in range(1, len(elevation_list))]
         total_climbing = sum(elev_diffs)
 
-        # Estimated power from speed
-        import pandas as pd
         df_temp = pd.DataFrame({'speed_kmh': speeds_kmh})
         power_list, total_calories = calculate_calories_and_power(df_temp, profile)
 
@@ -603,52 +859,50 @@ def save_live_ride():
         zone_distribution = classify_power_zones(power_list, ftp)
 
         summary = {
-            "max_speed":       max_speed,
-            "avg_speed":       avg_speed,
-            "avg_cadence":     round(sum(valid_cad)/len(valid_cad), 1) if valid_cad else 0,
-            "elevation_gain":  round(total_climbing, 1),
-            "total_calories":  total_calories,
-            "avg_power":       round(sum(power_list)/len(power_list), 1),
-            "max_power":       round(max(power_list), 1),
-            "distance_km":     round(total_dist, 2),
-            "avg_hr":          round(sum(valid_hr)/len(valid_hr), 0) if valid_hr else None,
-            "max_hr":          round(max(valid_hr), 0) if valid_hr else None,
-            "avg_temp":        None,
-            "max_temp":        None,
+            "max_speed": max_speed,
+            "avg_speed": avg_speed,
+            "avg_cadence": round(sum(valid_cad)/len(valid_cad), 1) if valid_cad else 0,
+            "elevation_gain": round(total_climbing, 1),
+            "total_calories": total_calories,
+            "avg_power": round(sum(power_list)/len(power_list), 1),
+            "max_power": round(max(power_list), 1),
+            "distance_km": round(total_dist, 2),
+            "avg_hr": round(sum(valid_hr)/len(valid_hr), 0) if valid_hr else None,
+            "max_hr": round(max(valid_hr), 0) if valid_hr else None,
+            "avg_temp": None,
+            "max_temp": None,
             "has_temperature": False,
-            "has_hr":          len(valid_hr) > 0,
+            "has_hr": len(valid_hr) > 0,
         }
 
         file_hash = hashlib.md5(json.dumps(points).encode()).hexdigest()
         filename = f"live_ride_{file_hash[:8]}.json"
 
-        rides = load_user_rides(session['user']['username'])
-        new_id = max((r.get('id', 0) for r in rides), default=0) + 1
-        rides.append({
-            "id":                new_id,
-            "filename":          filename,
-            "file_hash":         file_hash,
-            "summary":           summary,
+        ride_data = {
+            "filename": filename,
+            "file_hash": file_hash,
+            "summary": summary,
             "streams": {
-                "timestamps":  timestamps,
-                "speed":       speeds_kmh,
-                "cadence":     cadence_list,
-                "elevation":   elevation_list,
-                "power":       [round(float(p), 1) for p in power_list],
-                "heart_rate":  hr_list,
+                "timestamps": timestamps,
+                "speed": speeds_kmh,
+                "cadence": cadence_list,
+                "elevation": elevation_list,
+                "power": [round(float(p), 1) for p in power_list],
+                "heart_rate": hr_list,
                 "temperature": [],
             },
             "zone_distribution": zone_distribution,
-            "route":             route
-        })
-        save_user_rides(session['user']['username'], rides)
-        return jsonify({"status": "saved", "id": new_id})
+            "route": route
+        }
+        
+        ride_id = save_user_ride(session['user']['username'], ride_data, ride_type)
+        return jsonify({"status": "saved", "id": ride_id, "ride_type": ride_type})
 
     except Exception as e:
         err = traceback.format_exc()
         return jsonify({"error": str(e), "detail": err}), 500
 
-
+# ── Test / Health Routes ──────────────────────────────────────
 @app.route('/test-db')
 def test_db():
     """Test database connection"""
@@ -695,5 +949,21 @@ def db_status():
             "error": str(e)
         }), 500
 
+@app.route('/health')
+def health():
+    """Health check endpoint"""
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.close()
+        conn.close()
+        return jsonify({"status": "healthy", "database": "connected"})
+    except Exception as e:
+        return jsonify({"status": "unhealthy", "error": str(e)}), 500
+
+# ── Main ──────────────────────────────────────────────────────
 if __name__ == '__main__':
+    # Initialize database on startup
+    init_db()
     app.run(debug=True)
