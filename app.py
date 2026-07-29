@@ -974,9 +974,6 @@ def health():
         return jsonify({"status": "healthy"})
     except:
         return jsonify({"status": "unhealthy"}), 500
-@app.route('/health')
-def health():
-    return jsonify({"status": "ok"})
 # ── Main ──────────────────────────────────────────────────────
 if __name__ == '__main__':
     init_db()
