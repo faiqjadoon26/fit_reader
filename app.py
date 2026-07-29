@@ -486,7 +486,7 @@ def parse_ride(file_path, profile):
 def index():
     if 'user' in session:
         return redirect(url_for('dashboard'))
-    return render_template('index.html')
+    return render_template('landing.html')
 
 @app.route('/auth/login')
 def auth_login():
