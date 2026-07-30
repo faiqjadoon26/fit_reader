@@ -12,10 +12,15 @@ from psycopg2.extras import Json
 from datetime import datetime
 import math
 from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont
+
+# ─── PIL is now imported INSIDE the /share route ─────────────
+# We do NOT import Image, ImageDraw, ImageFont at the top.
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'cycling_dashboard_secret_2024_xk9_fallback')
+
+# ─── CRITICAL: Increase upload file size limit to 100 MB ────
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB
 
 # ── Database Connection ───────────────────────────────────────
 def get_db_connection():
@@ -83,7 +88,6 @@ def init_db():
     print("[DB] Database initialized successfully!")
 
 # Run once on import so tables exist under gunicorn too
-# (the __main__ guard at the bottom never runs when gunicorn imports this module)
 try:
     init_db()
 except Exception as e:
@@ -199,7 +203,6 @@ def save_user_ride(username, ride_data, ride_type='cycling'):
         ride_type = 'cycling'
     conn = get_db_connection()
     cur = conn.cursor()
-    # get ride date from first timestamp
     ride_date = None
     timestamps = ride_data.get('streams', {}).get('timestamps', [])
     if timestamps:
@@ -650,11 +653,11 @@ def upload_file():
         stats["id"] = ride_id
         return jsonify(stats)
     except Exception as e:
+        # Log the full error to Render logs
+        import traceback
         err = traceback.format_exc()
-        with open('upload_error.log', 'w') as ef:
-            ef.write(err)
-        return jsonify({"error": f"Failed to parse file: {str(e)}",
-                        "detail": err}), 500
+        print(err)
+        return jsonify({"error": str(e), "trace": err}), 500
 
 @app.route('/my-rides')
 @login_required
@@ -807,6 +810,7 @@ def save_live_ride():
         return jsonify({"status": "saved", "id": ride_id, "ride_type": ride_type})
     except Exception as e:
         err = traceback.format_exc()
+        print(err)
         return jsonify({"error": str(e), "detail": err}), 500
 
 # ── Download ──────────────────────────────────────────────────
@@ -826,9 +830,13 @@ def download_ride(ride_id):
     return send_file(file_path, as_attachment=True, download_name=filename)
 
 # ── Share (Instagram Story transparent PNG) ──────────────────
+# ─── PIL is imported here (lazy) to avoid segfaults ──────────
 @app.route('/share/<int:ride_id>')
 @login_required
 def share_ride(ride_id):
+    # Import PIL only when this endpoint is called
+    from PIL import Image, ImageDraw, ImageFont
+
     rides = get_user_rides(session['user']['username'])
     ride = next((r for r in rides if r.get('id') == ride_id), None)
     if not ride:
@@ -981,6 +989,7 @@ def health():
         return jsonify({"status": "healthy"})
     except:
         return jsonify({"status": "unhealthy"}), 500
+
 # ── Main ──────────────────────────────────────────────────────
 if __name__ == '__main__':
     init_db()
