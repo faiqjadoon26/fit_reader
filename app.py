@@ -82,6 +82,13 @@ def init_db():
     conn.close()
     print("[DB] Database initialized successfully!")
 
+# Run once on import so tables exist under gunicorn too
+# (the __main__ guard at the bottom never runs when gunicorn imports this module)
+try:
+    init_db()
+except Exception as e:
+    print(f"[DB] Warning: init_db() failed on startup: {e}")
+
 # ── GitHub OAuth ──────────────────────────────────────────────
 GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID')
 GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
