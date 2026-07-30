@@ -14,7 +14,7 @@
             --line: #e7e7ea;
             --orange: #fc4c02;
             --orange-dark: #d84001;
-            --shadow: 0 2px 10px rgba(0,0,0,0.06);
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
             --radius: 10px;
             --transition: 0.25s ease;
         }
@@ -24,9 +24,13 @@
             --text: #e8e8e8;
             --text-soft: #999999;
             --line: #2a2a2a;
-            --shadow: 0 2px 10px rgba(0,0,0,0.6);
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
         }
-        * { margin:0; padding:0; box-sizing:border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Roboto, Arial, sans-serif;
             background: var(--bg);
@@ -47,231 +51,959 @@
             z-index: 100;
             transition: background var(--transition), border-color var(--transition);
         }
-        .navbar-brand { font-size: 1.1rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; letter-spacing: -0.02em; }
-        .navbar-brand span { background: var(--orange); color: white; padding: 1px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 700; }
-        .navbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .user-info { display: flex; align-items: center; gap: 6px; }
-        .user-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); }
-        .username { font-weight: 600; font-size: 0.8rem; display: none; }
-        .logout-btn { color: var(--text-soft); text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; transition: background 0.2s; }
-        .logout-btn:hover { background: #fff1ec; color: var(--orange-dark); }
-        .theme-btn, .sensor-btn {
-            background: transparent; border: 1px solid var(--line); border-radius: 20px; padding: 4px 12px;
-            cursor: pointer; font-weight: 600; font-size: 0.75rem; color: var(--text);
-            transition: all 0.2s; white-space: nowrap;
+        .navbar-brand {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: -0.02em;
         }
-        .theme-btn:hover, .sensor-btn:hover { border-color: var(--orange); background: var(--orange); color: white; }
-        .sensor-btn.connected { border-color: #48bb78; background: #48bb78; color: white; }
+        .navbar-brand span {
+            background: var(--orange);
+            color: white;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
+        }
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--line);
+        }
+        .username {
+            font-weight: 600;
+            font-size: 0.8rem;
+            display: none;
+        }
+        .logout-btn {
+            color: var(--text-soft);
+            text-decoration: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+        .logout-btn:hover {
+            background: #fff1ec;
+            color: var(--orange-dark);
+        }
+        .theme-btn,
+        .sensor-btn {
+            background: transparent;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: var(--text);
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .theme-btn:hover,
+        .sensor-btn:hover {
+            border-color: var(--orange);
+            background: var(--orange);
+            color: white;
+        }
+        .sensor-btn.connected {
+            border-color: #48bb78;
+            background: #48bb78;
+            color: white;
+        }
 
-        .main-container { max-width: 1400px; margin: 0 auto; padding: 1rem 1rem 6rem; }
-        .activity-selector { margin-bottom: 1rem; }
-        .activity-grid { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-        .activity-grid::-webkit-scrollbar { display: none; }
-        .activity-btn {
-            flex-shrink: 0; padding: 6px 14px; border: 1px solid var(--line); border-radius: 20px;
-            background: var(--card); cursor: pointer; transition: all 0.15s; font-size: 0.75rem;
-            font-weight: 600; color: var(--text-soft); display: flex; align-items: center; gap: 4px; white-space: nowrap;
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 1rem 6rem;
         }
-        .activity-btn:hover { border-color: var(--orange); }
-        .activity-btn.active { border-color: var(--orange); background: var(--orange); color: white; }
-        .activity-btn .badge { display: inline-block; background: rgba(255,255,255,0.3); color: inherit; font-size: 0.6rem; padding: 0px 6px; border-radius: 10px; }
-        .activity-btn:not(.active) .badge { background: #f0f0f2; color: var(--text-soft); }
+        .activity-selector {
+            margin-bottom: 1rem;
+        }
+        .activity-grid {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+        .activity-grid::-webkit-scrollbar {
+            display: none;
+        }
+        .activity-btn {
+            flex-shrink: 0;
+            padding: 6px 14px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: var(--card);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-soft);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .activity-btn:hover {
+            border-color: var(--orange);
+        }
+        .activity-btn.active {
+            border-color: var(--orange);
+            background: var(--orange);
+            color: white;
+        }
+        .activity-btn .badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.3);
+            color: inherit;
+            font-size: 0.6rem;
+            padding: 0px 6px;
+            border-radius: 10px;
+        }
+        .activity-btn:not(.active) .badge {
+            background: #f0f0f2;
+            color: var(--text-soft);
+        }
 
         .stats-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-            margin-bottom: 1rem; overflow: hidden; transition: background var(--transition), border-color var(--transition);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: background var(--transition), border-color var(--transition);
         }
-        .stat-card { padding: 0.7rem; text-align: center; border-right: 1px solid var(--line); }
-        .stat-card:last-child { border-right: none; }
-        .stat-label { font-size: 0.6rem; text-transform: uppercase; color: var(--text-soft); letter-spacing: 0.05em; font-weight: 700; }
-        .stat-value { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-top: 2px; }
-        .stat-unit { font-size: 0.65rem; color: var(--text-soft); font-weight: 500; }
+        .stat-card {
+            padding: 0.7rem;
+            text-align: center;
+            border-right: 1px solid var(--line);
+        }
+        .stat-card:last-child {
+            border-right: none;
+        }
+        .stat-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-top: 2px;
+        }
+        .stat-unit {
+            font-size: 0.65rem;
+            color: var(--text-soft);
+            font-weight: 500;
+        }
 
-        .record-section { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-        .record-section .fab-label { font-size: 0.65rem; font-weight: 600; color: var(--text-soft); background: var(--card); padding: 2px 8px; border-radius: 10px; border: 1px solid var(--line); }
-        .record-btn { border: none; font-weight: 600; cursor: pointer; transition: background 0.2s, opacity 0.2s, transform 0.1s; }
-        .record-btn:active { transform: scale(0.95); }
-        .record-btn.start { width: 56px; height: 56px; border-radius: 50%; background: var(--orange); color: white; font-size: 1.4rem; box-shadow: 0 4px 14px rgba(252,76,2,0.45); display: flex; align-items: center; justify-content: center; }
-        .record-btn.start:hover { background: var(--orange-dark); }
-        .record-btn.pause, .record-btn.resume, .record-btn.stop, .record-btn.discard { padding: 12px 20px; border-radius: 30px; font-size: 0.9rem; }
-        .record-btn.pause { background: #ed8936; color: white; }
-        .record-btn.pause:hover { background: #dd6b20; }
-        .record-btn.resume { background: #4299e1; color: white; }
-        .record-btn.resume:hover { background: #3182ce; }
-        .record-btn.stop { background: var(--orange); color: white; }
-        .record-btn.stop:hover { background: var(--orange-dark); }
-        .record-btn.discard { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.4); }
-        .record-btn.discard:hover { background: rgba(255,255,255,0.25); }
-        .record-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .record-section {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .record-section .fab-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-soft);
+            background: var(--card);
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+        }
+        .record-btn {
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, opacity 0.2s, transform 0.1s;
+        }
+        .record-btn:active {
+            transform: scale(0.95);
+        }
+        .record-btn.start {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--orange);
+            color: white;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 14px rgba(252, 76, 2, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .record-btn.start:hover {
+            background: var(--orange-dark);
+        }
+        .record-btn.pause,
+        .record-btn.resume,
+        .record-btn.stop,
+        .record-btn.discard {
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+        }
+        .record-btn.pause {
+            background: #ed8936;
+            color: white;
+        }
+        .record-btn.pause:hover {
+            background: #dd6b20;
+        }
+        .record-btn.resume {
+            background: #4299e1;
+            color: white;
+        }
+        .record-btn.resume:hover {
+            background: #3182ce;
+        }
+        .record-btn.stop {
+            background: var(--orange);
+            color: white;
+        }
+        .record-btn.stop:hover {
+            background: var(--orange-dark);
+        }
+        .record-btn.discard {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .record-btn.discard:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        .record-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
 
         .record-minimized-bar {
-            position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
-            background: #2d3748; color: white; padding: 10px 16px; border-radius: 30px;
-            display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            cursor: pointer; z-index: 900; font-size: 0.8rem; font-weight: 500;
-            font-variant-numeric: tabular-nums; white-space: nowrap;
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3748;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            z-index: 900;
+            font-size: 0.8rem;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
         }
-        .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); animation: pulse 1.5s ease-in-out infinite; flex-shrink: 0; }
-        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
-        .minimized-expand { color: #a0aec0; font-size: 0.7rem; }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--orange);
+            animation: pulse 1.5s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.8);
+            }
+        }
+        .minimized-expand {
+            color: #a0aec0;
+            font-size: 0.7rem;
+        }
 
         /* --- FIXED RECORD MODAL LAYOUT --- */
         .record-modal {
-            position: fixed; inset: 0; z-index: 1000; background: #121212;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: #121212;
+            display: none;
+            /* hidden by default, shown via JS */
+            flex-direction: column;
+            /* ensures children stack properly */
         }
         #recordMap {
-            position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1;
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: #1a1a2e;
+            /* fallback while loading */;
         }
         .record-modal-topbar {
-            position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); gap: 8px;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            padding-top: max(12px, env(safe-area-inset-top));
+            gap: 8px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent);
+            pointer-events: none;
         }
-        .modal-icon-btn { 
-            width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(0,0,0,0.6); 
-            color: white; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; 
-            justify-content: center; flex-shrink: 0; backdrop-filter: blur(4px); 
+        .record-modal-topbar>* {
+            pointer-events: auto;
         }
-        .modal-icon-btn:hover { background: rgba(255,255,255,0.2); }
+        .modal-icon-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            backdrop-filter: blur(4px);
+        }
+        .modal-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
         .modal-center-controls {
-            display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; flex-wrap: wrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex: 1;
+            justify-content: center;
+            flex-wrap: wrap;
         }
         .modal-select {
-            background: rgba(0,0,0,0.6); border: none; color: white; padding: 4px 8px; border-radius: 4px;
-            font-size: 0.75rem; font-weight: 600; cursor: pointer; backdrop-filter: blur(4px); outline: none;
+            background: rgba(0, 0, 0, 0.6);
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(4px);
+            outline: none;
         }
-        .modal-select option { background: #121212; color: white; }
-        .gps-status { font-size: 0.7rem; padding: 4px 12px; border-radius: 20px; font-weight: 500; background: rgba(0,0,0,0.6); color: #e2e8f0; backdrop-filter: blur(4px); white-space: nowrap; }
-        .gps-status.active { background: rgba(72,187,120,0.85); color: white; }
-        .gps-status.paused { background: rgba(237,137,54,0.85); color: white; }
-        .gps-status.error { background: rgba(229,62,62,0.85); color: white; }
+        .modal-select option {
+            background: #121212;
+            color: white;
+        }
+        .gps-status {
+            font-size: 0.7rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.6);
+            color: #e2e8f0;
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
+        }
+        .gps-status.active {
+            background: rgba(72, 187, 120, 0.85);
+            color: white;
+        }
+        .gps-status.paused {
+            background: rgba(237, 137, 54, 0.85);
+            color: white;
+        }
+        .gps-status.error {
+            background: rgba(229, 62, 62, 0.85);
+            color: white;
+        }
 
         .record-modal-stats-wrapper {
-            position: absolute; bottom: 70px; left: 0; right: 0; z-index: 1000;
-            background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4) 80%, transparent);
+            position: absolute;
+            bottom: 70px;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.4) 80%, transparent);
             padding: 16px 12px 8px;
+            pointer-events: none;
         }
-        .record-modal-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
-        .record-modal-sensor-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); }
-        .modal-stat { text-align: center; color: white; }
-        .modal-stat-primary .record-stat-value { font-size: 1.6rem; }
-        .record-stat-label { font-size: 0.55rem; text-transform: uppercase; color: #cbd5e0; font-weight: 600; letter-spacing: 0.5px; }
-        .record-stat-value { font-size: 1.1rem; font-weight: 700; color: white; margin-top: 1px; font-variant-numeric: tabular-nums; }
-        .record-stat-value .stat-unit { color: #cbd5e0; font-size: 0.6rem; }
+        .record-modal-stats-wrapper>* {
+            pointer-events: auto;
+        }
+        .record-modal-stats {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+        }
+        .record-modal-sensor-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .modal-stat {
+            text-align: center;
+            color: white;
+        }
+        .modal-stat-primary .record-stat-value {
+            font-size: 1.6rem;
+        }
+        .record-stat-label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            color: #cbd5e0;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .record-stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+            margin-top: 1px;
+            font-variant-numeric: tabular-nums;
+        }
+        .record-stat-value .stat-unit {
+            color: #cbd5e0;
+            font-size: 0.6rem;
+        }
 
         .record-modal-message {
-            position: absolute; bottom: 55px; left: 0; right: 0; z-index: 1000;
-            text-align: center; color: white; font-size: 0.75rem; background: rgba(0,0,0,0.6);
-            padding: 4px; min-height: 1.2em; pointer-events: none;
+            position: absolute;
+            bottom: 55px;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            text-align: center;
+            color: white;
+            font-size: 0.75rem;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 4px;
+            min-height: 1.2em;
+            pointer-events: none;
         }
 
         .record-modal-controls {
-            position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
-            display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
-            background: rgba(0,0,0,0.8); padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom));
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 12px 16px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
             backdrop-filter: blur(8px);
+            pointer-events: none;
+        }
+        .record-modal-controls>* {
+            pointer-events: auto;
         }
 
         @media (max-width: 600px) {
-            .record-modal-stats { grid-template-columns: repeat(3, 1fr); }
-            .modal-stat-primary { grid-column: span 3; }
-            .modal-stat-primary .record-stat-value { font-size: 1.8rem; }
-            .record-stat-value { font-size: 1rem; }
-            .record-modal-topbar { padding: 8px 12px; }
-            .modal-icon-btn { width: 32px; height: 32px; font-size: 0.9rem; }
-            .modal-center-controls { gap: 4px; }
-            .gps-status { font-size: 0.55rem; padding: 2px 8px; }
-            .modal-select { font-size: 0.65rem; padding: 2px 6px; }
-            .record-btn.stop, .record-btn.discard, .record-btn.pause, .record-btn.resume { padding: 10px 16px; font-size: 0.8rem; }
+            .record-modal-stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .modal-stat-primary {
+                grid-column: span 3;
+            }
+            .modal-stat-primary .record-stat-value {
+                font-size: 1.8rem;
+            }
+            .record-stat-value {
+                font-size: 1rem;
+            }
+            .record-modal-topbar {
+                padding: 8px 12px;
+            }
+            .modal-icon-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 0.9rem;
+            }
+            .modal-center-controls {
+                gap: 4px;
+            }
+            .gps-status {
+                font-size: 0.55rem;
+                padding: 2px 8px;
+            }
+            .modal-select {
+                font-size: 0.65rem;
+                padding: 2px 6px;
+            }
+            .record-btn.stop,
+            .record-btn.discard,
+            .record-btn.pause,
+            .record-btn.resume {
+                padding: 10px 16px;
+                font-size: 0.8rem;
+            }
         }
-        @media (max-width: 400px) { .record-modal-stats { grid-template-columns: repeat(2, 1fr); } .modal-stat-primary { grid-column: span 2; } }
+        @media (max-width: 400px) {
+            .record-modal-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .modal-stat-primary {
+                grid-column: span 2;
+            }
+        }
 
-        .upload-section { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; text-align: center; transition: background var(--transition), border-color var(--transition); }
-        .upload-section h2 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.2rem; }
-        .upload-section p { color: var(--text-soft); margin-bottom: 0.8rem; font-size: 0.8rem; }
-        .upload-btn-wrapper { position: relative; overflow: hidden; display: inline-block; }
-        .upload-btn-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
-        .upload-btn { background: var(--text); color: var(--card); padding: 8px 20px; border: none; border-radius: 30px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
-        .upload-btn:hover { background: #000; }
-        .upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .upload-section {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            transition: background var(--transition), border-color var(--transition);
+        }
+        .upload-section h2 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+        .upload-section p {
+            color: var(--text-soft);
+            margin-bottom: 0.8rem;
+            font-size: 0.8rem;
+        }
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .upload-btn-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .upload-btn {
+            background: var(--text);
+            color: var(--card);
+            padding: 8px 20px;
+            border: none;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .upload-btn:hover {
+            background: #000;
+        }
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
 
-        .rides-section { background: transparent; }
-        .rides-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 6px; }
-        .rides-header h2 { font-size: 1rem; font-weight: 800; }
-        .rides-header .ride-count { color: var(--text-soft); font-size: 0.75rem; }
-        .rides-header .filter-badge { background: #fff1ec; color: var(--orange-dark); padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
-        .ride-list { display: grid; gap: 10px; }
-        .ride-item { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 0.9rem; cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s, background var(--transition), border-color var(--transition); }
-        .ride-item:hover { border-color: #d0d0d5; box-shadow: var(--shadow); }
-        .ride-item .ride-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 0.6rem; }
-        .ride-item .ride-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
-        .ride-item .ride-title-block { min-width: 0; }
-        .ride-item .ride-name { font-weight: 700; word-break: break-word; font-size: 0.9rem; line-height: 1.3; }
-        .ride-item .ride-meta { display: flex; align-items: center; gap: 4px; color: var(--text-soft); font-size: 0.7rem; margin-top: 2px; flex-wrap: wrap; }
-        .ride-item .ride-type-badge { font-size: 0.55rem; padding: 1px 7px; border-radius: 10px; font-weight: 700; text-transform: uppercase; }
-        .ride-item .ride-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap: 6px; padding: 0.6rem 0; border-top: 1px solid var(--line); }
-        .ride-item .ride-stats .stat-block { display: flex; flex-direction: column; }
-        .ride-item .ride-stats .stat-block .stat-num-label { font-size: 0.55rem; text-transform: uppercase; color: var(--text-soft); font-weight: 700; letter-spacing: 0.03em; }
-        .ride-item .ride-stats .stat-block .stat-num-value { font-size: 0.9rem; font-weight: 800; color: var(--text); }
-        .ride-item .actions { display: flex; gap: 4px; align-items: center; justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 0.5rem; }
-        .action-btn { background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; color: var(--text-soft); }
-        .action-btn:hover { background: #f0f0f2; }
-        .delete-btn { background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; color: var(--text-soft); }
-        .delete-btn:hover { background: #fff1ec; color: var(--orange-dark); }
-        .no-rides { text-align: center; padding: 2rem; color: var(--text-soft); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
-        .no-rides .big-icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
-        .loading { text-align: center; padding: 1.5rem; color: var(--text-soft); }
-        .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--line); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .rides-section {
+            background: transparent;
+        }
+        .rides-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .rides-header h2 {
+            font-size: 1rem;
+            font-weight: 800;
+        }
+        .rides-header .ride-count {
+            color: var(--text-soft);
+            font-size: 0.75rem;
+        }
+        .rides-header .filter-badge {
+            background: #fff1ec;
+            color: var(--orange-dark);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .ride-list {
+            display: grid;
+            gap: 10px;
+        }
+        .ride-item {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 0.9rem;
+            cursor: pointer;
+            transition: box-shadow 0.15s, border-color 0.15s, background var(--transition), border-color var(--transition);
+        }
+        .ride-item:hover {
+            border-color: #d0d0d5;
+            box-shadow: var(--shadow);
+        }
+        .ride-item .ride-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 0.6rem;
+        }
+        .ride-item .ride-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .ride-item .ride-title-block {
+            min-width: 0;
+        }
+        .ride-item .ride-name {
+            font-weight: 700;
+            word-break: break-word;
+            font-size: 0.9rem;
+            line-height: 1.3;
+        }
+        .ride-item .ride-meta {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-soft);
+            font-size: 0.7rem;
+            margin-top: 2px;
+            flex-wrap: wrap;
+        }
+        .ride-item .ride-type-badge {
+            font-size: 0.55rem;
+            padding: 1px 7px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .ride-item .ride-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 6px;
+            padding: 0.6rem 0;
+            border-top: 1px solid var(--line);
+        }
+        .ride-item .ride-stats .stat-block {
+            display: flex;
+            flex-direction: column;
+        }
+        .ride-item .ride-stats .stat-block .stat-num-label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+        .ride-item .ride-stats .stat-block .stat-num-value {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .ride-item .actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            justify-content: flex-end;
+            border-top: 1px solid var(--line);
+            padding-top: 0.5rem;
+        }
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+            color: var(--text-soft);
+        }
+        .action-btn:hover {
+            background: #f0f0f2;
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+            color: var(--text-soft);
+        }
+        .delete-btn:hover {
+            background: #fff1ec;
+            color: var(--orange-dark);
+        }
+        .no-rides {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-soft);
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+        }
+        .no-rides .big-icon {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .loading {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-soft);
+        }
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--line);
+            border-top-color: var(--orange);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
-        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(100px); background: #2d3748; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s; z-index: 1100; max-width: 90%; text-align: center; font-weight: 500; font-size: 0.9rem; pointer-events: none; }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .toast.success { background: #48bb78; }
-        .toast.error { background: #fc8181; }
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #2d3748;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1100;
+            max-width: 90%;
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        .toast.success {
+            background: #48bb78;
+        }
+        .toast.error {
+            background: #fc8181;
+        }
 
         /* --- SENSOR MANAGEMENT MODAL --- */
         .sensor-modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 2000;
-            display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(4px);
         }
-        .sensor-modal-overlay.active { display: flex; }
+        .sensor-modal-overlay.active {
+            display: flex;
+        }
         .sensor-modal-box {
-            background: var(--card); border-radius: var(--radius); padding: 20px; max-width: 450px; width: 100%;
-            border: 1px solid var(--line); box-shadow: var(--shadow); transition: background var(--transition), border-color var(--transition);
-            max-height: 80vh; display: flex; flex-direction: column;
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 20px;
+            max-width: 450px;
+            width: 100%;
+            border: 1px solid var(--line);
+            box-shadow: var(--shadow);
+            transition: background var(--transition), border-color var(--transition);
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
         }
-        .sensor-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .sensor-modal-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--text); }
-        .sensor-modal-close { background: transparent; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-soft); }
-        .sensor-modal-close:hover { color: var(--text); }
-        .sensor-device-list { flex: 1; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; min-height: 50px; }
+        .sensor-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .sensor-modal-header h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .sensor-modal-close {
+            background: transparent;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            color: var(--text-soft);
+        }
+        .sensor-modal-close:hover {
+            color: var(--text);
+        }
+        .sensor-device-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 50px;
+        }
         .sensor-device-item {
-            display: flex; justify-content: space-between; align-items: center; padding: 10px 12px;
-            background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            background: var(--bg);
+            border: 1px solid var(--line);
+            border-radius: 8px;
             transition: background var(--transition), border-color var(--transition);
         }
-        .sensor-device-item .dev-info { display: flex; flex-direction: column; gap: 2px; }
-        .sensor-device-item .dev-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
-        .sensor-device-item .dev-id { font-size: 0.7rem; color: var(--text-soft); font-family: monospace; }
-        .sensor-device-item .dev-status { color: #48bb78; font-size: 0.7rem; font-weight: 600; }
-        .sensor-device-item .dev-remove { background: transparent; border: none; color: #fc8181; cursor: pointer; font-size: 0.9rem; padding: 4px; }
-        .sensor-device-item .dev-remove:hover { color: #e53e3e; }
-        .sensor-modal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .sensor-btn-primary { background: var(--orange); color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; flex: 1; transition: background 0.2s; }
-        .sensor-btn-primary:hover { background: var(--orange-dark); }
-        .sensor-btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--line); padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-        .sensor-btn-secondary:hover { background: var(--line); }
+        .sensor-device-item .dev-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .sensor-device-item .dev-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+        .sensor-device-item .dev-id {
+            font-size: 0.7rem;
+            color: var(--text-soft);
+            font-family: monospace;
+        }
+        .sensor-device-item .dev-status {
+            color: #48bb78;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .sensor-device-item .dev-remove {
+            background: transparent;
+            border: none;
+            color: #fc8181;
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 4px;
+        }
+        .sensor-device-item .dev-remove:hover {
+            color: #e53e3e;
+        }
+        .sensor-modal-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .sensor-btn-primary {
+            background: var(--orange);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            transition: background 0.2s;
+        }
+        .sensor-btn-primary:hover {
+            background: var(--orange-dark);
+        }
+        .sensor-btn-secondary {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--line);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .sensor-btn-secondary:hover {
+            background: var(--line);
+        }
 
         @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr 1fr; }
-            .stat-card { border-bottom: 1px solid var(--line); }
-            .stat-card:nth-child(2n) { border-right: none; }
-            .ride-item .ride-stats { grid-template-columns: repeat(2, 1fr); }
-            .navbar { padding: 0 0.6rem; height: 48px; }
-            .navbar-brand { font-size: 0.95rem; }
-            .main-container { padding: 0.6rem 0.6rem 5rem; }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .stat-card {
+                border-bottom: 1px solid var(--line);
+            }
+            .stat-card:nth-child(2n) {
+                border-right: none;
+            }
+            .ride-item .ride-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .navbar {
+                padding: 0 0.6rem;
+                height: 48px;
+            }
+            .navbar-brand {
+                font-size: 0.95rem;
+            }
+            .main-container {
+                padding: 0.6rem 0.6rem 5rem;
+            }
         }
     </style>
 </head>
@@ -290,7 +1022,9 @@
     </nav>
 
     <div class="main-container">
-        <div class="activity-selector"><div class="activity-grid" id="activityGrid"></div></div>
+        <div class="activity-selector">
+            <div class="activity-grid" id="activityGrid"></div>
+        </div>
 
         <div class="record-section" id="recordSection">
             <div class="record-controls"><button class="record-btn start" id="recStartBtn" onclick="openRecordingModal()">⏺</button></div>
@@ -303,36 +1037,59 @@
             <span class="minimized-expand">▲</span>
         </div>
 
-        <div class="record-modal" id="recordModal" style="display:none;">
+        <div class="record-modal" id="recordModal">
             <div id="recordMap"></div>
             <div class="record-modal-topbar">
                 <button class="modal-icon-btn" id="recMinimizeBtn" onclick="minimizeRecordModal()">▼</button>
-                
+
                 <div class="modal-center-controls">
                     <span class="gps-status" id="gpsStatus">GPS idle</span>
                     <select id="recRideTypeSelect" class="modal-select"></select>
-                    <button class="modal-icon-btn" id="modalSensorBtn" onclick="openSensorManager()" style="font-size: 1rem; position:relative;">📡</button>
+                    <button class="modal-icon-btn" id="modalSensorBtn" onclick="openSensorManager()" style="font-size:1rem;position:relative;">📡</button>
                 </div>
 
                 <button class="modal-icon-btn" id="recFullscreenBtn" onclick="toggleFullscreen()">⛶</button>
             </div>
             <div class="record-modal-stats-wrapper">
                 <div class="record-modal-stats">
-                    <div class="modal-stat modal-stat-primary"><div class="record-stat-label">Duration</div><div class="record-stat-value" id="recDuration">00:00:00</div></div>
-                    <div class="modal-stat"><div class="record-stat-label">Distance</div><div class="record-stat-value"><span id="recDistance">0.00</span> <span class="stat-unit">km</span></div></div>
-                    <div class="modal-stat"><div class="record-stat-label">Speed</div><div class="record-stat-value"><span id="recSpeed">0.0</span> <span class="stat-unit">km/h</span></div></div>
-                    <div class="modal-stat"><div class="record-stat-label">Avg</div><div class="record-stat-value"><span id="recAvgSpeed">0.0</span> <span class="stat-unit">km/h</span></div></div>
-                    <div class="modal-stat"><div class="record-stat-label">Points</div><div class="record-stat-value" id="recPoints">0</div></div>
+                    <div class="modal-stat modal-stat-primary">
+                        <div class="record-stat-label">Duration</div>
+                        <div class="record-stat-value" id="recDuration">00:00:00</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Distance</div>
+                        <div class="record-stat-value"><span id="recDistance">0.00</span> <span class="stat-unit">km</span></div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Speed</div>
+                        <div class="record-stat-value"><span id="recSpeed">0.0</span> <span class="stat-unit">km/h</span></div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Avg</div>
+                        <div class="record-stat-value"><span id="recAvgSpeed">0.0</span> <span class="stat-unit">km/h</span></div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Points</div>
+                        <div class="record-stat-value" id="recPoints">0</div>
+                    </div>
                 </div>
                 <div class="record-modal-sensor-stats">
-                    <div class="modal-stat"><div class="record-stat-label">Heart Rate</div><div class="record-stat-value"><span id="recHR">--</span> <span class="stat-unit">bpm</span></div></div>
-                    <div class="modal-stat"><div class="record-stat-label">Cadence</div><div class="record-stat-value"><span id="recCadence">--</span> <span class="stat-unit">rpm</span></div></div>
-                    <div class="modal-stat"><div class="record-stat-label">Power</div><div class="record-stat-value"><span id="recPower">--</span> <span class="stat-unit">W</span></div></div>
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Heart Rate</div>
+                        <div class="record-stat-value"><span id="recHR">--</span> <span class="stat-unit">bpm</span></div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Cadence</div>
+                        <div class="record-stat-value"><span id="recCadence">--</span> <span class="stat-unit">rpm</span></div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Power</div>
+                        <div class="record-stat-value"><span id="recPower">--</span> <span class="stat-unit">W</span></div>
+                    </div>
                 </div>
             </div>
             <div id="recordMessage" class="record-modal-message"></div>
             <div class="record-modal-controls">
-                <!-- Standalone Start Button -->
                 <button class="record-btn start" id="recStartRecordingBtn" onclick="beginRecording()" style="display:none;">▶️ Start</button>
                 <button class="record-btn pause" id="recPauseBtn" onclick="pauseRecording()" style="display:none;">⏸️ Pause</button>
                 <button class="record-btn resume" id="recResumeBtn" onclick="resumeRecording()" style="display:none;">▶️ Resume</button>
@@ -361,10 +1118,22 @@
         </div>
 
         <div class="stats-grid" id="statsGrid">
-            <div class="stat-card"><div class="stat-label">Total Activities</div><div class="stat-value" id="totalRides">-</div></div>
-            <div class="stat-card"><div class="stat-label">Total Distance</div><div class="stat-value" id="totalDistance">- <span class="stat-unit">km</span></div></div>
-            <div class="stat-card"><div class="stat-label">Total Elevation</div><div class="stat-value" id="totalElevation">- <span class="stat-unit">m</span></div></div>
-            <div class="stat-card"><div class="stat-label">Total Calories</div><div class="stat-value" id="totalCalories">-</div></div>
+            <div class="stat-card">
+                <div class="stat-label">Total Activities</div>
+                <div class="stat-value" id="totalRides">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Distance</div>
+                <div class="stat-value" id="totalDistance">- <span class="stat-unit">km</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Elevation</div>
+                <div class="stat-value" id="totalElevation">- <span class="stat-unit">m</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Calories</div>
+                <div class="stat-value" id="totalCalories">-</div>
+            </div>
         </div>
 
         <div class="upload-section">
@@ -388,7 +1157,8 @@
 
     <div class="toast" id="toast"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    </script>
     <script>
         // ── Theme ──────────────────────────────────────────
         function applyTheme(theme) {
@@ -401,6 +1171,7 @@
             }
             localStorage.setItem('fit-reader-theme', theme);
         }
+
         function toggleDarkMode() {
             const isDark = document.body.classList.contains('dark-theme');
             applyTheme(isDark ? 'light' : 'dark');
@@ -425,12 +1196,22 @@
         let rideTypes = [];
         let allRides = [];
         let uploadInProgress = false;
-        let recWatchId = null, recPoints = [], recStartTime = null, recElapsedBeforePause = 0, recTimerInterval = null;
-        let recTotalDistanceKm = 0, recLastPoint = null, recIsPaused = false, recIsRecording = false;
-        let recMap = null, recPolyline = null, recMarker = null;
+        let recWatchId = null,
+            recPoints = [],
+            recStartTime = null,
+            recElapsedBeforePause = 0,
+            recTimerInterval = null;
+        let recTotalDistanceKm = 0,
+            recLastPoint = null,
+            recIsPaused = false,
+            recIsRecording = false;
+        let recMap = null,
+            recPolyline = null,
+            recMarker = null;
+        let mapInitialized = false;
 
         // ── Multi-Device Sensor State ──────────────────────
-        let connectedDevices = []; 
+        let connectedDevices = [];
         let sensorData = { heartRate: null, cadence: null, power: null, speed: null };
         let deviceIdCounter = 0;
 
@@ -458,7 +1239,8 @@
             rideTypes.forEach(type => {
                 const btn = document.createElement('button');
                 btn.className = `activity-btn ${selectedType === type.id ? 'active' : ''}`;
-                btn.innerHTML = `<span class="icon">${type.icon}</span> ${type.name} <span class="badge" id="badge-${type.id}">0</span>`;
+                btn.innerHTML =
+                    `<span class="icon">${type.icon}</span> ${type.name} <span class="badge" id="badge-${type.id}">0</span>`;
                 btn.onclick = () => selectType(type.id);
                 grid.appendChild(btn);
             });
@@ -514,7 +1296,8 @@
 
         async function loadRides() {
             const rideList = document.getElementById('rideList');
-            rideList.innerHTML = `<div class="loading"><div class="spinner"></div><p style="margin-top:4px;font-size:0.8rem;">Loading...</p></div>`;
+            rideList.innerHTML =
+                `<div class="loading"><div class="spinner"></div><p style="margin-top:4px;font-size:0.8rem;">Loading...</p></div>`;
             try {
                 let url = '/my-rides';
                 if (selectedType !== 'all') url += `?type=${selectedType}`;
@@ -525,14 +1308,16 @@
                 renderRides(allRides);
             } catch (error) {
                 console.error(error);
-                rideList.innerHTML = `<div class="no-rides"><span class="big-icon">❌</span><p>Failed to load</p><button onclick="loadRides()" style="margin-top:8px;padding:6px 16px;background:var(--orange);color:#fff;border:none;border-radius:20px;cursor:pointer;font-weight:600;">Retry</button></div>`;
+                rideList.innerHTML =
+                    `<div class="no-rides"><span class="big-icon">❌</span><p>Failed to load</p><button onclick="loadRides()" style="margin-top:8px;padding:6px 16px;background:var(--orange);color:#fff;border:none;border-radius:20px;cursor:pointer;font-weight:600;">Retry</button></div>`;
             }
         }
 
         function renderRides(rides) {
             const rideList = document.getElementById('rideList');
             if (rides.length === 0) {
-                rideList.innerHTML = `<div class="no-rides"><span class="big-icon">🏃</span><p>No activities found</p><p style="font-size:0.8rem;margin-top:4px;">Upload your first FIT file!</p></div>`;
+                rideList.innerHTML =
+                    `<div class="no-rides"><span class="big-icon">🏃</span><p>No activities found</p><p style="font-size:0.8rem;margin-top:4px;">Upload your first FIT file!</p></div>`;
                 return;
             }
             rideList.innerHTML = '';
@@ -546,26 +1331,26 @@
                 const dateStr = ride.ride_date ? new Date(ride.ride_date).toLocaleDateString(undefined, { month: 'short',
                     day: 'numeric', year: 'numeric' }) : 'Unknown';
                 div.innerHTML = `
-                    <div class="ride-card-header">
-                        <div class="ride-icon" style="background: ${color}1a; color: ${color};">${rideType.icon}</div>
-                        <div class="ride-title-block">
-                            <div class="ride-name">${ride.filename || 'Unnamed'}</div>
-                            <div class="ride-meta"><span>${dateStr}</span><span class="ride-type-badge" style="background: ${color}1a; color: ${color};">${rideType.name}</span></div>
+                        <div class="ride-card-header">
+                            <div class="ride-icon" style="background: ${color}1a; color: ${color};">${rideType.icon}</div>
+                            <div class="ride-title-block">
+                                <div class="ride-name">${ride.filename || 'Unnamed'}</div>
+                                <div class="ride-meta"><span>${dateStr}</span><span class="ride-type-badge" style="background: ${color}1a; color: ${color};">${rideType.name}</span></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="ride-stats">
-                        <div class="stat-block"><span class="stat-num-label">Distance</span><span class="stat-num-value">${summary.distance_km || 0} km</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Elevation</span><span class="stat-num-value">${summary.elevation_gain || 0} m</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
-                    </div>
-                    <div class="actions">
-                        <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
-                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
-                    </div>
-                `;
+                        <div class="ride-stats">
+                            <div class="stat-block"><span class="stat-num-label">Distance</span><span class="stat-num-value">${summary.distance_km || 0} km</span></div>
+                            <div class="stat-block"><span class="stat-num-label">Elevation</span><span class="stat-num-value">${summary.elevation_gain || 0} m</span></div>
+                            <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
+                            <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
+                        </div>
+                        <div class="actions">
+                            <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
+                            <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
+                            <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
+                        </div>
+                    `;
                 div.onclick = () => viewSummary(ride.id);
                 rideList.appendChild(div);
             });
@@ -643,7 +1428,9 @@
 
         // ── Actions ────────────────────────────────────────
         function downloadRide(rideId) { window.location.href = `/download/${rideId}`; }
+
         function shareRide(rideId) { window.open(`/share/${rideId}`, '_blank'); }
+
         function viewSummary(rideId) { window.open(`/ride-summary/${rideId}`, '_blank'); }
 
         async function deleteRide(rideId) {
@@ -671,18 +1458,19 @@
         function updateSensorBtnUI() {
             const mainBtn = document.getElementById('sensorBtn');
             const modalBtn = document.getElementById('modalSensorBtn');
-            
+
             const hasDevices = connectedDevices.length > 0;
             const mainText = hasDevices ? `📡 ${connectedDevices.length} Connected` : '🔍 Search Sensors';
-            if (mainBtn) { 
-                mainBtn.textContent = mainText; 
-                if(hasDevices) mainBtn.classList.add('connected'); 
+            if (mainBtn) {
+                mainBtn.textContent = mainText;
+                if (hasDevices) mainBtn.classList.add('connected');
                 else mainBtn.classList.remove('connected');
             }
-            if (modalBtn) { 
-                modalBtn.textContent = '📡'; 
-                if(hasDevices) { modalBtn.style.background = 'rgba(72,187,120,0.85)'; modalBtn.style.color = 'white'; }
-                else { modalBtn.style.background = 'rgba(0,0,0,0.6)'; modalBtn.style.color = 'white'; }
+            if (modalBtn) {
+                modalBtn.textContent = '📡';
+                if (hasDevices) { modalBtn.style.background = 'rgba(72,187,120,0.85)';
+                    modalBtn.style.color = 'white'; } else { modalBtn.style.background = 'rgba(0,0,0,0.6)';
+                    modalBtn.style.color = 'white'; }
             }
             renderSensorList();
         }
@@ -702,11 +1490,12 @@
         function closeSensorManager() {
             document.getElementById('sensorModal').classList.remove('active');
         }
-        
+
         function renderSensorList() {
             const list = document.getElementById('sensorDeviceList');
             if (connectedDevices.length === 0) {
-                list.innerHTML = `<div style="text-align:center; color:var(--text-soft); font-size:0.9rem; padding:20px; width:100%;">No devices connected. Tap "Add Device" to scan.</div>`;
+                list.innerHTML =
+                    `<div style="text-align:center; color:var(--text-soft); font-size:0.9rem; padding:20px; width:100%;">No devices connected. Tap "Add Device" to scan.</div>`;
                 return;
             }
             list.innerHTML = '';
@@ -714,23 +1503,23 @@
                 const div = document.createElement('div');
                 div.className = 'sensor-device-item';
                 div.innerHTML = `
-                    <div class="dev-info">
-                        <div class="dev-name">${dev.name || 'Unknown Device'}</div>
-                        <div class="dev-id">${dev.id}</div>
-                    </div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span class="dev-status">● Connected</span>
-                        <button class="dev-remove" onclick="disconnectDevice('${dev.id}')">✕</button>
-                    </div>
-                `;
+                        <div class="dev-info">
+                            <div class="dev-name">${dev.name || 'Unknown Device'}</div>
+                            <div class="dev-id">${dev.id}</div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span class="dev-status">● Connected</span>
+                            <button class="dev-remove" onclick="disconnectDevice('${dev.id}')">✕</button>
+                        </div>
+                    `;
                 list.appendChild(div);
             });
         }
 
         async function addNewDevice() {
-            if (!('bluetooth' in navigator)) { 
-                showToast('❌ Web Bluetooth is not supported on this browser/device.', 'error'); 
-                return; 
+            if (!('bluetooth' in navigator)) {
+                showToast('❌ Web Bluetooth is not supported on this browser/device.', 'error');
+                return;
             }
             try {
                 showToast('Opening Bluetooth search...', 'info');
@@ -746,11 +1535,11 @@
                 const server = await device.gatt.connect();
                 const uniqueId = `${device.id}-${deviceIdCounter++}`;
 
-                const devInfo = { 
-                    id: uniqueId, 
+                const devInfo = {
+                    id: uniqueId,
                     rawDeviceId: device.id,
-                    device: device, 
-                    server: server, 
+                    device: device,
+                    server: server,
                     name: device.name || 'Device'
                 };
                 connectedDevices.push(devInfo);
@@ -823,23 +1612,23 @@
                     const value = event.target.value;
                     const flags = value.getUint8(0);
                     let offset = 1;
-                    if (flags & 0x01) { 
+                    if (flags & 0x01) {
                         const wheelRevs = value.getUint32(offset, true);
                         const wheelTime = value.getUint16(offset + 4, true);
                         if (cscState.lastWheelRevs > 0) {
                             const revDiff = wheelRevs - cscState.lastWheelRevs;
                             const timeDiff = (wheelTime - cscState.lastWheelTime) / 1024;
                             if (timeDiff > 0) {
-                                const wheelCirc = 2.1; 
+                                const wheelCirc = 2.1;
                                 const speedKmh = (revDiff * wheelCirc / timeDiff) * 3.6;
-                                sensorData.speed = speedKmh; 
+                                sensorData.speed = speedKmh;
                             }
                         }
                         cscState.lastWheelRevs = wheelRevs;
                         cscState.lastWheelTime = wheelTime;
                         offset += 6;
                     }
-                    if (flags & 0x02) { 
+                    if (flags & 0x02) {
                         const crankRevs = value.getUint16(offset, true);
                         const crankTime = value.getUint16(offset + 2, true);
                         if (cscState.lastCrankRevs > 0) {
@@ -870,7 +1659,7 @@
             } catch (e) { console.warn(`[${devId}] Power service not found on this device`); }
         }
 
-        // ── RECORDING LOGIC (UPDATED) ──────────────────────
+        // ── RECORDING LOGIC (FIXED) ──────────────────────
         function haversineKm(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -882,36 +1671,142 @@
         }
 
         function initRecordMap(lat, lng) {
-            if (recMap) { recMap.remove();
-                recMap = null; }
-            recMap = L.map('recordMap').setView([lat, lng], 16);
-            const isDark = document.body.classList.contains('dark-theme');
-            const tileUrl = isDark ?
-                'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
-                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-            L.tileLayer(tileUrl, { attribution: isDark ? '&copy; CartoDB' : '&copy; OpenStreetMap' }).addTo(recMap);
-            recPolyline = L.polyline([], { color: '#fc4c02', weight: 4 }).addTo(recMap);
-            recMarker = L.circleMarker([lat, lng], { radius: 6, color: '#fff', weight: 2, fillColor: '#48bb78',
-                fillOpacity: 1 }).addTo(recMap);
-            setTimeout(() => recMap && recMap.invalidateSize(), 200);
+            // Clean up any previous map instance
+            if (recMap) {
+                recMap.remove();
+                recMap = null;
+                recPolyline = null;
+                recMarker = null;
+            }
+
+            const container = document.getElementById('recordMap');
+            if (!container) {
+                console.warn('recordMap container not found');
+                return;
+            }
+
+            // Ensure container has dimensions
+            container.style.width = '100%';
+            container.style.height = '100%';
+            container.style.minHeight = '300px';
+            container.style.display = 'block';
+
+            // Use requestAnimationFrame to ensure layout is complete
+            requestAnimationFrame(() => {
+                // Double-check container dimensions
+                const rect = container.getBoundingClientRect();
+                if (rect.width === 0 || rect.height === 0) {
+                    // Container not ready yet — try again after a short delay
+                    setTimeout(() => {
+                        initRecordMap(lat, lng);
+                    }, 100);
+                    return;
+                }
+
+                try {
+                    recMap = L.map('recordMap', {
+                        center: [lat, lng],
+                        zoom: 16,
+                        zoomControl: true,
+                        fadeAnimation: true,
+                        attributionControl: true
+                    });
+
+                    const isDark = document.body.classList.contains('dark-theme');
+                    const tileUrl = isDark ?
+                        'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
+                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+                    L.tileLayer(tileUrl, {
+                        attribution: isDark ? '&copy; CartoDB' : '&copy; OpenStreetMap',
+                        maxZoom: 19
+                    }).addTo(recMap);
+
+                    recPolyline = L.polyline([], {
+                        color: '#fc4c02',
+                        weight: 4,
+                        opacity: 0.9,
+                        smoothFactor: 1
+                    }).addTo(recMap);
+
+                    recMarker = L.circleMarker([lat, lng], {
+                        radius: 7,
+                        color: '#fff',
+                        weight: 2,
+                        fillColor: '#48bb78',
+                        fillOpacity: 1,
+                        pulsating: true
+                    }).addTo(recMap);
+
+                    // Force a size recalculation after the map is rendered
+                    setTimeout(() => {
+                        if (recMap) {
+                            recMap.invalidateSize(true);
+                            // Re-center to ensure we're at the right location
+                            recMap.setView([lat, lng], 16);
+                        }
+                    }, 100);
+
+                    // Also invalidate on window resize
+                    const resizeHandler = () => {
+                        if (recMap) recMap.invalidateSize();
+                    };
+                    window.addEventListener('resize', resizeHandler);
+                    // Store the handler so we can remove it later if needed
+                    recMap._resizeHandler = resizeHandler;
+
+                    mapInitialized = true;
+                    setGpsStatus('Ready', '');
+                } catch (err) {
+                    console.error('Leaflet map initialization error:', err);
+                    setGpsStatus('Map error', 'error');
+                    showToast('❌ Map failed to load', 'error');
+                }
+            });
         }
 
         function updateRecordMap(lat, lng) {
-            if (!recMap) { initRecordMap(lat, lng); return; }
-            recPolyline.addLatLng([lat, lng]);
-            recMarker.setLatLng([lat, lng]);
-            recMap.panTo([lat, lng]);
-            recMap.invalidateSize();
+            if (!recMap) {
+                // Try to re-initialize if map was lost
+                initRecordMap(lat, lng);
+                return;
+            }
+            try {
+                if (recPolyline) {
+                    recPolyline.addLatLng([lat, lng]);
+                }
+                if (recMarker) {
+                    recMarker.setLatLng([lat, lng]);
+                }
+                recMap.panTo([lat, lng], { animate: true, duration: 0.5 });
+                // Don't invalidate on every update – only when needed
+            } catch (err) {
+                console.warn('Map update error:', err);
+            }
         }
 
-        function teardownRecordMap() { if (recMap) { recMap.remove();
-                recMap = null; }
-            recPolyline = null;
-            recMarker = null; }
+        function teardownRecordMap() {
+            if (recMap) {
+                // Clean up resize handler
+                if (recMap._resizeHandler) {
+                    window.removeEventListener('resize', recMap._resizeHandler);
+                    recMap._resizeHandler = null;
+                }
+                recMap.remove();
+                recMap = null;
+                recPolyline = null;
+                recMarker = null;
+                mapInitialized = false;
+            }
+        }
 
-        function setGpsStatus(text, cls) { const el = document.getElementById('gpsStatus');
-            el.textContent = text;
-            el.className = `gps-status ${cls || ''}`; }
+        function setGpsStatus(text, cls) {
+            const el = document.getElementById('gpsStatus');
+            if (el) {
+                el.textContent = text;
+                el.className = `gps-status ${cls || ''}`;
+            }
+        }
 
         function formatDuration(ms) {
             const totalSec = Math.floor(ms / 1000);
@@ -936,7 +1831,8 @@
             const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
             document.getElementById('recAvgSpeed').textContent = avgSpeed.toFixed(1);
             const minimizedText = document.getElementById('minimizedText');
-            if (minimizedText) minimizedText.textContent = `Recording... ${durationStr} · ${recTotalDistanceKm.toFixed(2)} km`;
+            if (minimizedText) minimizedText.textContent =
+                `Recording... ${durationStr} · ${recTotalDistanceKm.toFixed(2)} km`;
         }
 
         function onGpsPosition(position) {
@@ -964,7 +1860,14 @@
                 power: sensorData.power || 0
             });
             recLastPoint = { lat, lng, rawTimestamp: position.timestamp };
-            updateRecordMap(lat, lng);
+
+            // Update map (re-initialize if needed)
+            if (!recMap || !mapInitialized) {
+                initRecordMap(lat, lng);
+            } else {
+                updateRecordMap(lat, lng);
+            }
+
             document.getElementById('recSpeed').textContent = speedKmh.toFixed(1);
             setGpsStatus('GPS locked', 'active');
             updateRecordUI();
@@ -981,7 +1884,7 @@
             showToast(`❌ ${msg}`, 'error');
         }
 
-        // Opens the map WITH a visible initial location, but DOES NOT start recording yet
+        // Opens the map with a visible initial location, but does NOT start recording yet
         function openRecordingModal() {
             // Reset all data
             recPoints = [];
@@ -991,14 +1894,16 @@
             recIsPaused = false;
             recIsRecording = false;
             recStartTime = null;
-            
+
             // Ensure no stale map exists
-            if (recMap) { recMap.remove(); recMap = null; recPolyline = null; recMarker = null; }
-            
+            teardownRecordMap();
+
+            // Show the modal
             document.getElementById('recordSection').style.display = 'none';
             document.getElementById('recordMinimizedBar').style.display = 'none';
-            document.getElementById('recordModal').style.display = 'flex';
-            
+            const modal = document.getElementById('recordModal');
+            modal.style.display = 'flex';
+
             setGpsStatus('Loading map...', '');
             document.getElementById('recordMessage').textContent = 'Press "Start" when ready.';
 
@@ -1009,28 +1914,42 @@
             document.getElementById('recStopBtn').style.display = 'none';
             document.getElementById('recDiscardBtn').style.display = 'none';
 
-            // Initialize the map immediately using current location
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    initRecordMap(pos.coords.latitude, pos.coords.longitude);
-                    setGpsStatus('Ready', '');
-                },
-                (err) => {
-                    console.warn('Initial map location fallback:', err);
-                    // Default to New York City if GPS is blocked/denied
-                    initRecordMap(40.7128, -74.0060); 
-                    setGpsStatus('Location unavailable', 'error');
-                },
-                { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
-            );
-            
+            // Ensure the map container is ready and has dimensions
+            const container = document.getElementById('recordMap');
+            if (container) {
+                container.style.width = '100%';
+                container.style.height = '100%';
+                container.style.minHeight = '300px';
+                container.style.display = 'block';
+            }
+
+            // Use a small delay to ensure the modal layout is fully rendered
+            setTimeout(() => {
+                // Try to get the user's location for the map center
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        initRecordMap(pos.coords.latitude, pos.coords.longitude);
+                        setGpsStatus('Ready', '');
+                    },
+                    (err) => {
+                        console.warn('Initial map location fallback:', err);
+                        // Default to a reasonable location (NYC) if GPS is blocked
+                        initRecordMap(40.7128, -74.0060);
+                        setGpsStatus('Location unavailable', 'error');
+                    }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+                );
+            }, 150);
+
             updateSensorUI();
         }
 
         // Actually begins the GPS Timer and Tracking
         function beginRecording() {
-            if (!('geolocation' in navigator)) { showToast('❌ Geolocation not supported', 'error'); return; }
-            
+            if (!('geolocation' in navigator)) {
+                showToast('❌ Geolocation not supported', 'error');
+                return;
+            }
+
             recIsRecording = true;
             recStartTime = Date.now();
 
@@ -1042,9 +1961,37 @@
             document.getElementById('recordMessage').textContent = '';
 
             setGpsStatus('Acquiring GPS...', 'active');
-            recWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, { enableHighAccuracy: true,
-                maximumAge: 1000, timeout: 15000 });
+
+            // Ensure map is ready before starting GPS watch
+            if (!recMap || !mapInitialized) {
+                // Try to get location and init map
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        initRecordMap(pos.coords.latitude, pos.coords.longitude);
+                        startGpsWatch();
+                    },
+                    (err) => {
+                        console.warn('GPS fallback for map init:', err);
+                        initRecordMap(40.7128, -74.0060);
+                        startGpsWatch();
+                    }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+                );
+            } else {
+                startGpsWatch();
+            }
+
             recTimerInterval = setInterval(updateRecordUI, 1000);
+        }
+
+        function startGpsWatch() {
+            if (recWatchId !== null) {
+                navigator.geolocation.clearWatch(recWatchId);
+                recWatchId = null;
+            }
+            recWatchId = navigator.geolocation.watchPosition(
+                onGpsPosition,
+                onGpsError, { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 }
+            );
         }
 
         function minimizeRecordModal() {
@@ -1054,16 +2001,22 @@
 
         function reopenRecordModal() {
             document.getElementById('recordMinimizedBar').style.display = 'none';
-            document.getElementById('recordModal').style.display = 'flex';
-            setTimeout(() => recMap && recMap.invalidateSize(), 100);
+            const modal = document.getElementById('recordModal');
+            modal.style.display = 'flex';
+            // Re-invalidate map size after reopening
+            setTimeout(() => {
+                if (recMap) recMap.invalidateSize(true);
+            }, 200);
         }
 
         function pauseRecording() {
             if (!recIsRecording || recIsPaused) return;
             recIsPaused = true;
             recElapsedBeforePause += Date.now() - recStartTime;
-            if (recWatchId !== null) { navigator.geolocation.clearWatch(recWatchId);
-                recWatchId = null; }
+            if (recWatchId !== null) {
+                navigator.geolocation.clearWatch(recWatchId);
+                recWatchId = null;
+            }
             setGpsStatus('Paused', 'paused');
             document.getElementById('recPauseBtn').style.display = 'none';
             document.getElementById('recResumeBtn').style.display = 'inline-block';
@@ -1074,18 +2027,36 @@
             recIsPaused = false;
             recStartTime = Date.now();
             recLastPoint = null;
-            recWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, { enableHighAccuracy: true,
-                maximumAge: 1000, timeout: 15000 });
+            // Ensure map is ready before resuming GPS
+            if (!recMap || !mapInitialized) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        initRecordMap(pos.coords.latitude, pos.coords.longitude);
+                        startGpsWatch();
+                    },
+                    (err) => {
+                        console.warn('GPS fallback for resume:', err);
+                        initRecordMap(40.7128, -74.0060);
+                        startGpsWatch();
+                    }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+                );
+            } else {
+                startGpsWatch();
+            }
             setGpsStatus('GPS locked', 'active');
             document.getElementById('recPauseBtn').style.display = 'inline-block';
             document.getElementById('recResumeBtn').style.display = 'none';
         }
 
         function stopGpsWatch() {
-            if (recWatchId !== null) { navigator.geolocation.clearWatch(recWatchId);
-                recWatchId = null; }
-            if (recTimerInterval) { clearInterval(recTimerInterval);
-                recTimerInterval = null; }
+            if (recWatchId !== null) {
+                navigator.geolocation.clearWatch(recWatchId);
+                recWatchId = null;
+            }
+            if (recTimerInterval) {
+                clearInterval(recTimerInterval);
+                recTimerInterval = null;
+            }
         }
 
         function resetRecordUI() {
@@ -1112,13 +2083,16 @@
         async function stopRecording() {
             if (!recIsRecording) return;
             stopGpsWatch();
-            if (recPoints.length < 2) { showToast('❌ Not enough GPS data', 'error');
+            if (recPoints.length < 2) {
+                showToast('❌ Not enough GPS data', 'error');
                 recIsRecording = false;
-                resetRecordUI(); return; }
+                resetRecordUI();
+                return;
+            }
             const statusDiv = document.getElementById('recordMessage');
             statusDiv.textContent = 'Saving ride...';
             document.getElementById('recStopBtn').disabled = true;
-            
+
             const selectedRideType = document.getElementById('recRideTypeSelect').value;
 
             try {
@@ -1128,15 +2102,23 @@
                     body: JSON.stringify({ points: recPoints, ride_type: selectedRideType })
                 });
                 const result = await response.json();
-                if (response.ok) { showToast('✅ Ride saved!', 'success');
+                if (response.ok) {
+                    showToast('✅ Ride saved!', 'success');
                     statusDiv.textContent = '';
-                    await loadRides(); } else { showToast(`❌ Failed: ${result.error || 'Unknown error'}`, 'error');
-                    statusDiv.textContent = `❌ Error: ${result.error || 'Unknown error'}`; }
-            } catch (error) { console.error(error);
+                    await loadRides();
+                } else {
+                    showToast(`❌ Failed: ${result.error || 'Unknown error'}`, 'error');
+                    statusDiv.textContent = `❌ Error: ${result.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                console.error(error);
                 showToast('❌ Save failed', 'error');
-                statusDiv.textContent = '❌ Save failed'; } finally { document.getElementById('recStopBtn').disabled = false;
+                statusDiv.textContent = '❌ Save failed';
+            } finally {
+                document.getElementById('recStopBtn').disabled = false;
                 recIsRecording = false;
-                resetRecordUI(); }
+                resetRecordUI();
+            }
         }
 
         function discardRecording() {
