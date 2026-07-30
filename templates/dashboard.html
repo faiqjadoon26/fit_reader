@@ -233,7 +233,8 @@
     <nav class="navbar">
         <div class="navbar-brand">🚴 Fit Reader <span>Beta</span></div>
         <div class="navbar-right">
-            <button class="sensor-btn" id="sensorBtn" onclick="scanSensors()">📡 Connect</button>
+            <!-- Updated button explicitly names the "Search" action -->
+            <button class="sensor-btn" id="sensorBtn" onclick="scanSensors()">🔍 Search Sensors</button>
             <button class="theme-btn" id="themeToggle" onclick="toggleDarkMode()">🌙</button>
             <div class="user-info">
                 <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar" />
@@ -576,20 +577,46 @@
             toast._timeout = setTimeout(() => toast.classList.remove('show'), 3500);
         }
 
+        // ── Helpers for Sensor UI ──────────────────────────
+        function updateSensorBtnUI() {
+            const btn = document.getElementById('sensorBtn');
+            if (sensorConnected) {
+                btn.textContent = '📡 Disconnect';
+                btn.classList.add('connected');
+            } else {
+                btn.textContent = '🔍 Search Sensors';
+                btn.classList.remove('connected');
+            }
+        }
+
+        function updateSensorUI() {
+            document.getElementById('recHR').textContent = sensorData.heartRate !== null ? sensorData.heartRate : '--';
+            document.getElementById('recCadence').textContent = sensorData.cadence !== null ? sensorData.cadence : '--';
+            document.getElementById('recPower').textContent = sensorData.power !== null ? sensorData.power : '--';
+        }
+
         // ── Sensors (Web Bluetooth) ────────────────────────
         async function scanSensors() {
             if (!('bluetooth' in navigator)) { showToast('❌ Web Bluetooth not supported', 'error'); return; }
+            
+            // If already connected, clicking acts as "Disconnect"
             if (sensorConnected) {
                 try { if (sensorServer) await sensorServer.disconnect(); } catch (e) {}
                 sensorConnected = false;
                 sensorServer = null;
                 sensorData = { heartRate: null, cadence: null, power: null, speed: null };
-                document.getElementById('sensorBtn').classList.remove('connected');
-                document.getElementById('sensorBtn').textContent = '📡 Connect';
+                updateSensorBtnUI();
+                document.getElementById('recHR').textContent = '--';
+                document.getElementById('recCadence').textContent = '--';
+                document.getElementById('recPower').textContent = '--';
                 showToast('Sensors disconnected', 'info');
                 return;
             }
+
+            // Otherwise, trigger the OS Bluetooth "Search" picker
             try {
+                showToast('Opening Bluetooth search...', 'info');
+                // This opens the native browser device picker
                 const device = await navigator.bluetooth.requestDevice({
                     filters: [{ services: ['heart_rate', 'cycling_speed_cadence', 'power_meter'] }],
                     optionalServices: ['heart_rate', 'cycling_speed_cadence', 'power_meter']
@@ -597,13 +624,19 @@
                 const server = await device.gatt.connect();
                 sensorServer = server;
                 sensorConnected = true;
-                document.getElementById('sensorBtn').classList.add('connected');
-                document.getElementById('sensorBtn').textContent = '📡 Disconnect';
+                updateSensorBtnUI();
                 await setupSensorListeners(server);
                 showToast('✅ Sensors connected!', 'success');
             } catch (error) {
                 console.error(error);
-                showToast('❌ Connection failed', 'error');
+                // User might have manually cancelled the search
+                if (error.message && error.message.includes('cancel')) {
+                     showToast('Search cancelled', 'info');
+                } else {
+                     showToast('❌ Connection failed', 'error');
+                }
+                sensorConnected = false;
+                updateSensorBtnUI();
             }
         }
 
@@ -640,12 +673,6 @@
             } catch (e) { console.warn('Power not available'); }
         }
 
-        function updateSensorUI() {
-            document.getElementById('recHR').textContent = sensorData.heartRate !== null ? sensorData.heartRate : '--';
-            document.getElementById('recCadence').textContent = sensorData.cadence !== null ? sensorData.cadence : '--';
-            document.getElementById('recPower').textContent = sensorData.power !== null ? sensorData.power : '--';
-        }
-
         // ── GPS Recording ──────────────────────────────────
         function haversineKm(lat1, lon1, lat2, lon2) {
             const R = 6371;
@@ -669,7 +696,6 @@
             recPolyline = L.polyline([], { color: '#fc4c02', weight: 4 }).addTo(recMap);
             recMarker = L.circleMarker([lat, lng], { radius: 6, color: '#fff', weight: 2, fillColor: '#48bb78',
                 fillOpacity: 1 }).addTo(recMap);
-            // Delay invalidateSize to ensure the map fully renders behind the overlays
             setTimeout(() => recMap && recMap.invalidateSize(), 200);
         }
 
@@ -678,7 +704,6 @@
             recPolyline.addLatLng([lat, lng]);
             recMarker.setLatLng([lat, lng]);
             recMap.panTo([lat, lng]);
-            // Ensure the map layout stays correct during panning
             recMap.invalidateSize();
         }
 
@@ -771,7 +796,7 @@
             teardownRecordMap();
             document.getElementById('recordSection').style.display = 'none';
             document.getElementById('recordMinimizedBar').style.display = 'none';
-            document.getElementById('recordModal').style.display = 'flex'; // Flex is removed in CSS, but display flex activates the absolute children
+            document.getElementById('recordModal').style.display = 'flex';
             setGpsStatus('Acquiring GPS...', 'active');
             document.getElementById('recordMessage').textContent = '';
             recWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, { enableHighAccuracy: true,
@@ -792,7 +817,6 @@
         function reopenRecordModal() {
             document.getElementById('recordMinimizedBar').style.display = 'none';
             document.getElementById('recordModal').style.display = 'flex';
-            // Recalculate the map size when reopening
             setTimeout(() => recMap && recMap.invalidateSize(), 100);
         }
 
