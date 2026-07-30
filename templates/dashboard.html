@@ -6,7 +6,6 @@
     <title>Fit Reader - Dashboard</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* ── Theme Variables (same as before) ────────────────────────── */
         :root {
             --bg: #f7f7f9;
             --card: #ffffff;
@@ -35,7 +34,6 @@
             min-height: 100vh;
             transition: background var(--transition), color var(--transition);
         }
-        /* ── Navbar ──────────────────────────────────── */
         .navbar {
             background: var(--card);
             border-bottom: 1px solid var(--line);
@@ -64,7 +62,7 @@
         }
         .theme-btn:hover, .sensor-btn:hover { border-color: var(--orange); background: var(--orange); color: white; }
         .sensor-btn.connected { border-color: #48bb78; background: #48bb78; color: white; }
-        /* ── Main Layout ────────────────────────────── */
+
         .main-container { max-width: 1400px; margin: 0 auto; padding: 1rem 1rem 6rem; }
         .activity-selector { margin-bottom: 1rem; }
         .activity-grid { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
@@ -78,6 +76,7 @@
         .activity-btn.active { border-color: var(--orange); background: var(--orange); color: white; }
         .activity-btn .badge { display: inline-block; background: rgba(255,255,255,0.3); color: inherit; font-size: 0.6rem; padding: 0px 6px; border-radius: 10px; }
         .activity-btn:not(.active) .badge { background: #f0f0f2; color: var(--text-soft); }
+
         .stats-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
@@ -88,7 +87,7 @@
         .stat-label { font-size: 0.6rem; text-transform: uppercase; color: var(--text-soft); letter-spacing: 0.05em; font-weight: 700; }
         .stat-value { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-top: 2px; }
         .stat-unit { font-size: 0.65rem; color: var(--text-soft); font-weight: 500; }
-        /* ── Record FAB ───────────────────────────────── */
+
         .record-section { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 500; display: flex; flex-direction: column; align-items: center; gap: 4px; }
         .record-section .fab-label { font-size: 0.65rem; font-weight: 600; color: var(--text-soft); background: var(--card); padding: 2px 8px; border-radius: 10px; border: 1px solid var(--line); }
         .record-btn { border: none; font-weight: 600; cursor: pointer; transition: background 0.2s, opacity 0.2s, transform 0.1s; }
@@ -105,7 +104,7 @@
         .record-btn.discard { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.4); }
         .record-btn.discard:hover { background: rgba(255,255,255,0.25); }
         .record-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        /* Minimized pill */
+
         .record-minimized-bar {
             position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
             background: #2d3748; color: white; padding: 10px 16px; border-radius: 30px;
@@ -116,7 +115,7 @@
         .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); animation: pulse 1.5s ease-in-out infinite; flex-shrink: 0; }
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
         .minimized-expand { color: #a0aec0; font-size: 0.7rem; }
-        /* ── Recording Modal ──────────────────────────── */
+
         .record-modal { position: fixed; inset: 0; z-index: 1000; background: #121212; display: flex; flex-direction: column; }
         .record-modal #recordMap { position: absolute; inset: 0; width: 100%; height: 100%; }
         .record-modal-topbar { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); gap: 8px; background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent); }
@@ -126,6 +125,7 @@
         .gps-status.active { background: rgba(72,187,120,0.85); color: white; }
         .gps-status.paused { background: rgba(237,137,54,0.85); color: white; }
         .gps-status.error { background: rgba(229,62,62,0.85); color: white; }
+
         .record-modal-stats-wrapper { position: relative; z-index: 10; margin-top: auto; background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4) 80%, transparent); padding: 16px 12px 8px; }
         .record-modal-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
         .record-modal-sensor-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); }
@@ -136,6 +136,7 @@
         .record-stat-value .stat-unit { color: #cbd5e0; font-size: 0.6rem; }
         .record-modal-message { position: relative; z-index: 10; text-align: center; color: white; font-size: 0.75rem; background: rgba(0,0,0,0.6); padding: 4px; min-height: 1.2em; }
         .record-modal-controls { position: relative; z-index: 10; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; background: rgba(0,0,0,0.8); padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom)); backdrop-filter: blur(8px); }
+
         @media (max-width: 600px) {
             .record-modal-stats { grid-template-columns: repeat(3, 1fr); }
             .modal-stat-primary { grid-column: span 3; }
@@ -147,7 +148,7 @@
             .record-btn.stop, .record-btn.discard, .record-btn.pause, .record-btn.resume { padding: 10px 16px; font-size: 0.8rem; }
         }
         @media (max-width: 400px) { .record-modal-stats { grid-template-columns: repeat(2, 1fr); } .modal-stat-primary { grid-column: span 2; } }
-        /* ── Upload ───────────────────────────────────── */
+
         .upload-section { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; text-align: center; transition: background var(--transition), border-color var(--transition); }
         .upload-section h2 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.2rem; }
         .upload-section p { color: var(--text-soft); margin-bottom: 0.8rem; font-size: 0.8rem; }
@@ -156,7 +157,7 @@
         .upload-btn { background: var(--text); color: var(--card); padding: 8px 20px; border: none; border-radius: 30px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
         .upload-btn:hover { background: #000; }
         .upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-        /* ── Rides List ───────────────────────────────── */
+
         .rides-section { background: transparent; }
         .rides-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 6px; }
         .rides-header h2 { font-size: 1rem; font-weight: 800; }
@@ -185,11 +186,12 @@
         .loading { text-align: center; padding: 1.5rem; color: var(--text-soft); }
         .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--line); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        /* ── Toast ────────────────────────────────────── */
+
         .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(100px); background: #2d3748; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s; z-index: 1100; max-width: 90%; text-align: center; font-weight: 500; font-size: 0.9rem; pointer-events: none; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
         .toast.success { background: #48bb78; }
         .toast.error { background: #fc8181; }
+
         @media (max-width: 480px) {
             .stats-grid { grid-template-columns: 1fr 1fr; }
             .stat-card { border-bottom: 1px solid var(--line); }
@@ -208,8 +210,8 @@
             <button class="sensor-btn" id="sensorBtn" onclick="scanSensors()">📡 Connect</button>
             <button class="theme-btn" id="themeToggle" onclick="toggleDarkMode()">🌙</button>
             <div class="user-info">
-                <img src="" alt="User" class="user-avatar" id="userAvatar" />
-                <span class="username" id="userName">User</span>
+                <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar" />
+                <span class="username">{{ user.name }}</span>
             </div>
             <a href="/auth/logout" class="logout-btn">Logout</a>
         </div>
@@ -218,20 +220,17 @@
     <div class="main-container">
         <div class="activity-selector"><div class="activity-grid" id="activityGrid"></div></div>
 
-        <!-- Record Button -->
         <div class="record-section" id="recordSection">
             <div class="record-controls"><button class="record-btn start" id="recStartBtn" onclick="startRecording()">⏺</button></div>
             <span class="fab-label">Record</span>
         </div>
 
-        <!-- Minimized pill -->
         <div class="record-minimized-bar" id="recordMinimizedBar" onclick="reopenRecordModal()" style="display:none;">
             <span class="pulse-dot"></span>
             <span id="minimizedText">Recording... 00:00:00</span>
             <span class="minimized-expand">▲</span>
         </div>
 
-        <!-- Recording Modal -->
         <div class="record-modal" id="recordModal" style="display:none;">
             <div id="recordMap"></div>
             <div class="record-modal-topbar">
@@ -262,7 +261,6 @@
             </div>
         </div>
 
-        <!-- Stats -->
         <div class="stats-grid" id="statsGrid">
             <div class="stat-card"><div class="stat-label">Total Activities</div><div class="stat-value" id="totalRides">-</div></div>
             <div class="stat-card"><div class="stat-label">Total Distance</div><div class="stat-value" id="totalDistance">- <span class="stat-unit">km</span></div></div>
@@ -270,7 +268,6 @@
             <div class="stat-card"><div class="stat-label">Total Calories</div><div class="stat-value" id="totalCalories">-</div></div>
         </div>
 
-        <!-- Upload -->
         <div class="upload-section">
             <h2>Upload an Activity</h2>
             <p>Upload FIT files from your GPS device</p>
@@ -281,7 +278,6 @@
             <div id="uploadStatus" style="margin-top:8px;font-size:0.8rem;color:var(--text-soft);"></div>
         </div>
 
-        <!-- Rides List -->
         <div class="rides-section">
             <div class="rides-header">
                 <div><h2>Activities</h2><span class="ride-count" id="rideCount">0 activities</span></div>
@@ -306,7 +302,6 @@
             }
             localStorage.setItem('fit-reader-theme', theme);
         }
-
         function toggleDarkMode() {
             const isDark = document.body.classList.contains('dark-theme');
             applyTheme(isDark ? 'light' : 'dark');
@@ -325,20 +320,6 @@
         document.addEventListener('fullscreenchange', () => {
             document.getElementById('recFullscreenBtn').textContent = '⛶';
         });
-
-        // ── Load User ──────────────────────────────────────
-        async function loadUser() {
-            try {
-                const res = await fetch('/user');
-                const user = await res.json();
-                document.getElementById('userAvatar').src = user.avatar;
-                document.getElementById('userName').textContent = user.name;
-            } catch (e) {
-                console.warn('Could not load user, using defaults');
-                document.getElementById('userAvatar').src = 'https://ui-avatars.com/api/?name=User&size=34&background=fc4c02&color=fff';
-                document.getElementById('userName').textContent = 'User';
-            }
-        }
 
         // ── State ──────────────────────────────────────────
         let selectedType = 'all';
@@ -545,9 +526,7 @@
 
         // ── Actions ────────────────────────────────────────
         function downloadRide(rideId) { window.location.href = `/download/${rideId}`; }
-
         function shareRide(rideId) { window.open(`/share/${rideId}`, '_blank'); }
-
         function viewSummary(rideId) { window.open(`/ride-summary/${rideId}`, '_blank'); }
 
         async function deleteRide(rideId) {
@@ -876,7 +855,6 @@
 
         // ── Init ────────────────────────────────────────────
         async function init() {
-            await loadUser();
             await loadRideTypes();
             await loadRides();
             setInterval(loadRides, 30000);
