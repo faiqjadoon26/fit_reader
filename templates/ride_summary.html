@@ -109,7 +109,7 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .chart-box canvas { width: 100% !important; height: 200px !important; }
+        .chart-box canvas { width: 100% !important; height: 180px !important; }
 
         /* --- POWER ZONES (kept) --- */
         .zone-container { margin-top: 20px; padding: 15px; border-radius: var(--radius); border: 1px solid var(--line); background: var(--bg); transition: background var(--transition), border-color var(--transition); }
@@ -194,6 +194,20 @@
                 <div class="chart-box">
                     <h3>⚡ Power</h3>
                     <canvas id="powerChart"></canvas>
+                </div>
+                {% endif %}
+
+                {% if streams.elevation %}
+                <div class="chart-box">
+                    <h3>⛰️ Elevation</h3>
+                    <canvas id="elevationChart"></canvas>
+                </div>
+                {% endif %}
+
+                {% if streams.temperature %}
+                <div class="chart-box">
+                    <h3>🌡️ Temperature</h3>
+                    <canvas id="tempChart"></canvas>
                 </div>
                 {% endif %}
             </div>
@@ -281,15 +295,15 @@
         map.fitBounds(polyline.getBounds());
         {% endif %}
 
-        // ── Chart.js (3 Separate Charts) ──────────────────
+        // ── Chart.js (5 Separate Charts) ──────────────────
         const streams = {{ streams|tojson }};
         const timestamps = streams.timestamps || [];
         const isDarkMode = document.body.classList.contains('dark-theme');
         const textColor = isDarkMode ? '#ccc' : '#666';
         const gridColor = isDarkMode ? '#2a2a2a' : '#e2e8f0';
 
-        // Helper to create a chart
-        function createChart(canvasId, label, data, color) {
+        // Helper to create a chart (with flexible startAtZero option)
+        function createChart(canvasId, label, data, color, startAtZero = true) {
             const canvas = document.getElementById(canvasId);
             if (!canvas || !data || data.length === 0) return;
             
@@ -312,13 +326,15 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: { 
-                        legend: { 
-                            display: false // Hide legend since title is already in the card
-                        } 
+                        legend: { display: false } 
                     },
                     scales: {
                         x: { ticks: { color: textColor }, grid: { color: gridColor } },
-                        y: { beginAtZero: true, ticks: { color: textColor }, grid: { color: gridColor } }
+                        y: { 
+                            beginAtZero: startAtZero, 
+                            ticks: { color: textColor }, 
+                            grid: { color: gridColor } 
+                        }
                     }
                 }
             });
@@ -326,9 +342,12 @@
 
         // Render each chart independently
         if (timestamps.length > 0) {
-            createChart('speedChart', 'Speed (km/h)', streams.speed, 'rgb(66, 153, 225)'); // Blue
-            createChart('hrChart', 'Heart Rate (bpm)', streams.heart_rate, 'rgb(252, 129, 129)'); // Red
-            createChart('powerChart', 'Power (W)', streams.power, 'rgb(246, 173, 85)'); // Orange
+            createChart('speedChart', 'Speed (km/h)', streams.speed, 'rgb(66, 153, 225)', true); // Blue
+            createChart('hrChart', 'Heart Rate (bpm)', streams.heart_rate, 'rgb(252, 129, 129)', true); // Red
+            createChart('powerChart', 'Power (W)', streams.power, 'rgb(246, 173, 85)', true); // Orange
+            // Elevation and Temperature do NOT start at 0, so the graph scales to their actual min/max
+            createChart('elevationChart', 'Elevation (m)', streams.elevation, 'rgb(72, 187, 120)', false); // Green
+            createChart('tempChart', 'Temperature (°C)', streams.temperature, 'rgb(159, 122, 234)', false); // Purple
         }
     </script>
 </body>
