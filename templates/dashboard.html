@@ -231,6 +231,39 @@
         .toast.success { background: #48bb78; }
         .toast.error { background: #fc8181; }
 
+        /* --- SENSOR MANAGEMENT MODAL --- */
+        .sensor-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 2000;
+            display: none; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px);
+        }
+        .sensor-modal-overlay.active { display: flex; }
+        .sensor-modal-box {
+            background: var(--card); border-radius: var(--radius); padding: 20px; max-width: 450px; width: 100%;
+            border: 1px solid var(--line); box-shadow: var(--shadow); transition: background var(--transition), border-color var(--transition);
+            max-height: 80vh; display: flex; flex-direction: column;
+        }
+        .sensor-modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .sensor-modal-header h3 { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+        .sensor-modal-close { background: transparent; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text-soft); }
+        .sensor-modal-close:hover { color: var(--text); }
+        .sensor-device-list { flex: 1; overflow-y: auto; margin-bottom: 15px; display: flex; flex-direction: column; gap: 8px; min-height: 50px; }
+        .sensor-device-item {
+            display: flex; justify-content: space-between; align-items: center; padding: 10px 12px;
+            background: var(--bg); border: 1px solid var(--line); border-radius: 8px;
+            transition: background var(--transition), border-color var(--transition);
+        }
+        .sensor-device-item .dev-info { display: flex; flex-direction: column; gap: 2px; }
+        .sensor-device-item .dev-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
+        .sensor-device-item .dev-id { font-size: 0.7rem; color: var(--text-soft); font-family: monospace; }
+        .sensor-device-item .dev-status { color: #48bb78; font-size: 0.7rem; font-weight: 600; }
+        .sensor-device-item .dev-remove { background: transparent; border: none; color: #fc8181; cursor: pointer; font-size: 0.9rem; padding: 4px; }
+        .sensor-device-item .dev-remove:hover { color: #e53e3e; }
+        .sensor-modal-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+        .sensor-btn-primary { background: var(--orange); color: white; border: none; padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; flex: 1; transition: background 0.2s; }
+        .sensor-btn-primary:hover { background: var(--orange-dark); }
+        .sensor-btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--line); padding: 8px 16px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .sensor-btn-secondary:hover { background: var(--line); }
+
         @media (max-width: 480px) {
             .stats-grid { grid-template-columns: 1fr 1fr; }
             .stat-card { border-bottom: 1px solid var(--line); }
@@ -246,7 +279,7 @@
     <nav class="navbar">
         <div class="navbar-brand">🚴 Fit Reader <span>Beta</span></div>
         <div class="navbar-right">
-            <button class="sensor-btn" id="sensorBtn" onclick="scanSensors()">🔍 Search Sensors</button>
+            <button class="sensor-btn" id="sensorBtn" onclick="openSensorManager()">🔍 Search Sensors</button>
             <button class="theme-btn" id="themeToggle" onclick="toggleDarkMode()">🌙</button>
             <div class="user-info">
                 <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar" />
@@ -275,11 +308,10 @@
             <div class="record-modal-topbar">
                 <button class="modal-icon-btn" id="recMinimizeBtn" onclick="minimizeRecordModal()">▼</button>
                 
-                <!-- NEW CENTER CONTROLS: GPS, SELECT TYPE, SENSORS -->
                 <div class="modal-center-controls">
                     <span class="gps-status" id="gpsStatus">GPS idle</span>
                     <select id="recRideTypeSelect" class="modal-select"></select>
-                    <button class="modal-icon-btn" id="modalSensorBtn" onclick="scanSensors()" style="font-size: 1rem; position:relative;">📡</button>
+                    <button class="modal-icon-btn" id="modalSensorBtn" onclick="openSensorManager()" style="font-size: 1rem; position:relative;">📡</button>
                 </div>
 
                 <button class="modal-icon-btn" id="recFullscreenBtn" onclick="toggleFullscreen()">⛶</button>
@@ -304,6 +336,25 @@
                 <button class="record-btn resume" id="recResumeBtn" onclick="resumeRecording()" style="display:none;">▶️ Resume</button>
                 <button class="record-btn stop" id="recStopBtn" onclick="stopRecording()" style="display:none;">⏹️ Stop</button>
                 <button class="record-btn discard" id="recDiscardBtn" onclick="discardRecording()" style="display:none;">🗑️ Discard</button>
+            </div>
+        </div>
+
+        <!-- SENSOR MANAGEMENT POP-UP MODAL -->
+        <div class="sensor-modal-overlay" id="sensorModal">
+            <div class="sensor-modal-box">
+                <div class="sensor-modal-header">
+                    <h3>📡 Manage Sensors</h3>
+                    <button class="sensor-modal-close" onclick="closeSensorManager()">✕</button>
+                </div>
+                <div class="sensor-device-list" id="sensorDeviceList">
+                    <div style="text-align:center; color:var(--text-soft); font-size:0.9rem; padding:20px; width:100%;">
+                        No devices connected. Tap "Add Device" to scan.
+                    </div>
+                </div>
+                <div class="sensor-modal-actions">
+                    <button class="sensor-btn-primary" onclick="addNewDevice()">➕ Add Device</button>
+                    <button class="sensor-btn-secondary" onclick="closeSensorManager()">Close</button>
+                </div>
             </div>
         </div>
 
@@ -374,9 +425,12 @@
         let uploadInProgress = false;
         let recWatchId = null, recPoints = [], recStartTime = null, recElapsedBeforePause = 0, recTimerInterval = null;
         let recTotalDistanceKm = 0, recLastPoint = null, recIsPaused = false, recIsRecording = false;
-        let sensorData = { heartRate: null, cadence: null, power: null, speed: null };
-        let sensorServer = null, sensorConnected = false;
         let recMap = null, recPolyline = null, recMarker = null;
+
+        // ── Multi-Device Sensor State ──────────────────────
+        let connectedDevices = []; // Stores { id, device, server, name }
+        let sensorData = { heartRate: null, cadence: null, power: null, speed: null };
+        let deviceIdCounter = 0;
 
         // ── Activity Types ─────────────────────────────────
         async function loadRideTypes() {
@@ -384,7 +438,7 @@
                 const response = await fetch('/ride-types');
                 rideTypes = await response.json();
                 renderActivityButtons();
-                populateModalSelect(); // Populate the dropdown in the recording modal
+                populateModalSelect();
             } catch (error) {
                 console.error(error);
                 showToast('❌ Failed to load activity types', 'error');
@@ -408,7 +462,6 @@
             });
         }
 
-        // NEW: Populate the dropdown inside the Record Modal
         function populateModalSelect() {
             const select = document.getElementById('recRideTypeSelect');
             select.innerHTML = '';
@@ -433,7 +486,6 @@
                 const type = rideTypes.find(t => t.id === typeId);
                 filterBadge.textContent = `${type.icon} ${type.name}`;
             }
-            // Also update the modal dropdown if it is visible
             const modalSelect = document.getElementById('recRideTypeSelect');
             if (modalSelect) modalSelect.value = typeId;
             loadRides();
@@ -613,20 +665,26 @@
             toast._timeout = setTimeout(() => toast.classList.remove('show'), 3500);
         }
 
-        // ── Helpers for Sensor UI ──────────────────────────
+        // ── SENSOR UI HELPER UPDATES ──────────────────────
         function updateSensorBtnUI() {
             const mainBtn = document.getElementById('sensorBtn');
             const modalBtn = document.getElementById('modalSensorBtn');
             
-            if (sensorConnected) {
-                const text = '📡 Disconnect';
-                if (mainBtn) { mainBtn.textContent = text; mainBtn.classList.add('connected'); }
-                if (modalBtn) { modalBtn.textContent = '📡'; modalBtn.style.background = 'rgba(72,187,120,0.85)'; modalBtn.style.color = 'white'; }
-            } else {
-                const text = '🔍 Search Sensors';
-                if (mainBtn) { mainBtn.textContent = text; mainBtn.classList.remove('connected'); }
-                if (modalBtn) { modalBtn.textContent = '📡'; modalBtn.style.background = 'rgba(0,0,0,0.6)'; modalBtn.style.color = 'white'; }
+            const hasDevices = connectedDevices.length > 0;
+
+            const mainText = hasDevices ? `📡 ${connectedDevices.length} Connected` : '🔍 Search Sensors';
+            if (mainBtn) { 
+                mainBtn.textContent = mainText; 
+                if(hasDevices) mainBtn.classList.add('connected'); 
+                else mainBtn.classList.remove('connected');
             }
+            if (modalBtn) { 
+                modalBtn.textContent = '📡'; 
+                if(hasDevices) { modalBtn.style.background = 'rgba(72,187,120,0.85)'; modalBtn.style.color = 'white'; }
+                else { modalBtn.style.background = 'rgba(0,0,0,0.6)'; modalBtn.style.color = 'white'; }
+            }
+            // Update the list inside the popup
+            renderSensorList();
         }
 
         function updateSensorUI() {
@@ -635,52 +693,100 @@
             document.getElementById('recPower').textContent = sensorData.power !== null ? sensorData.power : '--';
         }
 
-        // ── Sensors (Web Bluetooth) ────────────────────────
-        async function scanSensors() {
-            if (!('bluetooth' in navigator)) { showToast('❌ Web Bluetooth not supported', 'error'); return; }
-            
-            // If already connected, clicking acts as "Disconnect"
-            if (sensorConnected) {
-                try { if (sensorServer) await sensorServer.disconnect(); } catch (e) {}
-                sensorConnected = false;
-                sensorServer = null;
-                sensorData = { heartRate: null, cadence: null, power: null, speed: null };
-                updateSensorBtnUI();
-                document.getElementById('recHR').textContent = '--';
-                document.getElementById('recCadence').textContent = '--';
-                document.getElementById('recPower').textContent = '--';
-                showToast('Sensors disconnected', 'info');
+        // ── SENSOR MANAGER ──────────────────────────────────
+        function openSensorManager() {
+            document.getElementById('sensorModal').classList.add('active');
+            renderSensorList();
+        }
+
+        function closeSensorManager() {
+            document.getElementById('sensorModal').classList.remove('active');
+        }
+        
+        function renderSensorList() {
+            const list = document.getElementById('sensorDeviceList');
+            if (connectedDevices.length === 0) {
+                list.innerHTML = `<div style="text-align:center; color:var(--text-soft); font-size:0.9rem; padding:20px; width:100%;">No devices connected. Tap "Add Device" to scan.</div>`;
                 return;
             }
+            list.innerHTML = '';
+            connectedDevices.forEach(dev => {
+                const div = document.createElement('div');
+                div.className = 'sensor-device-item';
+                div.innerHTML = `
+                    <div class="dev-info">
+                        <div class="dev-name">${dev.name || 'Unknown Device'}</div>
+                        <div class="dev-id">${dev.id}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="dev-status">● Connected</span>
+                        <button class="dev-remove" onclick="disconnectDevice('${dev.id}')">✕</button>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
 
-            // Otherwise, trigger the OS Bluetooth "Search" picker
+        async function addNewDevice() {
+            if (!('bluetooth' in navigator)) { 
+                showToast('❌ Web Bluetooth not supported', 'error'); 
+                return; 
+            }
             try {
                 showToast('Opening Bluetooth search...', 'info');
-                // This opens the native browser device picker
                 const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ services: ['heart_rate', 'cycling_speed_cadence', 'power_meter'] }],
-                    optionalServices: ['heart_rate', 'cycling_speed_cadence', 'power_meter']
+                    filters: [
+                        { services: ['heart_rate'] },
+                        { services: ['cycling_speed_cadence'] },
+                        { services: ['cycling_power'] }
+                    ],
+                    optionalServices: ['heart_rate', 'cycling_speed_cadence', 'cycling_power']
                 });
                 const server = await device.gatt.connect();
-                sensorServer = server;
-                sensorConnected = true;
+                const uniqueId = `${device.id}-${deviceIdCounter++}`;
+                
+                // Store device info
+                const devInfo = { 
+                    id: uniqueId, 
+                    rawDeviceId: device.id,
+                    device: device, 
+                    server: server, 
+                    name: device.name || 'Device'
+                };
+                connectedDevices.push(devInfo);
+                
+                // Start listening for data
+                await setupSensorListeners(server, uniqueId);
+                
                 updateSensorBtnUI();
-                await setupSensorListeners(server);
-                showToast('✅ Sensors connected!', 'success');
+                showToast(`✅ Connected to ${devInfo.name}`, 'success');
+                
             } catch (error) {
                 console.error(error);
-                // User might have manually cancelled the search
                 if (error.message && error.message.includes('cancel')) {
                      showToast('Search cancelled', 'info');
                 } else {
-                     showToast('❌ Connection failed', 'error');
+                     showToast(`❌ Connection failed: ${error.message}`, 'error');
                 }
-                sensorConnected = false;
-                updateSensorBtnUI();
             }
         }
 
-        async function setupSensorListeners(server) {
+        async function disconnectDevice(devId) {
+            const index = connectedDevices.findIndex(d => d.id === devId);
+            if (index === -1) return;
+            const dev = connectedDevices[index];
+            try {
+                if (dev.server) await dev.server.disconnect();
+            } catch (e) { console.warn('Disconnect error', e); }
+            connectedDevices.splice(index, 1);
+            updateSensorBtnUI();
+            showToast('Device removed', 'info');
+        }
+
+        async function setupSensorListeners(server, devId) {
+            let cscState = { lastCrankRevs: 0, lastCrankTime: 0, lastWheelRevs: 0, lastWheelTime: 0 };
+            
+            // HR
             try {
                 const hrService = await server.getPrimaryService('heart_rate');
                 const hrChar = await hrService.getCharacteristic('heart_rate_measurement');
@@ -694,23 +800,65 @@
                     sensorData.heartRate = hr;
                     updateSensorUI();
                 });
-            } catch (e) { console.warn('HR not available'); }
+            } catch (e) { console.warn(`[${devId}] HR not available`); }
+
+            // CSC (Cadence & Speed)
             try {
                 const cscService = await server.getPrimaryService('cycling_speed_cadence');
                 const cscChar = await cscService.getCharacteristic('csc_measurement');
                 await cscChar.startNotifications();
-            } catch (e) { console.warn('CSC not available'); }
+                cscChar.addEventListener('characteristicvaluechanged', event => {
+                    const value = event.target.value;
+                    const flags = value.getUint8(0);
+                    let offset = 1;
+
+                    if (flags & 0x01) {
+                        const wheelRevs = value.getUint32(offset, true);
+                        const wheelTime = value.getUint16(offset + 4, true);
+                        if (cscState.lastWheelRevs > 0) {
+                            const revDiff = wheelRevs - cscState.lastWheelRevs;
+                            const timeDiff = (wheelTime - cscState.lastWheelTime) / 1024;
+                            if (timeDiff > 0) {
+                                const wheelCirc = 2.1; 
+                                const speedKmh = (revDiff * wheelCirc / timeDiff) * 3.6;
+                                sensorData.speed = speedKmh; 
+                            }
+                        }
+                        cscState.lastWheelRevs = wheelRevs;
+                        cscState.lastWheelTime = wheelTime;
+                        offset += 6;
+                    }
+
+                    if (flags & 0x02) {
+                        const crankRevs = value.getUint16(offset, true);
+                        const crankTime = value.getUint16(offset + 2, true);
+                        if (cscState.lastCrankRevs > 0) {
+                            const revDiff = crankRevs - cscState.lastCrankRevs;
+                            const timeDiff = (crankTime - cscState.lastCrankTime) / 1024;
+                            if (timeDiff > 0) {
+                                const cadenceRpm = (revDiff / timeDiff) * 60;
+                                sensorData.cadence = Math.round(cadenceRpm);
+                                updateSensorUI();
+                            }
+                        }
+                        cscState.lastCrankRevs = crankRevs;
+                        cscState.lastCrankTime = crankTime;
+                    }
+                });
+            } catch (e) { console.warn(`[${devId}] CSC not available`); }
+
+            // Power Meter
             try {
-                const powerService = await server.getPrimaryService('power_meter');
-                const powerChar = await powerService.getCharacteristic('power_measurement');
+                const powerService = await server.getPrimaryService('cycling_power');
+                const powerChar = await powerService.getCharacteristic('cycling_power_measurement');
                 await powerChar.startNotifications();
                 powerChar.addEventListener('characteristicvaluechanged', event => {
                     const value = event.target.value;
-                    const power = value.getUint16(0, true);
-                    sensorData.power = power;
+                    const powerVal = value.getUint16(2, true);
+                    sensorData.power = powerVal;
                     updateSensorUI();
                 });
-            } catch (e) { console.warn('Power not available'); }
+            } catch (e) { console.warn(`[${devId}] Power not available`); }
         }
 
         // ── GPS Recording ──────────────────────────────────
@@ -919,7 +1067,6 @@
             statusDiv.textContent = 'Saving ride...';
             document.getElementById('recStopBtn').disabled = true;
             
-            // Get the ride type directly from the modal dropdown
             const selectedRideType = document.getElementById('recRideTypeSelect').value;
 
             try {
