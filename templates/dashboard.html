@@ -6,7 +6,6 @@
     <title>Fit Reader - Dashboard</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* ... (styles unchanged, kept for brevity) ... */
         :root {
             --bg: #f7f7f9;
             --card: #ffffff;
@@ -351,7 +350,7 @@
             font-size: 0.7rem;
         }
 
-        /* --- FIXED RECORD MODAL LAYOUT --- */
+        /* --- RECORD MODAL LAYOUT --- */
         .record-modal {
             position: fixed;
             inset: 0;
@@ -847,157 +846,6 @@
             background: #fc8181;
         }
 
-        /* --- SENSOR MANAGEMENT MODAL --- */
-        .sensor-modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 2000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            backdrop-filter: blur(4px);
-        }
-        .sensor-modal-overlay.active {
-            display: flex;
-        }
-        .sensor-modal-box {
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 20px;
-            max-width: 450px;
-            width: 100%;
-            border: 1px solid var(--line);
-            box-shadow: var(--shadow);
-            transition: background var(--transition), border-color var(--transition);
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .sensor-modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        .sensor-modal-header h3 {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--text);
-        }
-        .sensor-modal-close {
-            background: transparent;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: var(--text-soft);
-        }
-        .sensor-modal-close:hover {
-            color: var(--text);
-        }
-        .sensor-status {
-            font-size: 0.85rem;
-            color: var(--text-soft);
-            padding: 6px 0 10px 0;
-            text-align: center;
-            border-bottom: 1px solid var(--line);
-            margin-bottom: 10px;
-            min-height: 2.2em;
-            transition: color 0.2s;
-        }
-        .sensor-status.success {
-            color: #48bb78;
-        }
-        .sensor-status.error {
-            color: #fc8181;
-        }
-        .sensor-status.searching {
-            color: var(--orange);
-        }
-        .sensor-device-list {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-height: 50px;
-        }
-        .sensor-device-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 12px;
-            background: var(--bg);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            transition: background var(--transition), border-color var(--transition);
-        }
-        .sensor-device-item .dev-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .sensor-device-item .dev-name {
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--text);
-        }
-        .sensor-device-item .dev-id {
-            font-size: 0.7rem;
-            color: var(--text-soft);
-            font-family: monospace;
-        }
-        .sensor-device-item .dev-status {
-            color: #48bb78;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-        .sensor-device-item .dev-remove {
-            background: transparent;
-            border: none;
-            color: #fc8181;
-            cursor: pointer;
-            font-size: 0.9rem;
-            padding: 4px;
-        }
-        .sensor-device-item .dev-remove:hover {
-            color: #e53e3e;
-        }
-        .sensor-modal-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .sensor-btn-primary {
-            background: var(--orange);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            cursor: pointer;
-            flex: 1;
-            transition: background 0.2s;
-        }
-        .sensor-btn-primary:hover {
-            background: var(--orange-dark);
-        }
-        .sensor-btn-secondary {
-            background: var(--bg);
-            color: var(--text);
-            border: 1px solid var(--line);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .sensor-btn-secondary:hover {
-            background: var(--line);
-        }
-
         @media (max-width: 480px) {
             .stats-grid {
                 grid-template-columns: 1fr 1fr;
@@ -1028,7 +876,7 @@
     <nav class="navbar">
         <div class="navbar-brand">🚴 Fit Reader <span>Beta</span></div>
         <div class="navbar-right">
-            <button class="sensor-btn" id="sensorBtn" onclick="openSensorManager()">🔍 Search Sensors</button>
+            <button class="sensor-btn" id="sensorBtn" onclick="connectSensor()">🔍 Search Sensors</button>
             <button class="theme-btn" id="themeToggle" onclick="toggleDarkMode()">🌙</button>
             <div class="user-info">
                 <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar" />
@@ -1062,7 +910,7 @@
                 <div class="modal-center-controls">
                     <span class="gps-status" id="gpsStatus">GPS idle</span>
                     <select id="recRideTypeSelect" class="modal-select"></select>
-                    <button class="modal-icon-btn" id="modalSensorBtn" onclick="openSensorManager()" style="font-size:1rem;position:relative;">📡</button>
+                    <button class="modal-icon-btn" id="modalSensorBtn" onclick="connectSensor()" style="font-size:1rem;position:relative;">📡</button>
                 </div>
 
                 <button class="modal-icon-btn" id="recFullscreenBtn" onclick="toggleFullscreen()">⛶</button>
@@ -1112,26 +960,6 @@
                 <button class="record-btn resume" id="recResumeBtn" onclick="resumeRecording()" style="display:none;">▶️ Resume</button>
                 <button class="record-btn stop" id="recStopBtn" onclick="stopRecording()" style="display:none;">⏹️ Stop</button>
                 <button class="record-btn discard" id="recDiscardBtn" onclick="discardRecording()" style="display:none;">🗑️ Discard</button>
-            </div>
-        </div>
-
-        <!-- SENSOR MANAGEMENT POP-UP MODAL -->
-        <div class="sensor-modal-overlay" id="sensorModal">
-            <div class="sensor-modal-box">
-                <div class="sensor-modal-header">
-                    <h3>📡 Manage Sensors</h3>
-                    <button class="sensor-modal-close" onclick="closeSensorManager()">✕</button>
-                </div>
-                <div class="sensor-status" id="sensorStatus">🔍 Ready to scan</div>
-                <div class="sensor-device-list" id="sensorDeviceList">
-                    <div style="text-align:center; color:var(--text-soft); font-size:0.9rem; padding:20px; width:100%;">
-                        No devices connected. Scanning will start automatically.
-                    </div>
-                </div>
-                <div class="sensor-modal-actions">
-                    <button class="sensor-btn-primary" id="scanAgainBtn" onclick="addNewDevice()">🔄 Scan Again</button>
-                    <button class="sensor-btn-secondary" onclick="closeSensorManager()">Close</button>
-                </div>
             </div>
         </div>
 
@@ -1491,7 +1319,6 @@
                     modalBtn.style.color = 'white'; } else { modalBtn.style.background = 'rgba(0,0,0,0.6)';
                     modalBtn.style.color = 'white'; }
             }
-            renderSensorList();
         }
 
         function updateSensorUI() {
@@ -1500,73 +1327,17 @@
             document.getElementById('recPower').textContent = sensorData.power !== null ? sensorData.power : '--';
         }
 
-        // ── SENSOR MANAGER ──────────────────────────────────
-        function setSensorStatus(message, type = '') {
-            const el = document.getElementById('sensorStatus');
-            if (!el) return;
-            el.textContent = message;
-            el.className = 'sensor-status' + (type ? ' ' + type : '');
-        }
-
-        function openSensorManager() {
-            const modal = document.getElementById('sensorModal');
-            modal.classList.add('active');
-            renderSensorList();
-            // Automatically trigger a scan if no devices are connected
-            if (!isScanning) {
-                setSensorStatus('🔍 Searching for devices...', 'searching');
-                setTimeout(() => {
-                    addNewDevice();
-                }, 300);
-            } else {
-                setSensorStatus('⏳ Scan already in progress...', 'searching');
-            }
-        }
-
-        function closeSensorManager() {
-            document.getElementById('sensorModal').classList.remove('active');
-            setSensorStatus('🔍 Ready to scan', '');
-        }
-
-        function renderSensorList() {
-            const list = document.getElementById('sensorDeviceList');
-            if (connectedDevices.length === 0) {
-                list.innerHTML =
-                    `<div style="text-align:center; color:var(--text-soft); font-size:0.9rem; padding:20px; width:100%;">No devices connected.</div>`;
-                return;
-            }
-            list.innerHTML = '';
-            connectedDevices.forEach(dev => {
-                const div = document.createElement('div');
-                div.className = 'sensor-device-item';
-                div.innerHTML = `
-                        <div class="dev-info">
-                            <div class="dev-name">${dev.name || 'Unknown Device'}</div>
-                            <div class="dev-id">${dev.id}</div>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <span class="dev-status">● Connected</span>
-                            <button class="dev-remove" onclick="disconnectDevice('${dev.id}')">✕</button>
-                        </div>
-                    `;
-                list.appendChild(div);
-            });
-            // Clear status when devices are present
-            setSensorStatus('✅ ' + connectedDevices.length + ' device(s) connected', 'success');
-        }
-
-        async function addNewDevice() {
+        // ── SENSOR CONNECTION (direct, no modal) ───────────
+        async function connectSensor() {
             if (isScanning) {
-                setSensorStatus('⏳ Scan already in progress...', 'searching');
+                showToast('⏳ Scan already in progress...', 'info');
                 return;
             }
             if (!('bluetooth' in navigator)) {
-                setSensorStatus('❌ Web Bluetooth is not supported.', 'error');
                 showToast('❌ Web Bluetooth is not supported.', 'error');
                 return;
             }
             isScanning = true;
-            setSensorStatus('🔍 Searching for devices...', 'searching');
             try {
                 const device = await navigator.bluetooth.requestDevice({
                     filters: [
@@ -1576,7 +1347,7 @@
                     ],
                     optionalServices: ['heart_rate', 'cycling_speed_cadence', 'cycling_power']
                 });
-                setSensorStatus('🔗 Connecting to ' + (device.name || 'Device') + '...', 'searching');
+                showToast(`Connecting to ${device.name || 'Device'}...`, 'info');
                 const server = await device.gatt.connect();
                 const uniqueId = `${device.id}-${deviceIdCounter++}`;
 
@@ -1589,7 +1360,6 @@
                 };
                 connectedDevices.push(devInfo);
                 updateSensorBtnUI();
-                setSensorStatus('✅ Connected to ' + devInfo.name, 'success');
                 showToast(`✅ Connected to ${devInfo.name}`, 'success');
                 await setupSensorListeners(server, uniqueId);
 
@@ -1599,12 +1369,11 @@
                     if (idx > -1) {
                         connectedDevices.splice(idx, 1);
                         updateSensorBtnUI();
-                        setSensorStatus('⚠️ ' + devInfo.name + ' disconnected', 'error');
                         showToast(`⚠️ ${devInfo.name} disconnected`, 'error');
                     }
                 });
             } catch (error) {
-                console.error("Add Device Error:", error);
+                console.error("Connection error:", error);
                 let errorMsg = 'Connection failed';
                 if (error.name === 'NotFoundError' || error.name === 'AbortError' || error.message?.includes('cancel')) {
                     errorMsg = 'Scan cancelled by user';
@@ -1617,33 +1386,10 @@
                 } else if (error.message?.includes('GATT')) {
                     errorMsg = 'GATT connection failed. Device may be incompatible.';
                 }
-                setSensorStatus('❌ ' + errorMsg, 'error');
                 showToast(`❌ ${errorMsg}`, 'error');
-                // If no devices are connected, show the "No devices" message
-                if (connectedDevices.length === 0) {
-                    renderSensorList();
-                }
             } finally {
                 isScanning = false;
             }
-        }
-
-        async function disconnectDevice(devId) {
-            const index = connectedDevices.findIndex(d => d.id === devId);
-            if (index === -1) return;
-            const dev = connectedDevices[index];
-            try {
-                if (dev.server) await dev.server.disconnect();
-            } catch (e) { /* ignore */ }
-            connectedDevices.splice(index, 1);
-            updateSensorBtnUI();
-            renderSensorList();
-            if (connectedDevices.length === 0) {
-                setSensorStatus('No devices connected.', '');
-            } else {
-                setSensorStatus('✅ ' + connectedDevices.length + ' device(s) connected', 'success');
-            }
-            showToast('Device removed', 'info');
         }
 
         async function setupSensorListeners(server, devId) {
