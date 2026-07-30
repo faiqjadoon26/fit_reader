@@ -357,9 +357,7 @@
             z-index: 1000;
             background: #121212;
             display: none;
-            /* hidden by default, shown via JS */
             flex-direction: column;
-            /* ensures children stack properly */
         }
         #recordMap {
             position: absolute;
@@ -368,7 +366,6 @@
             height: 100%;
             z-index: 1;
             background: #1a1a2e;
-            /* fallback while loading */;
         }
         .record-modal-topbar {
             position: absolute;
@@ -849,138 +846,7 @@
             background: #fc8181;
         }
 
-        /* --- SENSOR MANAGEMENT MODAL --- */
-        .sensor-modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 2000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            backdrop-filter: blur(4px);
-        }
-        .sensor-modal-overlay.active {
-            display: flex;
-        }
-        .sensor-modal-box {
-            background: var(--card);
-            border-radius: var(--radius);
-            padding: 20px;
-            max-width: 450px;
-            width: 100%;
-            border: 1px solid var(--line);
-            box-shadow: var(--shadow);
-            transition: background var(--transition), border-color var(--transition);
-            max-height: 80vh;
-            display: flex;
-            flex-direction: column;
-        }
-        .sensor-modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-        .sensor-modal-header h3 {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--text);
-        }
-        .sensor-modal-close {
-            background: transparent;
-            border: none;
-            font-size: 1.2rem;
-            cursor: pointer;
-            color: var(--text-soft);
-        }
-        .sensor-modal-close:hover {
-            color: var(--text);
-        }
-        .sensor-device-list {
-            flex: 1;
-            overflow-y: auto;
-            margin-bottom: 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            min-height: 50px;
-        }
-        .sensor-device-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 12px;
-            background: var(--bg);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            transition: background var(--transition), border-color var(--transition);
-        }
-        .sensor-device-item .dev-info {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .sensor-device-item .dev-name {
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: var(--text);
-        }
-        .sensor-device-item .dev-id {
-            font-size: 0.7rem;
-            color: var(--text-soft);
-            font-family: monospace;
-        }
-        .sensor-device-item .dev-status {
-            color: #48bb78;
-            font-size: 0.7rem;
-            font-weight: 600;
-        }
-        .sensor-device-item .dev-remove {
-            background: transparent;
-            border: none;
-            color: #fc8181;
-            cursor: pointer;
-            font-size: 0.9rem;
-            padding: 4px;
-        }
-        .sensor-device-item .dev-remove:hover {
-            color: #e53e3e;
-        }
-        .sensor-modal-actions {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .sensor-btn-primary {
-            background: var(--orange);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            cursor: pointer;
-            flex: 1;
-            transition: background 0.2s;
-        }
-        .sensor-btn-primary:hover {
-            background: var(--orange-dark);
-        }
-        .sensor-btn-secondary {
-            background: var(--bg);
-            color: var(--text);
-            border: 1px solid var(--line);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .sensor-btn-secondary:hover {
-            background: var(--line);
-        }
-
+        /* SENSOR MANAGEMENT MODAL REMOVED – using native browser popup only */
         @media (max-width: 480px) {
             .stats-grid {
                 grid-template-columns: 1fr 1fr;
@@ -1011,7 +877,7 @@
     <nav class="navbar">
         <div class="navbar-brand">🚴 Fit Reader <span>Beta</span></div>
         <div class="navbar-right">
-            <button class="sensor-btn" id="sensorBtn" onclick="openSensorManager()">🔍 Search Sensors</button>
+            <button class="sensor-btn" id="sensorBtn" onclick="addNewDevice()">🔍 Search Sensors</button>
             <button class="theme-btn" id="themeToggle" onclick="toggleDarkMode()">🌙</button>
             <div class="user-info">
                 <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar" />
@@ -1045,7 +911,7 @@
                 <div class="modal-center-controls">
                     <span class="gps-status" id="gpsStatus">GPS idle</span>
                     <select id="recRideTypeSelect" class="modal-select"></select>
-                    <button class="modal-icon-btn" id="modalSensorBtn" onclick="openSensorManager()" style="font-size:1rem;position:relative;">📡</button>
+                    <button class="modal-icon-btn" id="modalSensorBtn" onclick="addNewDevice()" style="font-size:1rem;position:relative;">📡</button>
                 </div>
 
                 <button class="modal-icon-btn" id="recFullscreenBtn" onclick="toggleFullscreen()">⛶</button>
@@ -1098,24 +964,7 @@
             </div>
         </div>
 
-        <!-- SENSOR MANAGEMENT POP-UP MODAL -->
-        <div class="sensor-modal-overlay" id="sensorModal">
-            <div class="sensor-modal-box">
-                <div class="sensor-modal-header">
-                    <h3>📡 Manage Sensors</h3>
-                    <button class="sensor-modal-close" onclick="closeSensorManager()">✕</button>
-                </div>
-                <div class="sensor-device-list" id="sensorDeviceList">
-                    <div style="text-align:center; color:var(--text-soft); font-size:0.9rem; padding:20px; width:100%;">
-                        No devices connected. Tap "Add Device" to scan.
-                    </div>
-                </div>
-                <div class="sensor-modal-actions">
-                    <button class="sensor-btn-primary" onclick="addNewDevice()">➕ Add Device</button>
-                    <button class="sensor-btn-secondary" onclick="closeSensorManager()">Close</button>
-                </div>
-            </div>
-        </div>
+        <!-- SENSOR MANAGEMENT MODAL REMOVED – using native browser popup only -->
 
         <div class="stats-grid" id="statsGrid">
             <div class="stat-card">
@@ -1472,7 +1321,6 @@
                     modalBtn.style.color = 'white'; } else { modalBtn.style.background = 'rgba(0,0,0,0.6)';
                     modalBtn.style.color = 'white'; }
             }
-            renderSensorList();
         }
 
         function updateSensorUI() {
@@ -1481,40 +1329,8 @@
             document.getElementById('recPower').textContent = sensorData.power !== null ? sensorData.power : '--';
         }
 
-        // ── SENSOR MANAGER ──────────────────────────────────
-        function openSensorManager() {
-            document.getElementById('sensorModal').classList.add('active');
-            renderSensorList();
-        }
-
-        function closeSensorManager() {
-            document.getElementById('sensorModal').classList.remove('active');
-        }
-
-        function renderSensorList() {
-            const list = document.getElementById('sensorDeviceList');
-            if (connectedDevices.length === 0) {
-                list.innerHTML =
-                    `<div style="text-align:center; color:var(--text-soft); font-size:0.9rem; padding:20px; width:100%;">No devices connected. Tap "Add Device" to scan.</div>`;
-                return;
-            }
-            list.innerHTML = '';
-            connectedDevices.forEach(dev => {
-                const div = document.createElement('div');
-                div.className = 'sensor-device-item';
-                div.innerHTML = `
-                        <div class="dev-info">
-                            <div class="dev-name">${dev.name || 'Unknown Device'}</div>
-                            <div class="dev-id">${dev.id}</div>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:8px;">
-                            <span class="dev-status">● Connected</span>
-                            <button class="dev-remove" onclick="disconnectDevice('${dev.id}')">✕</button>
-                        </div>
-                    `;
-                list.appendChild(div);
-            });
-        }
+        // ── SENSOR MANAGEMENT (No modal – direct native picker) ──
+        // We keep the add/remove functions, but no UI modal.
 
         async function addNewDevice() {
             if (!('bluetooth' in navigator)) {
@@ -1659,7 +1475,7 @@
             } catch (e) { console.warn(`[${devId}] Power service not found on this device`); }
         }
 
-        // ── RECORDING LOGIC (FIXED) ──────────────────────
+        // ── RECORDING LOGIC ──────────────────────────────
         function haversineKm(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -1671,7 +1487,6 @@
         }
 
         function initRecordMap(lat, lng) {
-            // Clean up any previous map instance
             if (recMap) {
                 recMap.remove();
                 recMap = null;
@@ -1685,18 +1500,14 @@
                 return;
             }
 
-            // Ensure container has dimensions
             container.style.width = '100%';
             container.style.height = '100%';
             container.style.minHeight = '300px';
             container.style.display = 'block';
 
-            // Use requestAnimationFrame to ensure layout is complete
             requestAnimationFrame(() => {
-                // Double-check container dimensions
                 const rect = container.getBoundingClientRect();
                 if (rect.width === 0 || rect.height === 0) {
-                    // Container not ready yet — try again after a short delay
                     setTimeout(() => {
                         initRecordMap(lat, lng);
                     }, 100);
@@ -1738,21 +1549,17 @@
                         pulsating: true
                     }).addTo(recMap);
 
-                    // Force a size recalculation after the map is rendered
                     setTimeout(() => {
                         if (recMap) {
                             recMap.invalidateSize(true);
-                            // Re-center to ensure we're at the right location
                             recMap.setView([lat, lng], 16);
                         }
                     }, 100);
 
-                    // Also invalidate on window resize
                     const resizeHandler = () => {
                         if (recMap) recMap.invalidateSize();
                     };
                     window.addEventListener('resize', resizeHandler);
-                    // Store the handler so we can remove it later if needed
                     recMap._resizeHandler = resizeHandler;
 
                     mapInitialized = true;
@@ -1767,7 +1574,6 @@
 
         function updateRecordMap(lat, lng) {
             if (!recMap) {
-                // Try to re-initialize if map was lost
                 initRecordMap(lat, lng);
                 return;
             }
@@ -1779,7 +1585,6 @@
                     recMarker.setLatLng([lat, lng]);
                 }
                 recMap.panTo([lat, lng], { animate: true, duration: 0.5 });
-                // Don't invalidate on every update – only when needed
             } catch (err) {
                 console.warn('Map update error:', err);
             }
@@ -1787,7 +1592,6 @@
 
         function teardownRecordMap() {
             if (recMap) {
-                // Clean up resize handler
                 if (recMap._resizeHandler) {
                     window.removeEventListener('resize', recMap._resizeHandler);
                     recMap._resizeHandler = null;
@@ -1861,7 +1665,6 @@
             });
             recLastPoint = { lat, lng, rawTimestamp: position.timestamp };
 
-            // Update map (re-initialize if needed)
             if (!recMap || !mapInitialized) {
                 initRecordMap(lat, lng);
             } else {
@@ -1884,9 +1687,7 @@
             showToast(`❌ ${msg}`, 'error');
         }
 
-        // Opens the map with a visible initial location, but does NOT start recording yet
         function openRecordingModal() {
-            // Reset all data
             recPoints = [];
             recTotalDistanceKm = 0;
             recLastPoint = null;
@@ -1895,10 +1696,8 @@
             recIsRecording = false;
             recStartTime = null;
 
-            // Ensure no stale map exists
             teardownRecordMap();
 
-            // Show the modal
             document.getElementById('recordSection').style.display = 'none';
             document.getElementById('recordMinimizedBar').style.display = 'none';
             const modal = document.getElementById('recordModal');
@@ -1907,14 +1706,12 @@
             setGpsStatus('Loading map...', '');
             document.getElementById('recordMessage').textContent = 'Press "Start" when ready.';
 
-            // Show the "Start" button and hide the rest
             document.getElementById('recStartRecordingBtn').style.display = 'inline-block';
             document.getElementById('recPauseBtn').style.display = 'none';
             document.getElementById('recResumeBtn').style.display = 'none';
             document.getElementById('recStopBtn').style.display = 'none';
             document.getElementById('recDiscardBtn').style.display = 'none';
 
-            // Ensure the map container is ready and has dimensions
             const container = document.getElementById('recordMap');
             if (container) {
                 container.style.width = '100%';
@@ -1923,9 +1720,7 @@
                 container.style.display = 'block';
             }
 
-            // Use a small delay to ensure the modal layout is fully rendered
             setTimeout(() => {
-                // Try to get the user's location for the map center
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
                         initRecordMap(pos.coords.latitude, pos.coords.longitude);
@@ -1933,7 +1728,6 @@
                     },
                     (err) => {
                         console.warn('Initial map location fallback:', err);
-                        // Default to a reasonable location (NYC) if GPS is blocked
                         initRecordMap(40.7128, -74.0060);
                         setGpsStatus('Location unavailable', 'error');
                     }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
@@ -1943,7 +1737,6 @@
             updateSensorUI();
         }
 
-        // Actually begins the GPS Timer and Tracking
         function beginRecording() {
             if (!('geolocation' in navigator)) {
                 showToast('❌ Geolocation not supported', 'error');
@@ -1953,7 +1746,6 @@
             recIsRecording = true;
             recStartTime = Date.now();
 
-            // Hide "Start", show Pause/Stop/Discard
             document.getElementById('recStartRecordingBtn').style.display = 'none';
             document.getElementById('recPauseBtn').style.display = 'inline-block';
             document.getElementById('recStopBtn').style.display = 'inline-block';
@@ -1962,9 +1754,7 @@
 
             setGpsStatus('Acquiring GPS...', 'active');
 
-            // Ensure map is ready before starting GPS watch
             if (!recMap || !mapInitialized) {
-                // Try to get location and init map
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
                         initRecordMap(pos.coords.latitude, pos.coords.longitude);
@@ -2003,7 +1793,6 @@
             document.getElementById('recordMinimizedBar').style.display = 'none';
             const modal = document.getElementById('recordModal');
             modal.style.display = 'flex';
-            // Re-invalidate map size after reopening
             setTimeout(() => {
                 if (recMap) recMap.invalidateSize(true);
             }, 200);
@@ -2027,7 +1816,6 @@
             recIsPaused = false;
             recStartTime = Date.now();
             recLastPoint = null;
-            // Ensure map is ready before resuming GPS
             if (!recMap || !mapInitialized) {
                 navigator.geolocation.getCurrentPosition(
                     (pos) => {
