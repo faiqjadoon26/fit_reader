@@ -13,18 +13,14 @@ from datetime import datetime
 import math
 from io import BytesIO
 
-# ─── PIL is now imported INSIDE the /share route ─────────────
-# We do NOT import Image, ImageDraw, ImageFont at the top.
-
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'cycling_dashboard_secret_2024_xk9_fallback')
 
-# ─── CRITICAL: Increase upload file size limit to 100 MB ────
-app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100 MB
+# ─── IMPORTANT: Increase upload limit to 100 MB ────────────
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 # ── Database Connection ───────────────────────────────────────
 def get_db_connection():
-    """Get PostgreSQL connection with SSL for Render"""
     database_url = os.environ.get('DATABASE_URL')
     if not database_url:
         raise ValueError("DATABASE_URL environment variable not set!")
@@ -35,8 +31,6 @@ def init_db():
     """Create tables if they don't exist"""
     conn = get_db_connection()
     cur = conn.cursor()
-
-    # Users table
     cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
             username VARCHAR(100) PRIMARY KEY,
@@ -47,8 +41,6 @@ def init_db():
             profile JSONB DEFAULT '{}'::jsonb
         )
     """)
-
-    # Rides table with ride_type
     cur.execute("""
         CREATE TABLE IF NOT EXISTS rides (
             id SERIAL PRIMARY KEY,
@@ -65,8 +57,6 @@ def init_db():
             UNIQUE(username, file_hash)
         )
     """)
-
-    # Add column if missing (for existing DBs)
     cur.execute("""
         SELECT column_name 
         FROM information_schema.columns 
@@ -74,24 +64,28 @@ def init_db():
     """)
     if not cur.fetchone():
         cur.execute("ALTER TABLE rides ADD COLUMN ride_type VARCHAR(50) DEFAULT 'cycling'")
-
-    # Indexes
     cur.execute("""
         CREATE INDEX IF NOT EXISTS idx_rides_username ON rides(username);
         CREATE INDEX IF NOT EXISTS idx_rides_date ON rides(ride_date);
         CREATE INDEX IF NOT EXISTS idx_rides_type ON rides(ride_type);
     """)
-
     conn.commit()
     cur.close()
     conn.close()
     print("[DB] Database initialized successfully!")
 
-# Run once on import so tables exist under gunicorn too
-try:
-    init_db()
-except Exception as e:
-    print(f"[DB] Warning: init_db() failed on startup: {e}")
+# ─── Lazy DB init ─────────────────────────────────────────────
+_db_initialized = False
+
+@app.before_request
+def initialize_db():
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            init_db()
+            _db_initialized = True
+        except Exception as e:
+            print(f"[DB] Init failed: {e}")
 
 # ── GitHub OAuth ──────────────────────────────────────────────
 GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID')
@@ -366,7 +360,6 @@ def parse_ride(file_path, profile):
     df = pd.DataFrame(data_points)
     df.dropna(subset=['timestamp'], inplace=True)
 
-    # Elevation
     if 'enhanced_altitude' in df.columns:
         df['elevation'] = pd.to_numeric(df['enhanced_altitude'], errors='coerce').fillna(0)
     elif 'altitude' in df.columns:
@@ -374,19 +367,16 @@ def parse_ride(file_path, profile):
     else:
         df['elevation'] = 0.0
 
-    # Speed
     if 'speed' in df.columns:
         df['speed_kmh'] = pd.to_numeric(df['speed'], errors='coerce').fillna(0) * 3.6
     else:
         df['speed_kmh'] = 0.0
 
-    # Cadence
     if 'cadence' in df.columns:
         df['cadence'] = pd.to_numeric(df['cadence'], errors='coerce').fillna(0)
     else:
         df['cadence'] = 0.0
 
-    # Temperature
     if 'temperature' in df.columns:
         df['temperature'] = pd.to_numeric(df['temperature'], errors='coerce').ffill().fillna(0)
         has_temperature = bool((df['temperature'] != 0).any())
@@ -394,7 +384,6 @@ def parse_ride(file_path, profile):
         df['temperature'] = 0.0
         has_temperature = False
 
-    # Heart rate
     if 'heart_rate' in df.columns:
         df['heart_rate'] = pd.to_numeric(df['heart_rate'], errors='coerce').fillna(0)
         has_hr = bool((df['heart_rate'] > 0).any())
@@ -402,7 +391,6 @@ def parse_ride(file_path, profile):
         df['heart_rate'] = 0.0
         has_hr = False
 
-    # GPS
     if 'position_lat' in df.columns and 'position_long' in df.columns:
         df['lat'] = pd.to_numeric(df['position_lat'], errors='coerce') * (180 / 2 ** 31)
         df['lng'] = pd.to_numeric(df['position_long'], errors='coerce') * (180 / 2 ** 31)
@@ -412,11 +400,9 @@ def parse_ride(file_path, profile):
         df['lng'] = float('nan')
         route_df = pd.DataFrame(columns=['lat', 'lng'])
 
-    # Elevation gain
     df['elevation_diff'] = df['elevation'].diff()
     total_climbing = float(df['elevation_diff'][df['elevation_diff'] > 0].sum())
 
-    # Distance
     if 'distance' in df.columns:
         dist_series = pd.to_numeric(df['distance'], errors='coerce')
         if dist_series.max() > 0:
@@ -426,7 +412,6 @@ def parse_ride(file_path, profile):
     else:
         total_distance = round(float(df['speed_kmh'].sum()) / 3600, 2)
 
-    # Power
     if 'power' in df.columns:
         pwr_series = pd.to_numeric(df['power'], errors='coerce').fillna(0)
         if pwr_series.sum() > 0:
@@ -543,7 +528,6 @@ def auth_logout():
 def dashboard():
     return render_template('dashboard.html', user=session['user'])
 
-# ── Profile ───────────────────────────────────────────────────
 @app.route('/profile', methods=['GET'])
 @login_required
 def get_profile():
@@ -558,7 +542,6 @@ def update_profile():
     save_user_profile(session['user']['username'], profile)
     return jsonify({"status": "saved"})
 
-# ── Ride Types ────────────────────────────────────────────────
 @app.route('/ride-types')
 def get_ride_types():
     return jsonify(RIDE_TYPES_INFO)
@@ -603,7 +586,6 @@ def update_ride_type(ride_id):
 def stats_by_type():
     return jsonify(get_stats_by_type(session['user']['username']))
 
-# ── Rides CRUD ────────────────────────────────────────────────
 @app.route('/check-duplicate', methods=['POST'])
 @login_required
 def check_duplicate():
@@ -653,7 +635,6 @@ def upload_file():
         stats["id"] = ride_id
         return jsonify(stats)
     except Exception as e:
-        # Log the full error to Render logs
         import traceback
         err = traceback.format_exc()
         print(err)
@@ -746,7 +727,6 @@ def save_live_ride():
         if ride_type not in VALID_RIDE_TYPES:
             ride_type = 'cycling'
         profile = get_user_profile(session['user']['username'])
-        weight = float(profile.get('weight', 75))
         timestamps = [p['timestamp'] for p in points]
         speeds_kmh = [float(p.get('speed_kmh', 0)) for p in points]
         hr_list = [int(p.get('heart_rate', 0)) for p in points]
@@ -813,7 +793,6 @@ def save_live_ride():
         print(err)
         return jsonify({"error": str(e), "detail": err}), 500
 
-# ── Download ──────────────────────────────────────────────────
 @app.route('/download/<int:ride_id>')
 @login_required
 def download_ride(ride_id):
@@ -829,13 +808,11 @@ def download_ride(ride_id):
         return jsonify({"error": "File not found on server"}), 404
     return send_file(file_path, as_attachment=True, download_name=filename)
 
-# ── Share (Instagram Story transparent PNG) ──────────────────
-# ─── PIL is imported here (lazy) to avoid segfaults ──────────
+# ─── Share route with lazy PIL import ────────────────────────
 @app.route('/share/<int:ride_id>')
 @login_required
 def share_ride(ride_id):
-    # Import PIL only when this endpoint is called
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw, ImageFont  # <-- lazy import
 
     rides = get_user_rides(session['user']['username'])
     ride = next((r for r in rides if r.get('id') == ride_id), None)
@@ -847,12 +824,10 @@ def share_ride(ride_id):
     ride_type_info = next((t for t in RIDE_TYPES_INFO if t['id'] == ride_type), RIDE_TYPES_INFO[0])
     route = ride.get('route', [])
 
-    # Image size: Instagram story 1080x1920
     width, height = 1080, 1920
     img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    # Font loading
     try:
         font_paths = [
             "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
@@ -876,11 +851,9 @@ def share_ride(ride_id):
         font_medium = ImageFont.load_default()
         font_small = ImageFont.load_default()
 
-    # Activity icon + name
     draw.text((60, 60), ride_type_info['icon'], font=font_large, fill=(255, 255, 255, 255))
     draw.text((180, 80), ride_type_info['name'], font=font_large, fill=(255, 255, 255, 255))
 
-    # Stats grid
     stats = [
         ("Distance", f"{summary.get('distance_km', 0):.1f} km"),
         ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h"),
@@ -901,7 +874,6 @@ def share_ride(ride_id):
         draw.text((x, y), value, font=font_medium, fill=(255, 255, 255, 255))
         draw.text((x, y + 60), label, font=font_small, fill=(200, 200, 200, 255))
 
-    # Mini route map
     if len(route) > 1:
         map_width, map_height = 400, 200
         map_x = width - map_width - 60
@@ -925,7 +897,6 @@ def share_ride(ride_id):
         draw.ellipse([points[0][0]-8, points[0][1]-8, points[0][0]+8, points[0][1]+8], fill=(46, 204, 113, 255))
         draw.ellipse([points[-1][0]-8, points[-1][1]-8, points[-1][0]+8, points[-1][1]+8], fill=(231, 76, 60, 255))
 
-    # Brand
     draw.text((60, height - 80), "🚴 Fit Reader", font=font_small, fill=(180, 180, 180, 200))
 
     buffer = BytesIO()
@@ -933,7 +904,6 @@ def share_ride(ride_id):
     buffer.seek(0)
     return send_file(buffer, mimetype='image/png', as_attachment=True, download_name=f"ride_story_{ride_id}.png")
 
-# ── Ride Summary Page ─────────────────────────────────────────
 @app.route('/ride-summary/<int:ride_id>')
 @login_required
 def ride_summary(ride_id):
@@ -951,7 +921,6 @@ def ride_summary(ride_id):
                            zone_distribution=ride.get('zone_distribution', []),
                            user=session['user'])
 
-# ── Health / Test ─────────────────────────────────────────────
 @app.route('/test-db')
 def test_db():
     try:
@@ -990,7 +959,5 @@ def health():
     except:
         return jsonify({"status": "unhealthy"}), 500
 
-# ── Main ──────────────────────────────────────────────────────
 if __name__ == '__main__':
-    init_db()
     app.run(debug=True)
