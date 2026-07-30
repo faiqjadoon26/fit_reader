@@ -332,7 +332,7 @@
             </div>
             <div id="recordMessage" class="record-modal-message"></div>
             <div class="record-modal-controls">
-                <!-- NEW: Standalone Start Button -->
+                <!-- Standalone Start Button -->
                 <button class="record-btn start" id="recStartRecordingBtn" onclick="beginRecording()" style="display:none;">▶️ Start</button>
                 <button class="record-btn pause" id="recPauseBtn" onclick="pauseRecording()" style="display:none;">⏸️ Pause</button>
                 <button class="record-btn resume" id="recResumeBtn" onclick="resumeRecording()" style="display:none;">▶️ Resume</button>
@@ -981,7 +981,7 @@
             showToast(`❌ ${msg}`, 'error');
         }
 
-        // NEW: Opens the map but DOES NOT start recording yet
+        // Opens the map WITH a visible initial location, but DOES NOT start recording yet
         function openRecordingModal() {
             // Reset all data
             recPoints = [];
@@ -991,13 +991,15 @@
             recIsPaused = false;
             recIsRecording = false;
             recStartTime = null;
-            teardownRecordMap();
+            
+            // Ensure no stale map exists
+            if (recMap) { recMap.remove(); recMap = null; recPolyline = null; recMarker = null; }
             
             document.getElementById('recordSection').style.display = 'none';
             document.getElementById('recordMinimizedBar').style.display = 'none';
             document.getElementById('recordModal').style.display = 'flex';
             
-            setGpsStatus('Ready to record', ''); // Show "Ready"
+            setGpsStatus('Loading map...', '');
             document.getElementById('recordMessage').textContent = 'Press "Start" when ready.';
 
             // Show the "Start" button and hide the rest
@@ -1006,11 +1008,26 @@
             document.getElementById('recResumeBtn').style.display = 'none';
             document.getElementById('recStopBtn').style.display = 'none';
             document.getElementById('recDiscardBtn').style.display = 'none';
+
+            // Initialize the map immediately using current location
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    initRecordMap(pos.coords.latitude, pos.coords.longitude);
+                    setGpsStatus('Ready', '');
+                },
+                (err) => {
+                    console.warn('Initial map location fallback:', err);
+                    // Default to New York City if GPS is blocked/denied
+                    initRecordMap(40.7128, -74.0060); 
+                    setGpsStatus('Location unavailable', 'error');
+                },
+                { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+            );
             
             updateSensorUI();
         }
 
-        // NEW: Actually begins the GPS and Timer
+        // Actually begins the GPS Timer and Tracking
         function beginRecording() {
             if (!('geolocation' in navigator)) { showToast('❌ Geolocation not supported', 'error'); return; }
             
@@ -1089,6 +1106,7 @@
             document.getElementById('recordModal').style.display = 'none';
             document.getElementById('recordMinimizedBar').style.display = 'none';
             document.getElementById('recordSection').style.display = 'block';
+            teardownRecordMap();
         }
 
         async function stopRecording() {
@@ -1126,7 +1144,6 @@
             stopGpsWatch();
             recIsRecording = false;
             recPoints = [];
-            teardownRecordMap();
             document.getElementById('recordMessage').textContent = 'Discarded';
             resetRecordUI();
         }
@@ -1141,4 +1158,3 @@
     </script>
 </body>
 </html>
-```
