@@ -672,6 +672,7 @@
             <ul class="nav-menu">
                 <li><a href="#" class="active"><span class="icon">📊</span> <span>Cycling Dashboard</span></a></li>
                 <li><a href="#" onclick="document.getElementById('drop-zone').scrollIntoView({behavior:'smooth'})"><span class="icon">📤</span> <span>Upload Ride</span></a></li>
+                <li><a href="#" onclick="openRecordModal()"><span class="icon">🔴</span> <span>Record</span></a></li>
                 <li><a href="#" onclick="document.getElementById('rides-section').scrollIntoView({behavior:'smooth'})"><span class="icon">📂</span> <span>My Rides</span></a></li>
                 <li><a href="#" onclick="document.getElementById('club-section').scrollIntoView({behavior:'smooth'})"><span class="icon">🏆</span> <span>Club</span></a></li>
                 <li><a href="/profile"><span class="icon">👤</span> <span>Profile</span></a></li>
@@ -732,9 +733,7 @@
             <!-- Results -->
             <div id="results" class="hidden">
                 <!-- Stats Grid -->
-                <div class="stats-grid" id="stats-grid">
-                    <!-- Dynamically populated -->
-                </div>
+                <div class="stats-grid" id="stats-grid"></div>
                 
                 <!-- Map -->
                 <div class="map-container">
@@ -1209,7 +1208,7 @@
             updateStats(summary);
             renderMap(route);
             renderCharts(streams);
-            updateStoryCard(summary, route);
+            updateStoryCard(summary);
             
             document.getElementById('download-story-btn').style.display = 'inline-block';
             document.getElementById('download-fit-btn').style.display = 'inline-block';
@@ -1331,7 +1330,7 @@
             });
         }
         
-        function updateStoryCard(summary, route) {
+        function updateStoryCard(summary) {
             const sportIcons = {
                 'ride': '🚴', 'run': '🏃', 'walk': '🚶', 'hike': '🥾', 
                 'swim': '🏊', 'trail_run': '🏔️', 'virtual_ride': '🚲',
