@@ -116,9 +116,20 @@
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
         .minimized-expand { color: #a0aec0; font-size: 0.7rem; }
 
-        .record-modal { position: fixed; inset: 0; z-index: 1000; background: #121212; display: flex; flex-direction: column; }
-        .record-modal #recordMap { position: absolute; inset: 0; width: 100%; height: 100%; }
-        .record-modal-topbar { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); gap: 8px; background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent); }
+        /* --- FIXED RECORD MODAL LAYOUT (CONTROLS NEVER ESCAPE) --- */
+        .record-modal {
+            position: fixed; inset: 0; z-index: 1000; background: #121212;
+            /* Remove flex to avoid flexbox conflicts with the absolute map */
+        }
+        #recordMap {
+            position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1;
+        }
+        .record-modal-topbar {
+            position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); gap: 8px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+        }
         .modal-icon-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: rgba(0,0,0,0.6); color: white; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; backdrop-filter: blur(4px); }
         .modal-icon-btn:hover { background: rgba(255,255,255,0.2); }
         .gps-status { font-size: 0.7rem; padding: 4px 12px; border-radius: 20px; font-weight: 500; background: rgba(0,0,0,0.6); color: #e2e8f0; backdrop-filter: blur(4px); white-space: nowrap; }
@@ -126,7 +137,11 @@
         .gps-status.paused { background: rgba(237,137,54,0.85); color: white; }
         .gps-status.error { background: rgba(229,62,62,0.85); color: white; }
 
-        .record-modal-stats-wrapper { position: relative; z-index: 10; margin-top: auto; background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4) 80%, transparent); padding: 16px 12px 8px; }
+        .record-modal-stats-wrapper {
+            position: absolute; bottom: 70px; left: 0; right: 0; z-index: 1000;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4) 80%, transparent);
+            padding: 16px 12px 8px;
+        }
         .record-modal-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
         .record-modal-sensor-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); }
         .modal-stat { text-align: center; color: white; }
@@ -134,8 +149,19 @@
         .record-stat-label { font-size: 0.55rem; text-transform: uppercase; color: #cbd5e0; font-weight: 600; letter-spacing: 0.5px; }
         .record-stat-value { font-size: 1.1rem; font-weight: 700; color: white; margin-top: 1px; font-variant-numeric: tabular-nums; }
         .record-stat-value .stat-unit { color: #cbd5e0; font-size: 0.6rem; }
-        .record-modal-message { position: relative; z-index: 10; text-align: center; color: white; font-size: 0.75rem; background: rgba(0,0,0,0.6); padding: 4px; min-height: 1.2em; }
-        .record-modal-controls { position: relative; z-index: 10; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; background: rgba(0,0,0,0.8); padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom)); backdrop-filter: blur(8px); }
+
+        .record-modal-message {
+            position: absolute; bottom: 55px; left: 0; right: 0; z-index: 1000;
+            text-align: center; color: white; font-size: 0.75rem; background: rgba(0,0,0,0.6);
+            padding: 4px; min-height: 1.2em; pointer-events: none;
+        }
+
+        .record-modal-controls {
+            position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
+            display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+            background: rgba(0,0,0,0.8); padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom));
+            backdrop-filter: blur(8px);
+        }
 
         @media (max-width: 600px) {
             .record-modal-stats { grid-template-columns: repeat(3, 1fr); }
@@ -643,7 +669,8 @@
             recPolyline = L.polyline([], { color: '#fc4c02', weight: 4 }).addTo(recMap);
             recMarker = L.circleMarker([lat, lng], { radius: 6, color: '#fff', weight: 2, fillColor: '#48bb78',
                 fillOpacity: 1 }).addTo(recMap);
-            setTimeout(() => recMap && recMap.invalidateSize(), 150);
+            // Delay invalidateSize to ensure the map fully renders behind the overlays
+            setTimeout(() => recMap && recMap.invalidateSize(), 200);
         }
 
         function updateRecordMap(lat, lng) {
@@ -651,6 +678,8 @@
             recPolyline.addLatLng([lat, lng]);
             recMarker.setLatLng([lat, lng]);
             recMap.panTo([lat, lng]);
+            // Ensure the map layout stays correct during panning
+            recMap.invalidateSize();
         }
 
         function teardownRecordMap() { if (recMap) { recMap.remove();
@@ -742,7 +771,7 @@
             teardownRecordMap();
             document.getElementById('recordSection').style.display = 'none';
             document.getElementById('recordMinimizedBar').style.display = 'none';
-            document.getElementById('recordModal').style.display = 'flex';
+            document.getElementById('recordModal').style.display = 'flex'; // Flex is removed in CSS, but display flex activates the absolute children
             setGpsStatus('Acquiring GPS...', 'active');
             document.getElementById('recordMessage').textContent = '';
             recWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, { enableHighAccuracy: true,
@@ -763,7 +792,8 @@
         function reopenRecordModal() {
             document.getElementById('recordMinimizedBar').style.display = 'none';
             document.getElementById('recordModal').style.display = 'flex';
-            setTimeout(() => recMap && recMap.invalidateSize(), 50);
+            // Recalculate the map size when reopening
+            setTimeout(() => recMap && recMap.invalidateSize(), 100);
         }
 
         function pauseRecording() {
