@@ -1,1500 +1,1719 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Fit Reader - Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #0a0a0a; color: #e8e8e8; }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #1a1a1a; }
-        ::-webkit-scrollbar-thumb { background: #f57c00; border-radius: 3px; }
-        
-        .app-container { display: flex; min-height: 100vh; }
-        
-        /* ── Sidebar ── */
-        .sidebar {
-            width: 240px;
-            background: #111111;
-            padding: 30px 20px;
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
+        /* ── Theme Variables ────────────────────────── */
+        :root {
+            --bg: #f7f7f9;
+            --card: #ffffff;
+            --text: #242428;
+            --text-soft: #6b6b70;
+            --line: #e7e7ea;
+            --orange: #fc4c02;
+            --orange-dark: #d84001;
+            --shadow: 0 2px 10px rgba(0,0,0,0.06);
+            --radius: 10px;
+            --transition: 0.25s ease;
+        }
+
+        .dark-theme {
+            --bg: #0d0d0d;
+            --card: #1a1a1a;
+            --text: #e8e8e8;
+            --text-soft: #999999;
+            --line: #2a2a2a;
+            --shadow: 0 2px 10px rgba(0,0,0,0.6);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Roboto, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            transition: background var(--transition), color var(--transition);
+        }
+
+        /* ── Navbar ──────────────────────────────────── */
+        .navbar {
+            background: var(--card);
+            border-bottom: 1px solid var(--line);
+            padding: 0 1rem;
+            height: 56px;
             display: flex;
-            flex-direction: column;
-            border-right: 1px solid #2a2a2a;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
             z-index: 100;
+            transition: background var(--transition), border-color var(--transition);
         }
-        .sidebar-brand { font-size: 20px; font-weight: 700; color: #e8e8e8; padding: 0 12px 30px 12px; border-bottom: 1px solid #2a2a2a; margin-bottom: 25px; }
-        .sidebar-brand span { color: #f57c00; }
-        .sidebar-brand small { font-size: 11px; font-weight: 400; color: #888; display: block; margin-top: 2px; }
-        
-        .nav-menu { list-style: none; flex: 1; }
-        .nav-menu li { margin-bottom: 4px; }
-        .nav-menu a {
+
+        .navbar-brand {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text);
             display: flex;
             align-items: center;
-            gap: 14px;
-            padding: 12px 16px;
-            color: #999;
-            text-decoration: none;
-            border-radius: 12px;
-            font-weight: 500;
-            font-size: 14px;
-            transition: all 0.2s;
-            cursor: pointer;
+            gap: 6px;
+            letter-spacing: -0.02em;
         }
-        .nav-menu a:hover { background: #1a1a1a; color: #fff; }
-        .nav-menu a.active { background: #f57c00; color: #fff; box-shadow: 0 4px 20px rgba(245,124,0,0.3); }
-        .nav-menu a .icon { font-size: 20px; width: 28px; text-align: center; }
-        
-        .sidebar-footer {
-            border-top: 1px solid #2a2a2a;
-            padding-top: 20px;
-            margin-top: auto;
+
+        .navbar-brand span {
+            background: var(--orange);
+            color: white;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
         }
-        .sidebar-footer .user-card {
+
+        .navbar-right {
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 10px 12px;
-            border-radius: 12px;
-            background: #1a1a1a;
+            gap: 8px;
+            flex-wrap: wrap;
         }
-        .sidebar-footer .user-avatar {
-            width: 40px;
-            height: 40px;
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .user-avatar {
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid #f57c00;
+            border: 1px solid var(--line);
         }
-        .sidebar-footer .user-name { font-weight: 600; font-size: 14px; color: #e8e8e8; }
-        .sidebar-footer .user-email { font-size: 12px; color: #888; }
-        .sidebar-footer .logout-link {
-            display: block;
-            margin-top: 12px;
-            padding: 10px 16px;
-            color: #ff6b6b;
-            text-decoration: none;
-            border-radius: 10px;
-            font-weight: 500;
-            font-size: 14px;
-            text-align: center;
-            transition: all 0.2s;
-            background: #1a0a0a;
-            border: 1px solid #2a0a0a;
-        }
-        .sidebar-footer .logout-link:hover { background: #2a0a0a; }
-        
-        /* ── Main Content ── */
-        .main-content {
-            margin-left: 240px;
-            flex: 1;
-            padding: 30px 40px 40px 40px;
-        }
-        
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .page-header h1 { font-size: 28px; font-weight: 700; color: #e8e8e8; }
-        .page-header p { color: #888; font-size: 15px; margin-top: 4px; }
-        
-        /* ── Upload Area ── */
-        .upload-area {
-            border: 2.5px dashed #2a2a2a;
-            padding: 45px 30px;
-            text-align: center;
-            border-radius: 20px;
-            background: #111111;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-bottom: 30px;
-        }
-        .upload-area:hover { border-color: #f57c00; background: #1a1200; }
-        .upload-area.dragover { border-color: #f57c00; background: #1a1800; transform: scale(1.01); }
-        .upload-area .icon { font-size: 48px; display: block; margin-bottom: 12px; }
-        .upload-area h3 { font-size: 18px; color: #e8e8e8; font-weight: 600; }
-        .upload-area p { color: #888; font-size: 14px; margin-top: 4px; }
-        .upload-area .btn-upload {
-            margin-top: 15px;
-            background: #f57c00;
-            color: #fff;
-            border: none;
-            padding: 12px 35px;
-            border-radius: 12px;
+
+        .username {
             font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.2s;
+            font-size: 0.8rem;
+            display: none;
         }
-        .upload-area .btn-upload:hover { background: #ff9800; transform: translateY(-2px); box-shadow: 0 6px 25px rgba(245,124,0,0.4); }
-        .upload-area .btn-upload:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
-        #file-input { display: none; }
-        
-        .sport-selector {
+
+        .logout-btn {
+            color: var(--text-soft);
+            text-decoration: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+        .logout-btn:hover {
+            background: #fff1ec;
+            color: var(--orange-dark);
+        }
+
+        .theme-btn, .sensor-btn {
+            background: transparent;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.75rem;
+            color: var(--text);
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .theme-btn:hover, .sensor-btn:hover {
+            border-color: var(--orange);
+            background: var(--orange);
+            color: white;
+        }
+        .sensor-btn.connected {
+            border-color: #48bb78;
+            background: #48bb78;
+            color: white;
+        }
+
+        /* ── Main Layout ────────────────────────────── */
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 1rem 6rem;
+        }
+
+        /* ── Activity Selector ───────────────────────── */
+        .activity-selector {
+            margin-bottom: 1rem;
+        }
+
+        .activity-grid {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+        .activity-grid::-webkit-scrollbar { display: none; }
+
+        .activity-btn {
+            flex-shrink: 0;
+            padding: 6px 14px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: var(--card);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-soft);
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            margin: 15px 0 5px 0;
+            gap: 4px;
+            white-space: nowrap;
         }
-        .sport-selector label { font-weight: 500; color: #aaa; font-size: 14px; }
-        .sport-selector select {
-            padding: 10px 20px;
+
+        .activity-btn:hover {
+            border-color: var(--orange);
+        }
+
+        .activity-btn.active {
+            border-color: var(--orange);
+            background: var(--orange);
+            color: white;
+        }
+
+        .activity-btn .badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.3);
+            color: inherit;
+            font-size: 0.6rem;
+            padding: 0px 6px;
             border-radius: 10px;
-            border: 1.5px solid #2a2a2a;
-            font-size: 14px;
-            background: #1a1a1a;
-            cursor: pointer;
-            min-width: 160px;
-            color: #e8e8e8;
         }
-        .sport-selector select:focus { outline: none; border-color: #f57c00; }
-        
-        #status {
-            margin: 10px 0 20px 0;
-            font-weight: 500;
-            padding: 12px 20px;
-            border-radius: 12px;
-            display: none;
-            text-align: center;
+
+        .activity-btn:not(.active) .badge {
+            background: #f0f0f2;
+            color: var(--text-soft);
         }
-        #status.success { color: #4caf50; background: #1a2a1a; display: block; border: 1px solid #4caf50; }
-        #status.error { color: #ff6b6b; background: #2a1a1a; display: block; border: 1px solid #ff6b6b; }
-        #status.info { color: #f57c00; background: #1a1800; display: block; border: 1px solid #f57c00; }
-        #error-message {
-            color: #ff6b6b;
-            margin: 10px 0;
-            padding: 12px 20px;
-            background: #2a1a1a;
-            border-radius: 12px;
-            display: none;
-            text-align: center;
-            font-weight: 500;
-            border: 1px solid #ff6b6b;
-        }
-        
-        .hidden { display: none !important; }
-        
-        /* ── Stats Grid ── */
+
+        /* ── Stats ───────────────────────────────────── */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin: 20px 0 30px 0;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            overflow: hidden;
+            transition: background var(--transition), border-color var(--transition);
         }
+
         .stat-card {
-            background: #111111;
-            padding: 18px 15px;
-            border-radius: 14px;
+            padding: 0.7rem;
             text-align: center;
-            border: 1px solid #2a2a2a;
-            transition: all 0.2s;
+            border-right: 1px solid var(--line);
         }
-        .stat-card:hover { border-color: #f57c00; transform: translateY(-2px); }
-        .stat-card .value { font-size: 22px; font-weight: 700; color: #f57c00; }
-        .stat-card .label { font-size: 12px; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
-        
-        /* ── Map ── */
-        .map-container {
-            background: #111111;
-            border-radius: 16px;
-            padding: 20px;
-            margin: 20px 0;
-            border: 1px solid #2a2a2a;
+        .stat-card:last-child { border-right: none; }
+
+        .stat-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            letter-spacing: 0.05em;
+            font-weight: 700;
         }
-        .map-container h4 {
-            margin-bottom: 15px;
-            color: #e8e8e8;
-            font-size: 16px;
-            font-weight: 600;
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-top: 2px;
         }
-        #ride-map {
-            height: 350px;
-            border-radius: 12px;
-            background: #1a1a1a;
-            width: 100%;
+
+        .stat-unit {
+            font-size: 0.65rem;
+            color: var(--text-soft);
+            font-weight: 500;
         }
-        #ride-map .leaflet-tile-pane { filter: invert(0.9) hue-rotate(180deg); }
-        
-        /* ── Charts ── */
-        .chart-container {
-            background: #111111;
-            padding: 25px;
-            border-radius: 16px;
-            margin: 20px 0;
-            border: 1px solid #2a2a2a;
-        }
-        .chart-container h4 {
-            margin-bottom: 15px;
-            color: #e8e8e8;
-            font-size: 16px;
-            font-weight: 600;
-        }
-        .chart-wrapper { height: 200px; }
-        .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .chart-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
-        
-        /* ── Instagram Story Snapshot ── */
-        .story-section {
-            background: #111111;
-            border-radius: 16px;
-            padding: 30px;
-            margin: 20px 0;
-            border: 1px solid #2a2a2a;
-            text-align: center;
-        }
-        .story-section h4 {
-            margin-bottom: 20px;
-            color: #e8e8e8;
-            font-size: 16px;
-            font-weight: 600;
-        }
-        
-        #story-container {
-            display: inline-block;
-            background: transparent !important;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .story-card {
-            background: transparent !important;
-            padding: 0;
-            margin: 0 auto;
-            width: 380px;
-            position: relative;
+
+        /* ── Record Live Ride (floating button) ───────── */
+        .record-section {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 500;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            gap: 4px;
         }
-        
-        .story-content {
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-radius: 24px;
-            padding: 30px 25px 22px 25px;
-            width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            text-align: center;
-        }
-        .story-content .activity-emoji { font-size: 36px; margin-bottom: 2px; }
-        .story-content .activity-title {
-            font-size: 12px;
+
+        .record-section .fab-label {
+            font-size: 0.65rem;
             font-weight: 600;
-            color: rgba(255, 255, 255, 0.4);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-bottom: 12px;
-        }
-        .story-content .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-        .story-content .stats-grid .stat { text-align: center; }
-        .story-content .stats-grid .stat .value {
-            font-size: 28px;
-            font-weight: 700;
-            color: #ffffff;
-            letter-spacing: -0.5px;
-        }
-        .story-content .stats-grid .stat .value .unit {
-            font-size: 12px;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.3);
-            margin-left: 2px;
-        }
-        .story-content .stats-grid .stat .label {
-            font-size: 9px;
-            color: rgba(255, 255, 255, 0.3);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-top: 2px;
-        }
-        .story-content .extra-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 6px;
-            padding: 10px 0;
-            border-top: 1px solid rgba(255, 255, 255, 0.04);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            margin-bottom: 12px;
-        }
-        .story-content .extra-stats .stat .value {
-            font-size: 14px;
-            font-weight: 600;
-            color: #f57c00;
-        }
-        .story-content .extra-stats .stat .label {
-            font-size: 8px;
-            color: rgba(255, 255, 255, 0.25);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .story-content .brand-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .story-content .brand-footer .brand {
-            font-size: 12px;
-            font-weight: 600;
-            color: rgba(255, 255, 255, 0.5);
-        }
-        .story-content .brand-footer .brand span { color: #f57c00; }
-        .story-content .brand-footer .date {
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.2);
-        }
-        
-        .download-options {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin: 15px 0;
-        }
-        .btn-download-option {
-            background: #2a2a2a;
-            color: #e8e8e8;
-            border: 1px solid #3a3a3a;
-            padding: 8px 20px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            text-decoration: none;
-        }
-        .btn-download-option:hover {
-            background: #f57c00;
-            border-color: #f57c00;
-            color: #fff;
-            transform: translateY(-2px);
-        }
-        .btn-download-option .icon { font-size: 16px; }
-        
-        .btn-download-option.instagram {
-            background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-            border: none;
-            color: #fff;
-            padding: 10px 28px;
-            font-size: 15px;
-        }
-        .btn-download-option.instagram:hover {
-            transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 8px 30px rgba(220,39,67,0.4);
-        }
-        
-        /* ── My Rides ── */
-        .rides-section {
-            background: #111111;
-            padding: 25px 30px;
-            border-radius: 16px;
-            margin: 30px 0;
-            border: 1px solid #2a2a2a;
-        }
-        .rides-section h3 {
-            font-size: 18px;
-            font-weight: 700;
-            color: #e8e8e8;
-            margin-bottom: 20px;
-        }
-        .ride-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
-            background: #1a1a1a;
+            color: var(--text-soft);
+            background: var(--card);
+            padding: 2px 8px;
             border-radius: 10px;
-            border: 1px solid #2a2a2a;
-            margin-bottom: 8px;
+            border: 1px solid var(--line);
         }
-        .ride-item:hover { border-color: #f57c00; }
-        .ride-item .ride-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .ride-item .ride-icon { font-size: 20px; }
-        .ride-item .ride-name { font-weight: 500; color: #e8e8e8; }
-        .ride-item .ride-meta { color: #888; font-size: 13px; }
-        .ride-item .sport-badge { background: #2a2a2a; padding: 2px 12px; border-radius: 12px; font-size: 11px; color: #aaa; }
-        .ride-item .ride-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-        .btn-sm {
-            padding: 4px 12px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: 500;
+
+        .record-btn {
             border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn-sm.orange { background: #f57c00; color: #fff; }
-        .btn-sm.orange:hover { background: #ff9800; }
-        .btn-sm.gray { background: #2a2a2a; color: #aaa; }
-        .btn-sm.gray:hover { background: #3a3a3a; color: #fff; }
-        
-        .empty-rides { text-align: center; padding: 30px; color: #888; }
-        .empty-rides .icon { font-size: 36px; display: block; margin-bottom: 10px; }
-        
-        /* ── Club ── */
-        .club-section {
-            background: #111111;
-            padding: 25px 30px;
-            border-radius: 16px;
-            margin: 30px 0;
-            border: 1px solid #2a2a2a;
-        }
-        .club-section h3 {
-            font-size: 18px;
-            font-weight: 700;
-            color: #e8e8e8;
-            margin-bottom: 20px;
-        }
-        .club-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-        .club-table th {
-            text-align: left;
-            padding: 10px 12px;
-            background: #1a1a1a;
             font-weight: 600;
-            color: #f57c00;
-            border-bottom: 2px solid #2a2a2a;
-        }
-        .club-table td {
-            padding: 8px 12px;
-            border-bottom: 1px solid #1a1a1a;
-            color: #ccc;
-        }
-        .club-table tr:hover td { background: #1a1a1a; }
-        .club-table .rank { font-weight: 700; color: #f57c00; width: 40px; }
-        
-        /* ── Record Modal ── */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal-overlay.active { display: flex; }
-        
-        .modal-content {
-            background: #111111;
-            border: 1px solid #2a2a2a;
-            border-radius: 24px;
-            padding: 35px;
-            max-width: 550px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.8);
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        .modal-header h2 { font-size: 24px; color: #e8e8e8; }
-        .modal-header h2 span { color: #f57c00; }
-        .modal-close {
-            background: none;
-            border: none;
-            color: #888;
-            font-size: 28px;
             cursor: pointer;
-            padding: 0 5px;
+            transition: background 0.2s, opacity 0.2s, transform 0.1s;
         }
-        .modal-close:hover { color: #fff; }
-        
-        .record-sport-select {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin: 15px 0;
-        }
-        .record-sport-select button {
-            padding: 6px 18px;
-            border-radius: 20px;
-            border: 2px solid #2a2a2a;
-            background: transparent;
-            color: #888;
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        .record-sport-select button:hover { border-color: #f57c00; color: #fff; }
-        .record-sport-select button.active {
-            border-color: #f57c00;
-            background: #f57c00;
-            color: #fff;
-        }
-        
-        .record-big-display { text-align: center; padding: 20px 0; }
-        .record-big-display .time { font-size: 54px; font-weight: 700; color: #e8e8e8; font-variant-numeric: tabular-nums; letter-spacing: 2px; }
-        .record-big-display .distance { font-size: 22px; color: #f57c00; font-weight: 600; margin-top: 5px; }
-        
-        .record-metrics {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin: 15px 0;
-        }
-        .record-metrics .metric {
-            background: #1a1a1a;
-            padding: 12px;
-            border-radius: 12px;
-            text-align: center;
-        }
-        .record-metrics .metric .value { font-size: 22px; font-weight: 700; color: #f57c00; }
-        .record-metrics .metric .label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
-        
-        .record-gps-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
-            background: #1a1a1a;
-            border-radius: 10px;
-            margin: 10px 0;
-            font-size: 13px;
-            color: #888;
-        }
-        .record-gps-status .gps-dot {
-            width: 10px;
-            height: 10px;
+        .record-btn:active { transform: scale(0.95); }
+
+        .record-btn.start {
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
-            background: #ff6b6b;
+            background: var(--orange);
+            color: white;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 14px rgba(252,76,2,0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .record-btn.start:hover { background: var(--orange-dark); }
+
+        .record-btn.pause {
+            background: #ed8936;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+        }
+        .record-btn.pause:hover { background: #dd6b20; }
+
+        .record-btn.resume {
+            background: #4299e1;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+        }
+        .record-btn.resume:hover { background: #3182ce; }
+
+        .record-btn.stop {
+            background: var(--orange);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+        }
+        .record-btn.stop:hover { background: var(--orange-dark); }
+
+        .record-btn.discard {
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.4);
+            padding: 12px 20px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+        }
+        .record-btn.discard:hover { background: rgba(255,255,255,0.25); }
+
+        .record-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* ── Minimized recording pill ─────────────────── */
+        .record-minimized-bar {
+            position: fixed;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2d3748;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            cursor: pointer;
+            z-index: 900;
+            font-size: 0.8rem;
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--orange);
+            animation: pulse 1.5s ease-in-out infinite;
             flex-shrink: 0;
         }
-        .record-gps-status .gps-dot.active {
-            background: #4caf50;
-            animation: pulse-dot 1.5s infinite;
-        }
-        @keyframes pulse-dot {
+
+        @keyframes pulse {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.5; transform: scale(0.8); }
         }
-        
-        .record-actions { display: flex; gap: 12px; margin-top: 20px; justify-content: center; }
-        .btn-record-action {
-            padding: 14px 40px;
-            border-radius: 50px;
-            font-weight: 700;
-            font-size: 18px;
+
+        .minimized-expand {
+            color: #a0aec0;
+            font-size: 0.7rem;
+        }
+
+        /* ── Full‑screen Recording Modal ──────────────── */
+        .record-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: #121212;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .record-modal #recordMap {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .record-modal-topbar {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            padding-top: max(12px, env(safe-area-inset-top));
+            gap: 8px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+        }
+
+        .modal-icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
             border: none;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            font-size: 1.2rem;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            backdrop-filter: blur(4px);
+        }
+        .modal-icon-btn:hover { background: rgba(255,255,255,0.2); }
+
+        .gps-status {
+            font-size: 0.7rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            background: rgba(0,0,0,0.6);
+            color: #e2e8f0;
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
+        }
+
+        .gps-status.active { background: rgba(72,187,120,0.85); color: white; }
+        .gps-status.paused { background: rgba(237,137,54,0.85); color: white; }
+        .gps-status.error { background: rgba(229,62,62,0.85); color: white; }
+
+        /* ── Stats inside recording modal ──────────────── */
+        .record-modal-stats-wrapper {
+            position: relative;
+            z-index: 10;
+            margin-top: auto;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4) 80%, transparent);
+            padding: 16px 12px 8px;
+        }
+
+        .record-modal-stats {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+        }
+
+        .record-modal-sensor-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .modal-stat {
+            text-align: center;
+            color: white;
+        }
+
+        .modal-stat-primary .record-stat-value {
+            font-size: 1.6rem;
+        }
+
+        .record-stat-label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            color: #cbd5e0;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .record-stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+            margin-top: 1px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .record-stat-value .stat-unit {
+            color: #cbd5e0;
+            font-size: 0.6rem;
+        }
+
+        .record-modal-message {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            color: white;
+            font-size: 0.75rem;
+            background: rgba(0,0,0,0.6);
+            padding: 4px;
+            min-height: 1.2em;
+        }
+
+        .record-modal-controls {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            flex-wrap: wrap;
+            background: rgba(0,0,0,0.8);
+            padding: 12px 16px;
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            backdrop-filter: blur(8px);
+        }
+
+        /* ── Responsive tweaks for mobile ──────────────── */
+        @media (max-width: 600px) {
+            .record-modal-stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .modal-stat-primary {
+                grid-column: span 3;
+            }
+            .modal-stat-primary .record-stat-value {
+                font-size: 1.8rem;
+            }
+            .record-modal-sensor-stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .record-stat-value {
+                font-size: 1rem;
+            }
+            .record-modal-topbar {
+                padding: 8px 12px;
+            }
+            .modal-icon-btn {
+                width: 36px;
+                height: 36px;
+                font-size: 1rem;
+            }
+            .gps-status {
+                font-size: 0.6rem;
+                padding: 3px 10px;
+            }
+            .record-btn.stop,
+            .record-btn.discard,
+            .record-btn.pause,
+            .record-btn.resume {
+                padding: 10px 16px;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .record-modal-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .modal-stat-primary {
+                grid-column: span 2;
+            }
+            .record-modal-sensor-stats {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* ── Upload ───────────────────────────────────── */
+        .upload-section {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            transition: background var(--transition), border-color var(--transition);
+        }
+
+        .upload-section h2 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.2rem; }
+        .upload-section p {
+            color: var(--text-soft);
+            margin-bottom: 0.8rem;
+            font-size: 0.8rem;
+        }
+
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+
+        .upload-btn-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .upload-btn {
+            background: var(--text);
+            color: var(--card);
+            padding: 8px 20px;
+            border: none;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .upload-btn:hover { background: #000; }
+        .upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* ── Rides List ───────────────────────────────── */
+        .rides-section {
+            background: transparent;
+        }
+
+        .rides-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .rides-header h2 {
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        .rides-header .ride-count {
+            color: var(--text-soft);
+            font-size: 0.75rem;
+        }
+
+        .rides-header .filter-badge {
+            background: #fff1ec;
+            color: var(--orange-dark);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+
+        .ride-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .ride-item {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 0.9rem;
+            cursor: pointer;
+            transition: box-shadow 0.15s, border-color 0.15s, background var(--transition), border-color var(--transition);
+        }
+
+        .ride-item:hover {
+            border-color: #d0d0d5;
+            box-shadow: var(--shadow);
+        }
+
+        .ride-item .ride-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 0.6rem;
+        }
+
+        .ride-item .ride-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .ride-item .ride-title-block { min-width: 0; }
+        .ride-item .ride-name {
+            font-weight: 700;
+            word-break: break-word;
+            font-size: 0.9rem;
+            line-height: 1.3;
+        }
+
+        .ride-item .ride-meta {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-soft);
+            font-size: 0.7rem;
+            margin-top: 2px;
+            flex-wrap: wrap;
+        }
+
+        .ride-item .ride-type-badge {
+            font-size: 0.55rem;
+            padding: 1px 7px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .ride-item .ride-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 6px;
+            padding: 0.6rem 0;
+            border-top: 1px solid var(--line);
+        }
+
+        .ride-item .ride-stats .stat-block {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ride-item .ride-stats .stat-block .stat-num-label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+
+        .ride-item .ride-stats .stat-block .stat-num-value {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .ride-item .actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            justify-content: flex-end;
+            border-top: 1px solid var(--line);
+            padding-top: 0.5rem;
+        }
+
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+            color: var(--text-soft);
+        }
+        .action-btn:hover { background: #f0f0f2; }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+            color: var(--text-soft);
+        }
+        .delete-btn:hover {
+            background: #fff1ec;
+            color: var(--orange-dark);
+        }
+
+        .no-rides {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-soft);
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+        }
+
+        .no-rides .big-icon {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-soft);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--line);
+            border-top-color: var(--orange);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ── Toast ────────────────────────────────────── */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #2d3748;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            opacity: 0;
             transition: all 0.3s;
+            z-index: 1100;
+            max-width: 90%;
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.9rem;
+            pointer-events: none;
         }
-        .btn-record-action.start { background: #dc3545; color: white; box-shadow: 0 0 30px rgba(220,53,69,0.3); }
-        .btn-record-action.start:hover { transform: scale(1.05); box-shadow: 0 0 50px rgba(220,53,69,0.5); }
-        .btn-record-action.stop { background: #28a745; color: white; animation: pulse-btn 1.5s infinite; box-shadow: 0 0 30px rgba(40,167,69,0.3); }
-        @keyframes pulse-btn { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.02); } }
-        .btn-record-action.save { background: #f57c00; color: white; }
-        .btn-record-action.save:hover { background: #ff9800; transform: translateY(-2px); box-shadow: 0 6px 25px rgba(245,124,0,0.4); }
-        .btn-record-action.discard { background: #2a2a2a; color: #888; border: 1px solid #3a3a3a; }
-        .btn-record-action.discard:hover { background: #3a3a3a; color: #fff; }
-        
-        /* ── Responsive ── */
-        @media (max-width: 1024px) {
-            .stats-grid { grid-template-columns: repeat(3, 1fr); }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
         }
-        @media (max-width: 768px) {
-            .sidebar { width: 70px; padding: 20px 10px; }
-            .sidebar-brand { font-size: 16px; padding: 0 8px 20px 8px; text-align: center; }
-            .sidebar-brand small { display: none; }
-            .nav-menu a { padding: 12px; justify-content: center; }
-            .nav-menu a span:not(.icon) { display: none; }
-            .sidebar-footer .user-card { display: none; }
-            .sidebar-footer .logout-link { font-size: 12px; padding: 8px; }
-            .main-content { margin-left: 70px; padding: 20px; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .stat-card .value { font-size: 18px; }
-            #ride-map { height: 200px; }
-            .chart-grid { grid-template-columns: 1fr; }
-            .chart-grid-3 { grid-template-columns: 1fr; }
-            .chart-wrapper { height: 150px; }
-            .story-card { width: 100%; }
-            .story-content { padding: 20px 15px; }
-            .story-content .stats-grid .stat .value { font-size: 22px; }
-            .story-content .extra-stats { grid-template-columns: 1fr 1fr; }
-            .ride-item { flex-direction: column; align-items: stretch; gap: 8px; }
-            .club-table { font-size: 12px; }
-            .club-table th, .club-table td { padding: 5px 8px; }
-            .download-options { gap: 6px; }
-            .btn-download-option { font-size: 11px; padding: 5px 12px; }
-            .modal-content { padding: 20px; }
-            .record-big-display .time { font-size: 38px; }
-            .record-metrics { grid-template-columns: 1fr 1fr; }
-        }
+        .toast.success { background: #48bb78; }
+        .toast.error { background: #fc8181; }
+
+        /* ── Misc ────────────────────────────────────── */
         @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .stat-card {
+                border-bottom: 1px solid var(--line);
+            }
+            .stat-card:nth-child(2n) { border-right: none; }
+            .ride-item .ride-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .navbar {
+                padding: 0 0.6rem;
+                height: 48px;
+            }
+            .navbar-brand {
+                font-size: 0.95rem;
+            }
+            .main-container {
+                padding: 0.6rem 0.6rem 5rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar -->
-        <nav class="sidebar">
-            <div class="sidebar-brand">
-                🚴 Fit<span>Reader</span>
-                <small>Dashboard</small>
+
+    <!-- ─── Navbar ─────────────────────────────────── -->
+    <nav class="navbar">
+        <div class="navbar-brand">
+            🚴 Fit Reader
+            <span>Beta</span>
+        </div>
+        <div class="navbar-right">
+            <button class="sensor-btn" id="sensorBtn" onclick="scanSensors()">📡 Connect</button>
+            <button class="theme-btn" id="themeToggle" onclick="toggleDarkMode()">🌙</button>
+            <div class="user-info">
+                <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar" />
+                <span class="username">{{ user.name }}</span>
             </div>
-            <ul class="nav-menu">
-                <li><a href="#" class="active"><span class="icon">📊</span> <span>Cycling Dashboard</span></a></li>
-                <li><a href="#" onclick="document.getElementById('drop-zone').scrollIntoView({behavior:'smooth'})"><span class="icon">📤</span> <span>Upload Ride</span></a></li>
-                <li><a href="#" onclick="openRecordModal()"><span class="icon">🔴</span> <span>Record</span></a></li>
-                <li><a href="#" onclick="document.getElementById('rides-section').scrollIntoView({behavior:'smooth'})"><span class="icon">📂</span> <span>My Rides</span></a></li>
-                <li><a href="#" onclick="document.getElementById('club-section').scrollIntoView({behavior:'smooth'})"><span class="icon">🏆</span> <span>Club</span></a></li>
-                <li><a href="/profile"><span class="icon">👤</span> <span>Profile</span></a></li>
-            </ul>
-            <div class="sidebar-footer">
-                <div class="user-card">
-                    <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar">
-                    <div><div class="user-name">{{ user.name }}</div><div class="user-email">{{ user.email or 'user@example.com' }}</div></div>
+            <a href="/auth/logout" class="logout-btn">Logout</a>
+        </div>
+    </nav>
+
+    <!-- ─── Main Content ────────────────────────────── -->
+    <div class="main-container">
+
+        <!-- Activity Selector -->
+        <div class="activity-selector">
+            <div class="activity-grid" id="activityGrid"></div>
+        </div>
+
+        <!-- Record Live Ride (floating button) -->
+        <div class="record-section" id="recordSection">
+            <div class="record-controls">
+                <button class="record-btn start" id="recStartBtn" onclick="startRecording()">⏺</button>
+            </div>
+            <span class="fab-label">Record</span>
+        </div>
+
+        <!-- Minimized recording pill -->
+        <div class="record-minimized-bar" id="recordMinimizedBar" onclick="reopenRecordModal()" style="display:none;">
+            <span class="pulse-dot"></span>
+            <span id="minimizedText">Recording... 00:00:00</span>
+            <span class="minimized-expand">▲</span>
+        </div>
+
+        <!-- Full‑screen recording modal -->
+        <div class="record-modal" id="recordModal" style="display:none;">
+            <div id="recordMap"></div>
+
+            <!-- Top Bar -->
+            <div class="record-modal-topbar">
+                <button class="modal-icon-btn" id="recMinimizeBtn" onclick="minimizeRecordModal()">▼</button>
+                <span class="gps-status" id="gpsStatus">GPS idle</span>
+                <button class="modal-icon-btn" id="recFullscreenBtn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+            </div>
+
+            <!-- Stats -->
+            <div class="record-modal-stats-wrapper">
+                <div class="record-modal-stats">
+                    <div class="modal-stat modal-stat-primary">
+                        <div class="record-stat-label">Duration</div>
+                        <div class="record-stat-value" id="recDuration">00:00:00</div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Distance</div>
+                        <div class="record-stat-value"><span id="recDistance">0.00</span> <span class="stat-unit">km</span></div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Speed</div>
+                        <div class="record-stat-value"><span id="recSpeed">0.0</span> <span class="stat-unit">km/h</span></div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Avg</div>
+                        <div class="record-stat-value"><span id="recAvgSpeed">0.0</span> <span class="stat-unit">km/h</span></div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Points</div>
+                        <div class="record-stat-value" id="recPoints">0</div>
+                    </div>
                 </div>
-                <a href="/auth/logout" class="logout-link">🚪 Logout</a>
+
+                <div class="record-modal-sensor-stats">
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Heart Rate</div>
+                        <div class="record-stat-value"><span id="recHR">--</span> <span class="stat-unit">bpm</span></div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Cadence</div>
+                        <div class="record-stat-value"><span id="recCadence">--</span> <span class="stat-unit">rpm</span></div>
+                    </div>
+                    <div class="modal-stat">
+                        <div class="record-stat-label">Power</div>
+                        <div class="record-stat-value"><span id="recPower">--</span> <span class="stat-unit">W</span></div>
+                    </div>
+                </div>
             </div>
-        </nav>
-        
-        <!-- Main Content -->
-        <main class="main-content">
-            <div class="page-header">
+
+            <div id="recordMessage" class="record-modal-message"></div>
+
+            <div class="record-modal-controls">
+                <button class="record-btn pause" id="recPauseBtn" onclick="pauseRecording()" style="display:none;">⏸️ Pause</button>
+                <button class="record-btn resume" id="recResumeBtn" onclick="resumeRecording()" style="display:none;">▶️ Resume</button>
+                <button class="record-btn stop" id="recStopBtn" onclick="stopRecording()" style="display:none;">⏹️ Stop</button>
+                <button class="record-btn discard" id="recDiscardBtn" onclick="discardRecording()" style="display:none;">🗑️ Discard</button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-label">Total Activities</div>
+                <div class="stat-value" id="totalRides">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Distance</div>
+                <div class="stat-value" id="totalDistance">- <span class="stat-unit">km</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Elevation</div>
+                <div class="stat-value" id="totalElevation">- <span class="stat-unit">m</span></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Calories</div>
+                <div class="stat-value" id="totalCalories">-</div>
+            </div>
+        </div>
+
+        <!-- Upload -->
+        <div class="upload-section">
+            <h2>Upload an Activity</h2>
+            <p>Upload FIT files from your GPS device</p>
+            <div class="upload-btn-wrapper">
+                <button class="upload-btn" id="uploadBtn">📁 Choose FIT File</button>
+                <input type="file" id="fileInput" accept=".fit" />
+            </div>
+            <div id="uploadStatus" style="margin-top:8px;font-size:0.8rem;color:var(--text-soft);"></div>
+        </div>
+
+        <!-- Rides List -->
+        <div class="rides-section">
+            <div class="rides-header">
                 <div>
-                    <h1>📊 Cycling Dashboard</h1>
-                    <p>Upload, analyze, and share your activities</p>
+                    <h2>Activities</h2>
+                    <span class="ride-count" id="rideCount">0 activities</span>
+                </div>
+                <div>
+                    <span class="filter-badge" id="filterBadge">All Types</span>
+                    <button onclick="loadRides()" style="background:none;border:none;color:var(--orange);cursor:pointer;font-size:0.75rem;margin-left:6px;font-weight:600;">
+                        🔄
+                    </button>
                 </div>
             </div>
-            
-            <!-- Upload Area -->
-            <div class="upload-area" id="drop-zone">
-                <span class="icon">📁</span>
-                <h3>Upload Your Ride</h3>
-                <p><strong>Drag &amp; drop</strong> a .fit file here, or click to select</p>
-                <input type="file" id="file-input" accept=".fit">
-                <div class="sport-selector">
-                    <label for="sport-select">🏅 Sport:</label>
-                    <select id="sport-select">
-                        <option value="ride">🚴 Ride</option>
-                        <option value="run">🏃 Run</option>
-                        <option value="walk">🚶 Walk</option>
-                        <option value="hike">🥾 Hike</option>
-                        <option value="swim">🏊 Swim</option>
-                        <option value="trail_run">🏔️ Trail Run</option>
-                        <option value="virtual_ride">🚲 Virtual Ride</option>
-                        <option value="mountain_bike_ride">🚵 Mountain Bike</option>
-                        <option value="gravel_ride">🪨 Gravel Ride</option>
-                        <option value="ebike_ride">⚡ E-Bike</option>
-                        <option value="crossfit">💪 Crossfit</option>
-                        <option value="weight_training">🏋️ Weight Training</option>
-                        <option value="yoga">🧘 Yoga</option>
-                        <option value="golf">⛳ Golf</option>
-                        <option value="tennis">🎾 Tennis</option>
-                        <option value="soccer">⚽ Soccer</option>
-                        <option value="skiing">⛷️ Skiing</option>
-                        <option value="snowboard">🏂 Snowboard</option>
-                    </select>
+            <div class="ride-list" id="rideList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p style="margin-top:4px;font-size:0.8rem;">Loading...</p>
                 </div>
-                <button class="btn-upload" id="analyze-btn" disabled>📊 Analyze Activity</button>
             </div>
-            
-            <div id="status"></div>
-            <div id="error-message"></div>
-            
-            <!-- Results -->
-            <div id="results" class="hidden">
-                <!-- Stats Grid -->
-                <div class="stats-grid" id="stats-grid"></div>
-                
-                <!-- Map -->
-                <div class="map-container">
-                    <h4>🗺️ Route Map</h4>
-                    <div id="ride-map"></div>
-                </div>
-                
-                <!-- Charts -->
-                <div class="chart-grid-3">
-                    <div class="chart-container">
-                        <h4>❤️ Heart Rate</h4>
-                        <div class="chart-wrapper"><canvas id="chart-hr"></canvas></div>
+        </div>
+
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ─── JavaScript ──────────────────────────────────── -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // ── Theme ──────────────────────────────────────────────────────────
+        function applyTheme(theme) {
+            if (theme === 'dark') {
+                document.body.classList.add('dark-theme');
+                document.getElementById('themeToggle').textContent = '☀️';
+            } else {
+                document.body.classList.remove('dark-theme');
+                document.getElementById('themeToggle').textContent = '🌙';
+            }
+            localStorage.setItem('fit-reader-theme', theme);
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.body.classList.contains('dark-theme');
+            applyTheme(isDark ? 'light' : 'dark');
+        }
+
+        const savedTheme = localStorage.getItem('fit-reader-theme') || 'light';
+        applyTheme(savedTheme);
+
+        // ── Fullscreen ─────────────────────────────────────────────────────
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    showToast('Fullscreen request denied', 'error');
+                });
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.getElementById('recFullscreenBtn');
+            if (document.fullscreenElement) {
+                btn.textContent = '⛶'; // Keep same icon, or change to '⤓'
+            } else {
+                btn.textContent = '⛶';
+            }
+        });
+
+        // ── State ──────────────────────────────────────────────────────────
+        let selectedType = 'all';
+        let rideTypes = [];
+        let allRides = [];
+        let uploadInProgress = false;
+
+        // Recording
+        let recWatchId = null;
+        let recPoints = [];
+        let recStartTime = null;
+        let recElapsedBeforePause = 0;
+        let recTimerInterval = null;
+        let recTotalDistanceKm = 0;
+        let recLastPoint = null;
+        let recIsPaused = false;
+        let recIsRecording = false;
+
+        // Sensors
+        let sensorData = { heartRate: null, cadence: null, power: null, speed: null };
+        let sensorServer = null;
+        let sensorConnected = false;
+
+        // Map
+        let recMap = null;
+        let recPolyline = null;
+        let recMarker = null;
+
+        // ── Activity Types ─────────────────────────────────────────────────
+        async function loadRideTypes() {
+            try {
+                const response = await fetch('/ride-types');
+                rideTypes = await response.json();
+                renderActivityButtons();
+            } catch (error) {
+                console.error('Failed to load ride types:', error);
+                showToast('❌ Failed to load activity types', 'error');
+            }
+        }
+
+        function renderActivityButtons() {
+            const grid = document.getElementById('activityGrid');
+            grid.innerHTML = '';
+            const allBtn = document.createElement('button');
+            allBtn.className = `activity-btn ${selectedType === 'all' ? 'active' : ''}`;
+            allBtn.innerHTML = `<span class="icon">📊</span> All`;
+            allBtn.onclick = () => selectType('all');
+            grid.appendChild(allBtn);
+            rideTypes.forEach(type => {
+                const btn = document.createElement('button');
+                btn.className = `activity-btn ${selectedType === type.id ? 'active' : ''}`;
+                btn.innerHTML = `
+                    <span class="icon">${type.icon}</span>
+                    ${type.name}
+                    <span class="badge" id="badge-${type.id}">0</span>
+                `;
+                btn.onclick = () => selectType(type.id);
+                grid.appendChild(btn);
+            });
+        }
+
+        function selectType(typeId) {
+            selectedType = typeId;
+            document.querySelectorAll('.activity-btn').forEach(btn => btn.classList.remove('active'));
+            const buttons = document.querySelectorAll('.activity-btn');
+            const index = typeId === 'all' ? 0 : rideTypes.findIndex(t => t.id === typeId) + 1;
+            if (buttons[index]) buttons[index].classList.add('active');
+            const filterBadge = document.getElementById('filterBadge');
+            if (typeId === 'all') filterBadge.textContent = 'All Types';
+            else {
+                const type = rideTypes.find(t => t.id === typeId);
+                filterBadge.textContent = `${type.icon} ${type.name}`;
+            }
+            loadRides();
+        }
+
+        // ── Stats & Rides ──────────────────────────────────────────────────
+        function updateStats(rides) {
+            let totalRides = rides.length;
+            let totalDistance = 0,
+                totalElevation = 0,
+                totalCalories = 0;
+            rides.forEach(ride => {
+                const s = ride.summary || {};
+                totalDistance += s.distance_km || 0;
+                totalElevation += s.elevation_gain || 0;
+                totalCalories += s.total_calories || 0;
+            });
+            document.getElementById('totalRides').textContent = totalRides;
+            document.getElementById('totalDistance').innerHTML = `${totalDistance.toFixed(1)} <span class="stat-unit">km</span>`;
+            document.getElementById('totalElevation').innerHTML = `${totalElevation.toFixed(0)} <span class="stat-unit">m</span>`;
+            document.getElementById('totalCalories').textContent = Math.round(totalCalories);
+            document.getElementById('rideCount').textContent = `${totalRides} activities`;
+        }
+
+        async function loadRides() {
+            const rideList = document.getElementById('rideList');
+            rideList.innerHTML = `<div class="loading"><div class="spinner"></div><p style="margin-top:4px;font-size:0.8rem;">Loading...</p></div>`;
+            try {
+                let url = '/my-rides';
+                if (selectedType !== 'all') url += `?type=${selectedType}`;
+                const response = await fetch(url);
+                allRides = await response.json();
+                updateBadgeCounts();
+                updateStats(allRides);
+                renderRides(allRides);
+            } catch (error) {
+                console.error('Failed to load rides:', error);
+                rideList.innerHTML = `
+                    <div class="no-rides">
+                        <span class="big-icon">❌</span>
+                        <p>Failed to load</p>
+                        <button onclick="loadRides()" style="margin-top:8px;padding:6px 16px;background:var(--orange);color:#fff;border:none;border-radius:20px;cursor:pointer;font-weight:600;">Retry</button>
                     </div>
-                    <div class="chart-container">
-                        <h4>🔄 Cadence</h4>
-                        <div class="chart-wrapper"><canvas id="chart-cadence"></canvas></div>
+                `;
+            }
+        }
+
+        function renderRides(rides) {
+            const rideList = document.getElementById('rideList');
+            if (rides.length === 0) {
+                rideList.innerHTML = `
+                    <div class="no-rides">
+                        <span class="big-icon">🏃</span>
+                        <p>No activities found</p>
+                        <p style="font-size:0.8rem;margin-top:4px;">Upload your first FIT file!</p>
                     </div>
-                    <div class="chart-container">
-                        <h4>⚡ Power</h4>
-                        <div class="chart-wrapper"><canvas id="chart-power"></canvas></div>
-                    </div>
-                </div>
-                
-                <div class="chart-container">
-                    <h4>🏔️ Elevation &amp; ⚡ Speed</h4>
-                    <div class="chart-wrapper" style="height:220px;"><canvas id="chart-elevation-speed"></canvas></div>
-                </div>
-                
-                <!-- Instagram Story -->
-                <div class="story-section">
-                    <h4>📸 Instagram Story</h4>
-                    
-                    <div id="story-container">
-                        <div class="story-card" id="story-card">
-                            <div class="story-content">
-                                <div class="activity-emoji" id="story-emoji">🚴</div>
-                                <div class="activity-title" id="story-title">RIDE</div>
-                                
-                                <div class="stats-grid">
-                                    <div class="stat">
-                                        <div class="value" id="story-distance">0.0</div>
-                                        <div class="label">Distance</div>
-                                    </div>
-                                    <div class="stat">
-                                        <div class="value" id="story-time">0:00</div>
-                                        <div class="label">Time</div>
-                                    </div>
-                                    <div class="stat">
-                                        <div class="value" id="story-elevation">0 <span class="unit">m</span></div>
-                                        <div class="label">Elev Gain</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="extra-stats">
-                                    <div class="stat">
-                                        <div class="value" id="story-speed">0.0</div>
-                                        <div class="label">Avg Speed</div>
-                                    </div>
-                                    <div class="stat">
-                                        <div class="value" id="story-hr">--</div>
-                                        <div class="label">Avg HR</div>
-                                    </div>
-                                    <div class="stat">
-                                        <div class="value" id="story-calories">0</div>
-                                        <div class="label">Calories</div>
-                                    </div>
-                                    <div class="stat">
-                                        <div class="value" id="story-power">--</div>
-                                        <div class="label">Avg Power</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="brand-footer">
-                                    <div class="brand">🚴 <span>FitReader</span></div>
-                                    <div class="date" id="story-date">Today</div>
-                                </div>
+                `;
+                return;
+            }
+            rideList.innerHTML = '';
+            rides.forEach(ride => {
+                const summary = ride.summary || {};
+                const rideType = rideTypes.find(t => t.id === ride.ride_type) || { icon: '🚴', name: 'Cycling', color: '#fc4c02' };
+                const color = rideType.color || '#fc4c02';
+                const div = document.createElement('div');
+                div.className = 'ride-item';
+                const dateStr = ride.ride_date ? new Date(ride.ride_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown';
+                div.innerHTML = `
+                    <div class="ride-card-header">
+                        <div class="ride-icon" style="background: ${color}1a; color: ${color};">${rideType.icon}</div>
+                        <div class="ride-title-block">
+                            <div class="ride-name">${ride.filename || 'Unnamed'}</div>
+                            <div class="ride-meta">
+                                <span>${dateStr}</span>
+                                <span class="ride-type-badge" style="background: ${color}1a; color: ${color};">${rideType.name}</span>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="download-options">
-                        <button class="btn-download-option instagram" id="download-story-btn" style="display: none;" onclick="downloadStory()">
-                            <span class="icon">📸</span> Download for Instagram Story
-                        </button>
-                        <button class="btn-download-option" id="download-fit-btn" style="display: none;" onclick="downloadCurrentRide('fit')">
-                            <span class="icon">📄</span> Download .FIT
-                        </button>
-                        <button class="btn-download-option" id="download-gpx-btn" style="display: none;" onclick="downloadCurrentRide('gpx')">
-                            <span class="icon">🗺️</span> Download .GPX
-                        </button>
-                        <button class="btn-download-option" id="download-csv-btn" style="display: none;" onclick="downloadCSV()">
-                            <span class="icon">📊</span> Download CSV
-                        </button>
+                    <div class="ride-stats">
+                        <div class="stat-block"><span class="stat-num-label">Distance</span><span class="stat-num-value">${summary.distance_km || 0} km</span></div>
+                        <div class="stat-block"><span class="stat-num-label">Elevation</span><span class="stat-num-value">${summary.elevation_gain || 0} m</span></div>
+                        <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
+                        <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- My Rides -->
-            <div class="rides-section" id="rides-section">
-                <h3>📂 My Activities</h3>
-                <div id="rides-list">
-                    <div class="empty-rides">
-                        <span class="icon">🏃</span>
-                        <p>No activities uploaded yet. Upload your first .fit file above!</p>
+                    <div class="actions">
+                        <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
+                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Club -->
-            <div class="club-section" id="club-section">
-                <h3>🏆 Club Leaderboard</h3>
-                <div id="club-list">
-                    <p style="color:#888; text-align:center; padding:20px;">Loading leaderboard...</p>
-                </div>
-            </div>
-        </main>
-    </div>
-    
-    <!-- ═══ RECORD MODAL ═══ -->
-    <div class="modal-overlay" id="recordModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>🔴 <span>Record</span> Activity</h2>
-                <button class="modal-close" onclick="closeRecordModal()">&times;</button>
-            </div>
-            
-            <div class="record-sport-select" id="record-sport-select">
-                <button class="active" data-sport="ride" onclick="selectRecordSport('ride')">🚴 Ride</button>
-                <button data-sport="run" onclick="selectRecordSport('run')">🏃 Run</button>
-                <button data-sport="walk" onclick="selectRecordSport('walk')">🚶 Walk</button>
-                <button data-sport="hike" onclick="selectRecordSport('hike')">🥾 Hike</button>
-            </div>
-            
-            <div class="record-big-display">
-                <div class="time" id="record-time">00:00</div>
-                <div class="distance" id="record-distance">0.00 km</div>
-            </div>
-            
-            <div class="record-metrics">
-                <div class="metric">
-                    <div class="value" id="record-speed">0.0</div>
-                    <div class="label">Speed (km/h)</div>
-                </div>
-                <div class="metric">
-                    <div class="value" id="record-hr">--</div>
-                    <div class="label">Heart Rate</div>
-                </div>
-                <div class="metric">
-                    <div class="value" id="record-cadence">--</div>
-                    <div class="label">Cadence (RPM)</div>
-                </div>
-                <div class="metric">
-                    <div class="value" id="record-elevation">0</div>
-                    <div class="label">Elevation (m)</div>
-                </div>
-            </div>
-            
-            <div class="record-gps-status">
-                <div class="gps-dot" id="gps-dot"></div>
-                <span id="gps-status">Waiting for GPS...</span>
-            </div>
-            
-            <div class="record-actions">
-                <button class="btn-record-action start" id="record-action-btn" onclick="toggleRecording()">
-                    🔴 Start Recording
-                </button>
-            </div>
-            
-            <div style="display:flex; gap:10px; justify-content:center; margin-top:10px;">
-                <button class="btn-record-action save" id="save-record-btn" style="display:none;" onclick="saveRecording()">
-                    💾 Save Activity
-                </button>
-                <button class="btn-record-action discard" id="discard-record-btn" style="display:none;" onclick="discardRecording()">
-                    🗑️ Discard
-                </button>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-        // ── DOM Elements ──
-        const dropZone = document.getElementById('drop-zone');
-        const fileInput = document.getElementById('file-input');
-        const analyzeBtn = document.getElementById('analyze-btn');
-        const statusDiv = document.getElementById('status');
-        const errorDiv = document.getElementById('error-message');
-        const resultsDiv = document.getElementById('results');
-        const sportSelect = document.getElementById('sport-select');
-        
-        let selectedFile = null;
-        let currentRideId = null;
-        let mapInstance = null;
-        let charts = {};
-        let currentRideData = null;
-        
-        // ── Recording Variables ──
-        let isRecording = false;
-        let watchId = null;
-        let recordPoints = [];
-        let recordTimer = null;
-        let recordSeconds = 0;
-        let recordDistance = 0;
-        let lastPosition = null;
-        let selectedSport = 'ride';
-        
-        // ── Modal Functions ──
-        function openRecordModal() {
-            document.getElementById('recordModal').classList.add('active');
-            resetRecordDisplay();
-        }
-        
-        function closeRecordModal() {
-            if (isRecording) {
-                if (!confirm('Recording in progress. Stop and close?')) return;
-                stopRecording();
-            }
-            document.getElementById('recordModal').classList.remove('active');
-        }
-        
-        function selectRecordSport(sport) {
-            selectedSport = sport;
-            document.querySelectorAll('#record-sport-select button').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.sport === sport);
+                `;
+                div.onclick = () => viewSummary(ride.id);
+                rideList.appendChild(div);
             });
         }
-        
-        function resetRecordDisplay() {
-            document.getElementById('record-time').textContent = '00:00';
-            document.getElementById('record-distance').textContent = '0.00 km';
-            document.getElementById('record-speed').textContent = '0.0';
-            document.getElementById('record-hr').textContent = '--';
-            document.getElementById('record-cadence').textContent = '--';
-            document.getElementById('record-elevation').textContent = '0';
-            document.getElementById('gps-dot').className = 'gps-dot';
-            document.getElementById('gps-status').textContent = 'Waiting for GPS...';
-            document.getElementById('record-action-btn').className = 'btn-record-action start';
-            document.getElementById('record-action-btn').textContent = '🔴 Start Recording';
-            document.getElementById('save-record-btn').style.display = 'none';
-            document.getElementById('discard-record-btn').style.display = 'none';
+
+        function updateBadgeCounts() {
+            const counts = {};
+            allRides.forEach(ride => {
+                const type = ride.ride_type || 'cycling';
+                counts[type] = (counts[type] || 0) + 1;
+            });
+            rideTypes.forEach(type => {
+                const badge = document.getElementById(`badge-${type.id}`);
+                if (badge) badge.textContent = counts[type.id] || 0;
+            });
         }
-        
-        // ── Toggle Recording ──
-        function toggleRecording() {
-            if (!isRecording) {
-                startRecording();
-            } else {
-                stopRecording();
-            }
-        }
-        
-        function startRecording() {
-            if (!navigator.geolocation) {
-                alert('Geolocation is not supported by your browser.');
+
+        // ── Upload ─────────────────────────────────────────────────────────
+        document.getElementById('fileInput').addEventListener('change', async function(e) {
+            const file = this.files[0];
+            if (!file) return;
+            if (uploadInProgress) { showToast('Upload in progress', 'error'); return; }
+            if (!file.name.toLowerCase().endsWith('.fit')) {
+                showToast('Please select a .FIT file', 'error');
+                this.value = '';
                 return;
             }
-            
-            isRecording = true;
-            recordPoints = [];
-            recordSeconds = 0;
-            recordDistance = 0;
-            lastPosition = null;
-            
-            document.getElementById('record-action-btn').className = 'btn-record-action stop';
-            document.getElementById('record-action-btn').textContent = '⏹️ Stop Recording';
-            document.getElementById('gps-dot').className = 'gps-dot active';
-            document.getElementById('gps-status').textContent = 'Recording GPS...';
-            document.getElementById('save-record-btn').style.display = 'none';
-            document.getElementById('discard-record-btn').style.display = 'none';
-            
-            recordTimer = setInterval(() => {
-                recordSeconds++;
-                document.getElementById('record-time').textContent = formatDuration(recordSeconds);
-            }, 1000);
-            
-            watchId = navigator.geolocation.watchPosition(
-                (position) => {
-                    const { latitude, longitude, speed, altitude } = position.coords;
-                    const timestamp = new Date().toISOString();
-                    
-                    if (lastPosition) {
-                        const d = calculateDistance(
-                            lastPosition.lat, lastPosition.lng,
-                            latitude, longitude
-                        );
-                        recordDistance += d;
+            uploadInProgress = true;
+            const uploadBtn = document.getElementById('uploadBtn');
+            const statusDiv = document.getElementById('uploadStatus');
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = '⏳ Uploading...';
+            statusDiv.textContent = 'Checking...';
+
+            try {
+                const formData = new FormData();
+                formData.append('fitfile', file);
+                const checkResponse = await fetch('/check-duplicate', { method: 'POST', body: formData });
+                const checkResult = await checkResponse.json();
+                let overwrite = false;
+                if (checkResult.is_duplicate) {
+                    statusDiv.textContent = '⚠️ Duplicate detected!';
+                    const userConfirmed = confirm(`Overwrite existing ride (ID: ${checkResult.duplicate_id})?`);
+                    if (userConfirmed) {
+                        overwrite = true;
+                        statusDiv.textContent = 'Overwriting...';
+                    } else {
+                        statusDiv.textContent = 'Cancelled';
+                        uploadInProgress = false;
+                        uploadBtn.disabled = false;
+                        uploadBtn.textContent = '📁 Choose FIT File';
+                        this.value = '';
+                        return;
                     }
-                    lastPosition = { lat: latitude, lng: longitude };
-                    
-                    recordPoints.push({
-                        lat: latitude,
-                        lng: longitude,
-                        timestamp: timestamp,
-                        speed_kmh: (speed || 0) * 3.6,
-                        altitude: altitude || 0,
-                        heart_rate: null,
-                        cadence: null,
-                    });
-                    
-                    document.getElementById('record-distance').textContent = recordDistance.toFixed(2) + ' km';
-                    document.getElementById('record-speed').textContent = ((speed || 0) * 3.6).toFixed(1);
-                    document.getElementById('record-elevation').textContent = (altitude || 0).toFixed(0);
-                    document.getElementById('gps-status').textContent = 'GPS active - ' + recordPoints.length + ' points';
-                },
-                (error) => {
-                    document.getElementById('gps-status').textContent = 'GPS error: ' + error.message;
-                },
-                { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 }
-            );
+                }
+                const uploadFormData = new FormData();
+                uploadFormData.append('fitfile', file);
+                uploadFormData.append('ride_type', selectedType === 'all' ? 'cycling' : selectedType);
+                if (overwrite && checkResult.duplicate_id) uploadFormData.append('overwrite_id', checkResult.duplicate_id);
+                statusDiv.textContent = 'Uploading & parsing...';
+                const uploadResponse = await fetch('/upload', { method: 'POST', body: uploadFormData });
+                const result = await uploadResponse.json();
+                if (uploadResponse.ok) {
+                    showToast('✅ Upload successful!', 'success');
+                    statusDiv.textContent = '✅ Complete!';
+                    await loadRides();
+                    this.value = '';
+                } else {
+                    showToast(`❌ Upload failed: ${result.error || 'Unknown error'}`, 'error');
+                    statusDiv.textContent = `❌ Error: ${result.error || 'Unknown error'}`;
+                }
+            } catch (error) {
+                console.error('Upload error:', error);
+                showToast('❌ Upload failed', 'error');
+                statusDiv.textContent = '❌ Upload failed';
+            } finally {
+                uploadInProgress = false;
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = '📁 Choose FIT File';
+            }
+        });
+
+        // ── Actions ────────────────────────────────────────────────────────
+        function downloadRide(rideId) { window.location.href = `/download/${rideId}`; }
+
+        function shareRide(rideId) { window.open(`/share/${rideId}`, '_blank'); }
+
+        function viewSummary(rideId) { window.open(`/ride-summary/${rideId}`, '_blank'); }
+
+        async function deleteRide(rideId) {
+            if (!confirm('Delete this activity?')) return;
+            try {
+                const response = await fetch(`/ride/${rideId}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (response.ok) {
+                    showToast('🗑️ Deleted', 'success');
+                    await loadRides();
+                } else {
+                    showToast(`❌ Failed: ${result.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast('❌ Delete failed', 'error');
+            }
         }
-        
-        function stopRecording() {
-            isRecording = false;
-            if (watchId) {
-                navigator.geolocation.clearWatch(watchId);
-                watchId = null;
-            }
-            if (recordTimer) {
-                clearInterval(recordTimer);
-                recordTimer = null;
-            }
-            
-            document.getElementById('record-action-btn').className = 'btn-record-action start';
-            document.getElementById('record-action-btn').textContent = '🔴 Start Recording';
-            document.getElementById('gps-dot').className = 'gps-dot';
-            document.getElementById('gps-status').textContent = 'Recording stopped. ' + recordPoints.length + ' points.';
-            
-            if (recordPoints.length > 1) {
-                document.getElementById('save-record-btn').style.display = 'inline-block';
-                document.getElementById('discard-record-btn').style.display = 'inline-block';
-            } else {
-                document.getElementById('gps-status').textContent = 'Not enough data points. Try again.';
-            }
+
+        // ── Toast ──────────────────────────────────────────────────────────
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            clearTimeout(toast._timeout);
+            toast._timeout = setTimeout(() => toast.classList.remove('show'), 3500);
         }
-        
-        function saveRecording() {
-            if (recordPoints.length < 2) {
-                alert('Not enough data points to save.');
+
+        // ── Sensors (Web Bluetooth) ───────────────────────────────────────
+        async function scanSensors() {
+            if (!('bluetooth' in navigator)) {
+                showToast('❌ Web Bluetooth not supported', 'error');
                 return;
             }
-            
-            document.getElementById('save-record-btn').textContent = '💾 Saving...';
-            document.getElementById('save-record-btn').disabled = true;
-            
-            fetch('/save-live-ride', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    points: recordPoints,
-                    sport_type: selectedSport,
-                }),
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.status === 'saved') {
-                    statusDiv.textContent = '✅ Activity saved successfully!';
-                    statusDiv.className = 'status success';
-                    statusDiv.style.display = 'block';
-                    document.getElementById('save-record-btn').style.display = 'none';
-                    document.getElementById('discard-record-btn').style.display = 'none';
-                    document.getElementById('gps-status').textContent = '✅ Saved successfully!';
-                    loadMyRides();
-                    setTimeout(() => { statusDiv.style.display = 'none'; }, 5000);
-                    closeRecordModal();
-                } else {
-                    throw new Error(data.error || 'Failed to save');
-                }
-            })
-            .catch(err => {
-                alert('Failed to save: ' + err.message);
-            })
-            .finally(() => {
-                document.getElementById('save-record-btn').textContent = '💾 Save Activity';
-                document.getElementById('save-record-btn').disabled = false;
-            });
+            if (sensorConnected) {
+                try { if (sensorServer) await sensorServer.disconnect(); } catch (e) {}
+                sensorConnected = false;
+                sensorServer = null;
+                sensorData = { heartRate: null, cadence: null, power: null, speed: null };
+                document.getElementById('sensorBtn').classList.remove('connected');
+                document.getElementById('sensorBtn').textContent = '📡 Connect';
+                showToast('Sensors disconnected', 'info');
+                return;
+            }
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['heart_rate', 'cycling_speed_cadence', 'power_meter'] }],
+                    optionalServices: ['heart_rate', 'cycling_speed_cadence', 'power_meter']
+                });
+                const server = await device.gatt.connect();
+                sensorServer = server;
+                sensorConnected = true;
+                document.getElementById('sensorBtn').classList.add('connected');
+                document.getElementById('sensorBtn').textContent = '📡 Disconnect';
+
+                await setupSensorListeners(server);
+                showToast('✅ Sensors connected!', 'success');
+            } catch (error) {
+                console.error('Sensor error:', error);
+                showToast('❌ Connection failed', 'error');
+            }
         }
-        
-        function discardRecording() {
-            if (!confirm('Are you sure you want to discard this recording?')) return;
-            recordPoints = [];
-            document.getElementById('save-record-btn').style.display = 'none';
-            document.getElementById('discard-record-btn').style.display = 'none';
-            document.getElementById('gps-status').textContent = 'Recording discarded.';
-            resetRecordDisplay();
+
+        async function setupSensorListeners(server) {
+            // Heart Rate
+            try {
+                const hrService = await server.getPrimaryService('heart_rate');
+                const hrChar = await hrService.getCharacteristic('heart_rate_measurement');
+                await hrChar.startNotifications();
+                hrChar.addEventListener('characteristicvaluechanged', event => {
+                    const value = event.target.value;
+                    const flags = value.getUint8(0);
+                    let hr = 0;
+                    if (flags & 0x01) hr = value.getUint16(1, true);
+                    else hr = value.getUint8(1);
+                    sensorData.heartRate = hr;
+                    updateSensorUI();
+                });
+            } catch (e) { console.warn('HR not available'); }
+
+            // CSC
+            try {
+                const cscService = await server.getPrimaryService('cycling_speed_cadence');
+                const cscChar = await cscService.getCharacteristic('csc_measurement');
+                await cscChar.startNotifications();
+                // For simplicity, we use GPS speed, but cadence can be derived if needed.
+                // Many sensors don't send speed directly; we rely on GPS.
+                // We'll keep a placeholder to show cadence if we can parse it.
+                // (Advanced parsing would require storing previous crank events)
+            } catch (e) { console.warn('CSC not available'); }
+
+            // Power Meter
+            try {
+                const powerService = await server.getPrimaryService('power_meter');
+                const powerChar = await powerService.getCharacteristic('power_measurement');
+                await powerChar.startNotifications();
+                powerChar.addEventListener('characteristicvaluechanged', event => {
+                    const value = event.target.value;
+                    const power = value.getUint16(0, true);
+                    sensorData.power = power;
+                    updateSensorUI();
+                });
+            } catch (e) { console.warn('Power not available'); }
         }
-        
-        function calculateDistance(lat1, lon1, lat2, lon2) {
+
+        function updateSensorUI() {
+            document.getElementById('recHR').textContent = sensorData.heartRate !== null ? sensorData.heartRate : '--';
+            document.getElementById('recCadence').textContent = sensorData.cadence !== null ? sensorData.cadence : '--';
+            document.getElementById('recPower').textContent = sensorData.power !== null ? sensorData.power : '--';
+        }
+
+        // ── GPS Recording ──────────────────────────────────────────────────
+        function haversineKm(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const a = Math.sin(dLat / 2) ** 2 +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) ** 2;
+            return R * 2 * Math.asin(Math.sqrt(a));
         }
-        
-        // ── Drag & Drop ──
-        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-        dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
-        });
-        dropZone.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) handleFile(e.target.files[0]);
-        });
-        
-        function handleFile(file) {
-            if (!file.name.toLowerCase().endsWith('.fit')) {
-                showError('Please select a .fit file.');
+
+        function initRecordMap(lat, lng) {
+            if (recMap) { recMap.remove();
+                recMap = null; }
+            recMap = L.map('recordMap').setView([lat, lng], 16);
+            const isDark = document.body.classList.contains('dark-theme');
+            const tileUrl = isDark ?
+                'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
+                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+            L.tileLayer(tileUrl, {
+                attribution: isDark ? '&copy; CartoDB' : '&copy; OpenStreetMap'
+            }).addTo(recMap);
+            recPolyline = L.polyline([], { color: '#fc4c02', weight: 4 }).addTo(recMap);
+            recMarker = L.circleMarker([lat, lng], {
+                radius: 6,
+                color: '#fff',
+                weight: 2,
+                fillColor: '#48bb78',
+                fillOpacity: 1
+            }).addTo(recMap);
+            setTimeout(() => recMap && recMap.invalidateSize(), 150);
+        }
+
+        function updateRecordMap(lat, lng) {
+            if (!recMap) { initRecordMap(lat, lng); return; }
+            recPolyline.addLatLng([lat, lng]);
+            recMarker.setLatLng([lat, lng]);
+            recMap.panTo([lat, lng]);
+        }
+
+        function teardownRecordMap() {
+            if (recMap) { recMap.remove();
+                recMap = null; }
+            recPolyline = null;
+            recMarker = null;
+        }
+
+        function setGpsStatus(text, cls) {
+            const el = document.getElementById('gpsStatus');
+            el.textContent = text;
+            el.className = `gps-status ${cls || ''}`;
+        }
+
+        function formatDuration(ms) {
+            const totalSec = Math.floor(ms / 1000);
+            const h = String(Math.floor(totalSec / 3600)).padStart(2, '0');
+            const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
+            const s = String(totalSec % 60).padStart(2, '0');
+            return `${h}:${m}:${s}`;
+        }
+
+        function currentElapsedMs() {
+            if (!recStartTime) return 0;
+            if (recIsPaused) return recElapsedBeforePause;
+            return recElapsedBeforePause + (Date.now() - recStartTime);
+        }
+
+        function updateRecordUI() {
+            const durationStr = formatDuration(currentElapsedMs());
+            document.getElementById('recDuration').textContent = durationStr;
+            document.getElementById('recDistance').textContent = recTotalDistanceKm.toFixed(2);
+            document.getElementById('recPoints').textContent = recPoints.length;
+            const elapsedHours = currentElapsedMs() / 3600000;
+            const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
+            document.getElementById('recAvgSpeed').textContent = avgSpeed.toFixed(1);
+            const minimizedText = document.getElementById('minimizedText');
+            if (minimizedText) {
+                minimizedText.textContent = `Recording... ${durationStr} · ${recTotalDistanceKm.toFixed(2)} km`;
+            }
+        }
+
+        function onGpsPosition(position) {
+            const coords = position.coords;
+            const lat = coords.latitude;
+            const lng = coords.longitude;
+            const altitude = coords.altitude || 0;
+            let speedKmh = 0;
+            if (coords.speed !== null && coords.speed !== undefined && coords.speed >= 0) {
+                speedKmh = coords.speed * 3.6;
+            } else if (recLastPoint) {
+                const dtSec = (position.timestamp - recLastPoint.rawTimestamp) / 1000;
+                if (dtSec > 0) {
+                    const distKm = haversineKm(recLastPoint.lat, recLastPoint.lng, lat, lng);
+                    speedKmh = (distKm / dtSec) * 3600;
+                }
+            }
+            if (recLastPoint) {
+                recTotalDistanceKm += haversineKm(recLastPoint.lat, recLastPoint.lng, lat, lng);
+            }
+            recPoints.push({
+                timestamp: new Date(position.timestamp).toISOString(),
+                lat: lat,
+                lng: lng,
+                altitude: altitude,
+                speed_kmh: speedKmh,
+                heart_rate: sensorData.heartRate || 0,
+                cadence: sensorData.cadence || 0,
+                power: sensorData.power || 0
+            });
+            recLastPoint = { lat, lng, rawTimestamp: position.timestamp };
+            updateRecordMap(lat, lng);
+            document.getElementById('recSpeed').textContent = speedKmh.toFixed(1);
+            setGpsStatus('GPS locked', 'active');
+            updateRecordUI();
+            updateSensorUI();
+        }
+
+        function onGpsError(error) {
+            console.error('GPS error:', error);
+            let msg = 'GPS error';
+            if (error.code === error.PERMISSION_DENIED) msg = 'Permission denied';
+            else if (error.code === error.POSITION_UNAVAILABLE) msg = 'Location unavailable';
+            else if (error.code === error.TIMEOUT) msg = 'Timeout';
+            setGpsStatus(msg, 'error');
+            showToast(`❌ ${msg}`, 'error');
+        }
+
+        function startRecording() {
+            if (!('geolocation' in navigator)) {
+                showToast('❌ Geolocation not supported', 'error');
                 return;
             }
-            selectedFile = file;
-            analyzeBtn.disabled = false;
-            statusDiv.textContent = '✅ Selected: ' + file.name + ' (' + (file.size / 1024).toFixed(1) + ' KB)';
-            statusDiv.className = 'status success';
-            statusDiv.style.display = 'block';
-            errorDiv.style.display = 'none';
-            resultsDiv.classList.add('hidden');
+            recPoints = [];
+            recTotalDistanceKm = 0;
+            recLastPoint = null;
+            recElapsedBeforePause = 0;
+            recIsPaused = false;
+            recIsRecording = true;
+            recStartTime = Date.now();
+            teardownRecordMap();
+
+            document.getElementById('recordSection').style.display = 'none';
+            document.getElementById('recordMinimizedBar').style.display = 'none';
+            document.getElementById('recordModal').style.display = 'flex';
+
+            setGpsStatus('Acquiring GPS...', 'active');
+            document.getElementById('recordMessage').textContent = '';
+
+            recWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, {
+                enableHighAccuracy: true,
+                maximumAge: 1000,
+                timeout: 15000
+            });
+
+            recTimerInterval = setInterval(updateRecordUI, 1000);
+
+            document.getElementById('recPauseBtn').style.display = 'inline-block';
+            document.getElementById('recResumeBtn').style.display = 'none';
+            document.getElementById('recStopBtn').style.display = 'inline-block';
+            document.getElementById('recDiscardBtn').style.display = 'inline-block';
+            updateSensorUI();
         }
-        
-        function showError(msg) {
-            errorDiv.textContent = '❌ ' + msg;
-            errorDiv.style.display = 'block';
-            statusDiv.style.display = 'none';
-            analyzeBtn.disabled = true;
+
+        function minimizeRecordModal() {
+            document.getElementById('recordModal').style.display = 'none';
+            document.getElementById('recordMinimizedBar').style.display = 'flex';
         }
-        
-        // ── Upload ──
-        analyzeBtn.addEventListener('click', startUpload);
-        
-        async function startUpload() {
-            if (!selectedFile) return;
-            analyzeBtn.disabled = true;
-            statusDiv.textContent = '⏳ Uploading...';
-            statusDiv.className = 'status info';
-            statusDiv.style.display = 'block';
-            errorDiv.style.display = 'none';
-            const formData = new FormData();
-            formData.append('fitfile', selectedFile);
-            formData.append('sport_type', sportSelect.value);
+
+        function reopenRecordModal() {
+            document.getElementById('recordMinimizedBar').style.display = 'none';
+            document.getElementById('recordModal').style.display = 'flex';
+            setTimeout(() => recMap && recMap.invalidateSize(), 50);
+        }
+
+        function pauseRecording() {
+            if (!recIsRecording || recIsPaused) return;
+            recIsPaused = true;
+            recElapsedBeforePause += Date.now() - recStartTime;
+            if (recWatchId !== null) {
+                navigator.geolocation.clearWatch(recWatchId);
+                recWatchId = null;
+            }
+            setGpsStatus('Paused', 'paused');
+            document.getElementById('recPauseBtn').style.display = 'none';
+            document.getElementById('recResumeBtn').style.display = 'inline-block';
+        }
+
+        function resumeRecording() {
+            if (!recIsRecording || !recIsPaused) return;
+            recIsPaused = false;
+            recStartTime = Date.now();
+            recLastPoint = null;
+            recWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, {
+                enableHighAccuracy: true,
+                maximumAge: 1000,
+                timeout: 15000
+            });
+            setGpsStatus('GPS locked', 'active');
+            document.getElementById('recPauseBtn').style.display = 'inline-block';
+            document.getElementById('recResumeBtn').style.display = 'none';
+        }
+
+        function stopGpsWatch() {
+            if (recWatchId !== null) {
+                navigator.geolocation.clearWatch(recWatchId);
+                recWatchId = null;
+            }
+            if (recTimerInterval) {
+                clearInterval(recTimerInterval);
+                recTimerInterval = null;
+            }
+        }
+
+        function resetRecordUI() {
+            document.getElementById('recPauseBtn').style.display = 'none';
+            document.getElementById('recResumeBtn').style.display = 'none';
+            document.getElementById('recStopBtn').style.display = 'none';
+            document.getElementById('recDiscardBtn').style.display = 'none';
+            document.getElementById('recDuration').textContent = '00:00:00';
+            document.getElementById('recDistance').textContent = '0.00';
+            document.getElementById('recSpeed').textContent = '0.0';
+            document.getElementById('recAvgSpeed').textContent = '0.0';
+            document.getElementById('recPoints').textContent = '0';
+            document.getElementById('recHR').textContent = '--';
+            document.getElementById('recCadence').textContent = '--';
+            document.getElementById('recPower').textContent = '--';
+            setGpsStatus('GPS idle', '');
+            document.getElementById('recordModal').style.display = 'none';
+            document.getElementById('recordMinimizedBar').style.display = 'none';
+            document.getElementById('recordSection').style.display = 'block';
+        }
+
+        async function stopRecording() {
+            if (!recIsRecording) return;
+            stopGpsWatch();
+            if (recPoints.length < 2) {
+                showToast('❌ Not enough GPS data', 'error');
+                recIsRecording = false;
+                resetRecordUI();
+                return;
+            }
+            const statusDiv = document.getElementById('recordMessage');
+            statusDiv.textContent = 'Saving ride...';
+            document.getElementById('recStopBtn').disabled = true;
+
             try {
-                const response = await fetch('/upload', {
+                const response = await fetch('/save-live-ride', {
                     method: 'POST',
-                    body: formData,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        points: recPoints,
+                        ride_type: selectedType === 'all' ? 'cycling' : selectedType
+                    })
                 });
-                if (!response.ok) {
-                    let msg = 'Server error';
-                    try { const d = await response.json(); if (d.error) msg = d.error; } catch(_) {}
-                    throw new Error(msg);
+                const result = await response.json();
+                if (response.ok) {
+                    showToast('✅ Ride saved!', 'success');
+                    statusDiv.textContent = '';
+                    await loadRides();
+                } else {
+                    showToast(`❌ Failed: ${result.error || 'Unknown error'}`, 'error');
+                    statusDiv.textContent = `❌ Error: ${result.error || 'Unknown error'}`;
                 }
-                const data = await response.json();
-                if (data.summary) {
-                    currentRideId = data.ride_id || null;
-                    currentRideData = data;
-                    displayResults(data.summary, data.streams || {}, data.route || []);
-                    statusDiv.textContent = '✅ Complete!';
-                    statusDiv.className = 'status success';
-                    loadMyRides();
-                } else throw new Error('Invalid response');
-            } catch (err) {
-                showError(err.message);
-                statusDiv.style.display = 'none';
+            } catch (error) {
+                console.error('Save error:', error);
+                showToast('❌ Save failed', 'error');
+                statusDiv.textContent = '❌ Save failed';
             } finally {
-                analyzeBtn.disabled = false;
+                document.getElementById('recStopBtn').disabled = false;
+                recIsRecording = false;
+                resetRecordUI();
             }
         }
-        
-        function displayResults(summary, streams, route) {
-            resultsDiv.classList.remove('hidden');
-            updateStats(summary);
-            renderMap(route);
-            renderCharts(streams);
-            updateStoryCard(summary);
-            
-            document.getElementById('download-story-btn').style.display = 'inline-block';
-            document.getElementById('download-fit-btn').style.display = 'inline-block';
-            document.getElementById('download-gpx-btn').style.display = 'inline-block';
-            document.getElementById('download-csv-btn').style.display = 'inline-block';
+
+        function discardRecording() {
+            if (!confirm('Discard recording?')) return;
+            stopGpsWatch();
+            recIsRecording = false;
+            recPoints = [];
+            teardownRecordMap();
+            document.getElementById('recordMessage').textContent = 'Discarded';
+            resetRecordUI();
         }
-        
-        // ── Update Stats ──
-        function updateStats(summary) {
-            const statsGrid = document.getElementById('stats-grid');
-            statsGrid.innerHTML = '';
-            const stats = [
-                { label: 'Distance', value: (summary.distance_km || 0).toFixed(2) + ' km' },
-                { label: 'Avg Speed', value: (summary.avg_speed || 0).toFixed(1) + ' km/h' },
-                { label: 'Max Speed', value: (summary.max_speed || 0).toFixed(1) + ' km/h' },
-                { label: 'Avg Cadence', value: (summary.avg_cadence || 0).toFixed(1) + ' RPM' },
-                { label: 'Elevation Gain', value: (summary.elevation_gain || 0).toFixed(1) + ' m' },
-                { label: 'Calories', value: summary.total_calories || '0' + ' kcal' },
-                { label: 'Avg Power', value: (summary.avg_power || 0).toFixed(1) + ' W' },
-                { label: 'Max Power', value: (summary.max_power || 0).toFixed(1) + ' W' },
-                { label: 'Avg Temp', value: (summary.avg_temp || '--') + ' °C' },
-                { label: 'Max Temp', value: (summary.max_temp || '--') + ' °C' },
-                { label: 'Avg HR', value: summary.avg_hr || '--' + ' bpm' },
-                { label: 'Max HR', value: summary.max_hr || '--' + ' bpm' },
-            ];
-            
-            stats.forEach(stat => {
-                const card = document.createElement('div');
-                card.className = 'stat-card';
-                card.innerHTML = `<div class="value">${stat.value}</div><div class="label">${stat.label}</div>`;
-                statsGrid.appendChild(card);
-            });
+
+        // ── Init ───────────────────────────────────────────────────────────
+        async function init() {
+            await loadRideTypes();
+            await loadRides();
+            setInterval(loadRides, 30000);
         }
-        
-        function renderMap(route) {
-            if (mapInstance) { mapInstance.remove(); mapInstance = null; }
-            const mapContainer = document.getElementById('ride-map');
-            if (!route || route.length < 2) {
-                mapContainer.innerHTML = '<p style="text-align:center; padding:40px; color:#888;">No GPS data available</p>';
-                return;
-            }
-            mapContainer.innerHTML = '';
-            const mapDiv = document.createElement('div');
-            mapDiv.style.height = '350px';
-            mapDiv.style.width = '100%';
-            mapDiv.style.borderRadius = '12px';
-            mapContainer.appendChild(mapDiv);
-            const latSum = route.reduce((sum, p) => sum + p[0], 0);
-            const lngSum = route.reduce((sum, p) => sum + p[1], 0);
-            const center = [latSum / route.length, lngSum / route.length];
-            mapInstance = L.map(mapDiv, { zoomControl: false }).setView(center, 13);
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(mapInstance);
-            const latlngs = route.map(p => [p[0], p[1]]);
-            L.polyline(latlngs, { color: '#f57c00', weight: 4, opacity: 0.9 }).addTo(mapInstance);
-            mapInstance.fitBounds(L.polyline(latlngs).getBounds(), { padding: [50, 50] });
-        }
-        
-        function renderCharts(streams) {
-            const distance = streams.distance || [];
-            const heartRate = streams.heart_rate || [];
-            const cadence = streams.cadence || [];
-            const power = streams.power || [];
-            const elevation = streams.elevation || [];
-            const speed = streams.speed || [];
-            
-            if (document.getElementById('chart-hr') && distance.length > 0) {
-                renderChart('chart-hr', 'Heart Rate', distance, [
-                    { label: 'Heart Rate (bpm)', data: heartRate, borderColor: '#f57c00', backgroundColor: 'rgba(245,124,0,0.1)', yAxisID: 'y' }
-                ]);
-            }
-            if (document.getElementById('chart-cadence') && distance.length > 0 && cadence.length > 0) {
-                renderChart('chart-cadence', 'Cadence', distance, [
-                    { label: 'Cadence (RPM)', data: cadence, borderColor: '#4fc3f7', backgroundColor: 'rgba(79,195,247,0.1)', yAxisID: 'y' }
-                ]);
-            }
-            if (document.getElementById('chart-power') && distance.length > 0 && power.length > 0) {
-                renderChart('chart-power', 'Power', distance, [
-                    { label: 'Power (W)', data: power, borderColor: '#ffc107', backgroundColor: 'rgba(255,193,7,0.1)', yAxisID: 'y' }
-                ]);
-            }
-            if (document.getElementById('chart-elevation-speed') && distance.length > 0) {
-                renderChart('chart-elevation-speed', 'Elevation & Speed', distance, [
-                    { label: 'Elevation (m)', data: elevation, borderColor: '#4caf50', backgroundColor: 'rgba(76,175,80,0.1)', yAxisID: 'y1' },
-                    { label: 'Speed (km/h)', data: speed, borderColor: '#f57c00', backgroundColor: 'rgba(245,124,0,0.1)', yAxisID: 'y2' }
-                ]);
-            }
-        }
-        
-        function renderChart(canvasId, title, labels, datasets) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return;
-            if (charts[canvasId]) { charts[canvasId].destroy(); }
-            charts[canvasId] = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels.map((d, i) => {
-                        if (i === 0) return 'Start';
-                        if (i === labels.length - 1) return 'End';
-                        return d.toFixed(1) + 'km';
-                    }),
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: 'top', labels: { color: '#e8e8e8' } },
-                        tooltip: { mode: 'index', intersect: false }
-                    },
-                    scales: {
-                        x: { ticks: { color: '#888' }, grid: { color: '#2a2a2a' } },
-                        y: { beginAtZero: true, position: 'left', ticks: { color: '#888' }, grid: { color: '#2a2a2a' } },
-                        y1: { beginAtZero: true, position: 'left', ticks: { color: '#888' }, grid: { color: '#2a2a2a' } },
-                        y2: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, ticks: { color: '#888' } }
-                    }
-                }
-            });
-        }
-        
-        function updateStoryCard(summary) {
-            const sportIcons = {
-                'ride': '🚴', 'run': '🏃', 'walk': '🚶', 'hike': '🥾', 
-                'swim': '🏊', 'trail_run': '🏔️', 'virtual_ride': '🚲',
-                'mountain_bike_ride': '🚵', 'gravel_ride': '🪨', 'ebike_ride': '⚡',
-                'crossfit': '💪', 'weight_training': '🏋️', 'yoga': '🧘',
-                'golf': '⛳', 'tennis': '🎾', 'soccer': '⚽', 'skiing': '⛷️',
-                'snowboard': '🏂'
-            };
-            
-            const sport = sportSelect.value || 'ride';
-            const icon = sportIcons[sport] || '🚴';
-            const title = sport.toUpperCase().replace(/_/g, ' ');
-            
-            document.getElementById('story-emoji').textContent = icon;
-            document.getElementById('story-title').textContent = title;
-            document.getElementById('story-distance').textContent = (summary.distance_km || 0).toFixed(1);
-            document.getElementById('story-time').textContent = formatDuration(summary.duration_seconds || 0);
-            document.getElementById('story-elevation').innerHTML = (summary.elevation_gain || 0).toFixed(0) + ' <span class="unit">m</span>';
-            document.getElementById('story-speed').textContent = (summary.avg_speed || 0).toFixed(1);
-            document.getElementById('story-hr').textContent = summary.avg_hr || '--';
-            document.getElementById('story-calories').textContent = summary.total_calories || '0';
-            document.getElementById('story-power').textContent = (summary.avg_power || 0).toFixed(1);
-            
-            const now = new Date();
-            document.getElementById('story-date').textContent = now.toLocaleDateString('en-US', { 
-                month: 'short', day: 'numeric', year: 'numeric' 
-            });
-        }
-        
-        function formatDuration(sec) {
-            if (!sec) return '0:00';
-            const h = Math.floor(sec / 3600);
-            const m = Math.floor((sec % 3600) / 60);
-            const s = Math.floor(sec % 60);
-            if (h > 0) return h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-            return m + ':' + String(s).padStart(2, '0');
-        }
-        
-        // ── Download Functions ──
-        function downloadCurrentRide(format) {
-            if (!currentRideId) return;
-            if (format === 'fit') {
-                window.location.href = '/download-ride/' + currentRideId;
-            } else if (format === 'gpx') {
-                window.location.href = '/download-ride/' + currentRideId + '?format=gpx';
-            }
-        }
-        
-        function downloadCSV() {
-            if (!currentRideData) return;
-            const streams = currentRideData.streams || {};
-            const distance = streams.distance || [];
-            const heartRate = streams.heart_rate || [];
-            const cadence = streams.cadence || [];
-            const power = streams.power || [];
-            const elevation = streams.elevation || [];
-            const speed = streams.speed || [];
-            
-            let csv = 'Distance (km),Heart Rate (bpm),Cadence (RPM),Power (W),Elevation (m),Speed (km/h)\n';
-            const maxLen = Math.max(distance.length, heartRate.length, cadence.length, power.length, elevation.length, speed.length);
-            for (let i = 0; i < maxLen; i++) {
-                csv += `${distance[i] || ''},${heartRate[i] || ''},${cadence[i] || ''},${power[i] || ''},${elevation[i] || ''},${speed[i] || ''}\n`;
-            }
-            
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const link = document.createElement('a');
-            link.download = `ride-data-${new Date().toISOString().slice(0,10)}.csv`;
-            link.href = URL.createObjectURL(blob);
-            link.click();
-            URL.revokeObjectURL(link.href);
-        }
-        
-        async function downloadStory() {
-            const element = document.getElementById('story-card');
-            try {
-                const canvas = await html2canvas(element, {
-                    scale: 2,
-                    backgroundColor: null,
-                    allowTaint: true,
-                    useCORS: true,
-                    logging: false,
-                    width: 380,
-                    height: 340,
-                });
-                const link = document.createElement('a');
-                link.download = 'strava-story-' + new Date().toISOString().slice(0,10) + '.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            } catch (error) {
-                console.error(error);
-                alert('Failed to generate story image.');
-            }
-        }
-        
-        // ── My Rides ──
-        async function loadMyRides() {
-            try {
-                const response = await fetch('/my-rides');
-                const rides = await response.json();
-                const container = document.getElementById('rides-list');
-                if (rides.length === 0) {
-                    container.innerHTML = '<div class="empty-rides"><span class="icon">🏃</span><p>No activities uploaded yet.</p></div>';
-                    return;
-                }
-                const icons = { 'ride': '🚴', 'run': '🏃', 'walk': '🚶', 'hike': '🥾', 'swim': '🏊' };
-                let html = '';
-                rides.forEach(ride => {
-                    const summary = ride.summary || {};
-                    const date = summary.start_time ? new Date(summary.start_time).toLocaleDateString() : 'Unknown';
-                    const dist = summary.distance_km || 0;
-                    const sport = ride.sport_type || 'ride';
-                    const icon = icons[sport] || '🏃';
-                    html += `<div class="ride-item">
-                        <div class="ride-info">
-                            <span class="ride-icon">${icon}</span>
-                            <span class="ride-name">${ride.filename}</span>
-                            <span class="ride-meta">${date} • ${dist} km</span>
-                            <span class="sport-badge">${sport.toUpperCase()}</span>
-                        </div>
-                        <div class="ride-actions">
-                            <button class="btn-sm orange" onclick="window.location.href='/ride/${ride.id}'">👁️ View</button>
-                            <button class="btn-sm gray" onclick="window.location.href='/download-ride/${ride.id}'">📥 Download</button>
-                        </div>
-                    </div>`;
-                });
-                container.innerHTML = html;
-            } catch (error) {
-                console.error('Failed to load rides:', error);
-                document.getElementById('rides-list').innerHTML = '<p style="color:#ff6b6b;">Failed to load activities.</p>';
-            }
-        }
-        
-        // ── Club ──
-        async function loadClub() {
-            try {
-                const response = await fetch('/club');
-                const riders = await response.json();
-                const container = document.getElementById('club-list');
-                if (riders.length === 0) {
-                    container.innerHTML = '<p style="color:#888; text-align:center; padding:20px;">No riders yet.</p>';
-                    return;
-                }
-                const medals = ['🥇', '🥈', '🥉'];
-                let html = `<table class="club-table"><thead><tr><th>#</th><th>Rider</th><th>Avg Speed</th><th>Rides</th><th>Elevation</th><th>Calories</th></tr></thead><tbody>`;
-                riders.forEach((rider, index) => {
-                    const rank = index + 1;
-                    const medal = rank <= 3 ? medals[index] : '';
-                    html += `<tr><td class="rank">${medal || rank}</td><td><strong>${rider.username}</strong></td>
-                        <td>${rider.best_avg_speed.toFixed(1)} km/h</td><td>${rider.total_rides}</td>
-                        <td>${rider.total_elevation.toFixed(0)}m</td><td>${rider.total_calories.toFixed(0)}</td></tr>`;
-                });
-                html += '</tbody></table>';
-                container.innerHTML = html;
-            } catch (error) {
-                console.error('Failed to load club:', error);
-                document.getElementById('club-list').innerHTML = '<p style="color:#ff6b6b;">Failed to load leaderboard.</p>';
-            }
-        }
-        
-        // ── Init ──
-        document.addEventListener('DOMContentLoaded', () => {
-            loadMyRides();
-            loadClub();
-        });
+
+        init();
     </script>
 </body>
 </html>
