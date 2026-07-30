@@ -6,7 +6,7 @@
     <title>Fit Reader - Dashboard</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* ... (existing styles unchanged) ... */
+        /* ... (styles unchanged, kept for brevity) ... */
         :root {
             --bg: #f7f7f9;
             --card: #ffffff;
@@ -879,7 +879,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
         .sensor-modal-header h3 {
             font-size: 1.1rem;
@@ -895,6 +895,25 @@
         }
         .sensor-modal-close:hover {
             color: var(--text);
+        }
+        .sensor-status {
+            font-size: 0.85rem;
+            color: var(--text-soft);
+            padding: 6px 0 10px 0;
+            text-align: center;
+            border-bottom: 1px solid var(--line);
+            margin-bottom: 10px;
+            min-height: 2.2em;
+            transition: color 0.2s;
+        }
+        .sensor-status.success {
+            color: #48bb78;
+        }
+        .sensor-status.error {
+            color: #fc8181;
+        }
+        .sensor-status.searching {
+            color: var(--orange);
         }
         .sensor-device-list {
             flex: 1;
@@ -1103,9 +1122,10 @@
                     <h3>📡 Manage Sensors</h3>
                     <button class="sensor-modal-close" onclick="closeSensorManager()">✕</button>
                 </div>
+                <div class="sensor-status" id="sensorStatus">🔍 Ready to scan</div>
                 <div class="sensor-device-list" id="sensorDeviceList">
                     <div style="text-align:center; color:var(--text-soft); font-size:0.9rem; padding:20px; width:100%;">
-                        No devices connected. Tap "Search Sensors" to scan.
+                        No devices connected. Scanning will start automatically.
                     </div>
                 </div>
                 <div class="sensor-modal-actions">
@@ -1481,28 +1501,38 @@
         }
 
         // ── SENSOR MANAGER ──────────────────────────────────
+        function setSensorStatus(message, type = '') {
+            const el = document.getElementById('sensorStatus');
+            if (!el) return;
+            el.textContent = message;
+            el.className = 'sensor-status' + (type ? ' ' + type : '');
+        }
+
         function openSensorManager() {
             const modal = document.getElementById('sensorModal');
             modal.classList.add('active');
             renderSensorList();
-            // Automatically trigger a scan if no devices are connected or if user wants to add more
+            // Automatically trigger a scan if no devices are connected
             if (!isScanning) {
-                // Small delay to let modal render, then start scan
+                setSensorStatus('🔍 Searching for devices...', 'searching');
                 setTimeout(() => {
                     addNewDevice();
                 }, 300);
+            } else {
+                setSensorStatus('⏳ Scan already in progress...', 'searching');
             }
         }
 
         function closeSensorManager() {
             document.getElementById('sensorModal').classList.remove('active');
+            setSensorStatus('🔍 Ready to scan', '');
         }
 
         function renderSensorList() {
             const list = document.getElementById('sensorDeviceList');
             if (connectedDevices.length === 0) {
                 list.innerHTML =
-                    `<div style="text-align:center; color:var(--text-soft); font-size:0.9rem; padding:20px; width:100%;">No devices connected. Scanning will start automatically.</div>`;
+                    `<div style="text-align:center; color:var(--text-soft); font-size:0.9rem; padding:20px; width:100%;">No devices connected.</div>`;
                 return;
             }
             list.innerHTML = '';
@@ -1521,17 +1551,23 @@
                     `;
                 list.appendChild(div);
             });
+            // Clear status when devices are present
+            setSensorStatus('✅ ' + connectedDevices.length + ' device(s) connected', 'success');
         }
 
         async function addNewDevice() {
-            if (isScanning) return;
+            if (isScanning) {
+                setSensorStatus('⏳ Scan already in progress...', 'searching');
+                return;
+            }
             if (!('bluetooth' in navigator)) {
-                showToast('❌ Web Bluetooth is not supported on this browser/device.', 'error');
+                setSensorStatus('❌ Web Bluetooth is not supported.', 'error');
+                showToast('❌ Web Bluetooth is not supported.', 'error');
                 return;
             }
             isScanning = true;
+            setSensorStatus('🔍 Searching for devices...', 'searching');
             try {
-                showToast('Opening Bluetooth search...', 'info');
                 const device = await navigator.bluetooth.requestDevice({
                     filters: [
                         { services: ['heart_rate'] },
@@ -1540,7 +1576,7 @@
                     ],
                     optionalServices: ['heart_rate', 'cycling_speed_cadence', 'cycling_power']
                 });
-                showToast(`Connecting to ${device.name || 'Device'}...`, 'info');
+                setSensorStatus('🔗 Connecting to ' + (device.name || 'Device') + '...', 'searching');
                 const server = await device.gatt.connect();
                 const uniqueId = `${device.id}-${deviceIdCounter++}`;
 
@@ -1553,6 +1589,7 @@
                 };
                 connectedDevices.push(devInfo);
                 updateSensorBtnUI();
+                setSensorStatus('✅ Connected to ' + devInfo.name, 'success');
                 showToast(`✅ Connected to ${devInfo.name}`, 'success');
                 await setupSensorListeners(server, uniqueId);
 
@@ -1562,6 +1599,7 @@
                     if (idx > -1) {
                         connectedDevices.splice(idx, 1);
                         updateSensorBtnUI();
+                        setSensorStatus('⚠️ ' + devInfo.name + ' disconnected', 'error');
                         showToast(`⚠️ ${devInfo.name} disconnected`, 'error');
                     }
                 });
@@ -1569,18 +1607,22 @@
                 console.error("Add Device Error:", error);
                 let errorMsg = 'Connection failed';
                 if (error.name === 'NotFoundError' || error.name === 'AbortError' || error.message?.includes('cancel')) {
-                    errorMsg = 'Search cancelled by user';
+                    errorMsg = 'Scan cancelled by user';
                 } else if (error.name === 'NotAllowedError') {
                     errorMsg = 'Bluetooth permission denied.';
                 } else if (error.name === 'SecurityError') {
-                    errorMsg = '⚠️ SECURITY ERROR: Web Bluetooth requires HTTPS. Please serve this app over HTTPS.';
+                    errorMsg = '⚠️ HTTPS required for Web Bluetooth.';
                 } else if (error.name === 'NetworkError') {
-                    errorMsg = 'Bluetooth hardware not found or disabled.';
+                    errorMsg = 'Bluetooth hardware not found.';
                 } else if (error.message?.includes('GATT')) {
-                    errorMsg = 'GATT connection failed. The device might be incompatible or out of range.';
+                    errorMsg = 'GATT connection failed. Device may be incompatible.';
                 }
+                setSensorStatus('❌ ' + errorMsg, 'error');
                 showToast(`❌ ${errorMsg}`, 'error');
-                updateSensorBtnUI();
+                // If no devices are connected, show the "No devices" message
+                if (connectedDevices.length === 0) {
+                    renderSensorList();
+                }
             } finally {
                 isScanning = false;
             }
@@ -1595,6 +1637,12 @@
             } catch (e) { /* ignore */ }
             connectedDevices.splice(index, 1);
             updateSensorBtnUI();
+            renderSensorList();
+            if (connectedDevices.length === 0) {
+                setSensorStatus('No devices connected.', '');
+            } else {
+                setSensorStatus('✅ ' + connectedDevices.length + ' device(s) connected', 'success');
+            }
             showToast('Device removed', 'info');
         }
 
