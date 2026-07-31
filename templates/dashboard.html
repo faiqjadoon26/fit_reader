@@ -62,11 +62,7 @@
         .logout-btn:hover { background: #fff1ec; color: var(--orange-dark); }
 
         /* ── Main Container ── */
-        .main-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 1rem 1rem 0;
-        }
+        .main-container { max-width: 1400px; margin: 0 auto; padding: 1rem 1rem 0; }
         /* ── Tab Content ── */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -104,34 +100,73 @@
             padding: 4px 0;
             position: relative;
         }
-        .tab-btn .tab-icon {
-            font-size: 1.4rem;
-            line-height: 1.2;
-        }
-        .tab-btn .tab-label {
-            font-size: 0.55rem;
-            text-transform: uppercase;
-            letter-spacing: 0.03em;
-        }
-        .tab-btn.active {
-            color: var(--orange);
-        }
-        .tab-btn.active .tab-icon {
-            transform: scale(1.05);
-        }
+        .tab-btn .tab-icon { font-size: 1.4rem; line-height: 1.2; }
+        .tab-btn .tab-label { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.03em; }
+        .tab-btn.active { color: var(--orange); }
+        .tab-btn.active .tab-icon { transform: scale(1.05); }
         .tab-btn:active { opacity: 0.7; }
-        .tab-btn .badge-dot {
-            position: absolute;
-            top: 6px;
-            right: 50%;
-            transform: translateX(calc(50% + 14px));
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--orange);
-            border: 1.5px solid var(--card);
+
+        /* ── Profile Tab ── */
+        .profile-card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: background var(--transition), border-color var(--transition);
         }
-        /* ── Existing Styles (condensed) ── */
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .profile-avatar { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--orange); }
+        .profile-name { font-size: 1.2rem; font-weight: 700; }
+        .profile-email { color: var(--text-soft); font-size: 0.9rem; }
+
+        .profile-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem 1.2rem; }
+        .profile-form .full-width { grid-column: 1 / -1; }
+        .profile-form label { font-size: 0.75rem; font-weight: 600; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.03em; display: block; margin-bottom: 2px; }
+        .profile-form input, .profile-form select {
+            width: 100%;
+            padding: 6px 10px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.9rem;
+            transition: border-color 0.2s;
+        }
+        .profile-form input:focus, .profile-form select:focus { outline: none; border-color: var(--orange); }
+        .profile-form .field-group { display: flex; flex-direction: column; }
+
+        .profile-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .profile-actions button {
+            background: var(--bg);
+            border: 1px solid var(--line);
+            border-radius: 30px;
+            padding: 10px 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .profile-actions button:hover { border-color: var(--orange); background: var(--orange); color: white; }
+        .profile-actions .save-btn { background: var(--orange); color: white; border-color: var(--orange); }
+        .profile-actions .save-btn:hover { background: var(--orange-dark); }
+
+        /* ── Existing styles (condensed) ── */
         .activity-selector { margin-bottom: 1rem; }
         .activity-grid { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
         .activity-grid::-webkit-scrollbar { display: none; }
@@ -206,7 +241,7 @@
         .toast.success { background: #48bb78; }
         .toast.error { background: #fc8181; }
 
-        /* ── Record Modal (overlay) ── */
+        /* ── Record Modal ── */
         .record-modal {
             position: fixed; inset: 0; z-index: 1000; background: #121212;
             display: none; flex-direction: column;
@@ -246,37 +281,20 @@
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
         .minimized-expand { color: #a0aec0; font-size: 0.7rem; }
 
-        /* ── Profile Tab ── */
-        .profile-card {
-            background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-            padding: 1.5rem; text-align: center; margin-bottom: 1rem;
-            transition: background var(--transition), border-color var(--transition);
-        }
-        .profile-avatar { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid var(--orange); margin-bottom: 0.5rem; }
-        .profile-name { font-size: 1.2rem; font-weight: 700; }
-        .profile-email { color: var(--text-soft); font-size: 0.9rem; }
-        .profile-actions { display: flex; flex-direction: column; gap: 8px; margin-top: 1rem; }
-        .profile-actions button { background: var(--bg); border: 1px solid var(--line); border-radius: 30px; padding: 10px 16px; font-weight: 600; font-size: 0.85rem; color: var(--text); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .profile-actions button:hover { border-color: var(--orange); background: var(--orange); color: white; }
-
         /* ── Maps Tab ── */
         .maps-container { height: 70vh; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; position: relative; }
         #mapsTabMap { width: 100%; height: 100%; }
 
-        /* ── Record Tab (just a button to open modal) ── */
-        .record-tab-content {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 2rem; text-align: center; min-height: 60vh;
-        }
-        .record-tab-content .big-record-btn {
-            width: 80px; height: 80px; border-radius: 50%; background: var(--orange);
-            color: white; font-size: 2.5rem; border: none; cursor: pointer;
-            box-shadow: 0 4px 14px rgba(252,76,2,0.4);
-            transition: transform 0.2s;
-        }
+        /* ── Record Tab ── */
+        .record-tab-content { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; min-height: 60vh; }
+        .record-tab-content .big-record-btn { width: 80px; height: 80px; border-radius: 50%; background: var(--orange); color: white; font-size: 2.5rem; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(252,76,2,0.4); transition: transform 0.2s; }
         .record-tab-content .big-record-btn:active { transform: scale(0.9); }
 
         /* ── Responsive ── */
+        @media (max-width: 600px) {
+            .profile-form { grid-template-columns: 1fr; }
+            .profile-form .full-width { grid-column: 1; }
+        }
         @media (max-width: 480px) {
             .stats-grid { grid-template-columns: 1fr 1fr; }
             .stat-card { border-bottom: 1px solid var(--line); }
@@ -288,6 +306,7 @@
             .record-modal-stats { grid-template-columns: repeat(3, 1fr); }
             .modal-stat-primary { grid-column: span 3; }
             .modal-stat-primary .record-stat-value { font-size: 1.8rem; }
+            .profile-header { flex-direction: column; align-items: center; text-align: center; }
         }
         @media (max-width: 400px) {
             .record-modal-stats { grid-template-columns: repeat(2, 1fr); }
@@ -357,13 +376,63 @@
             </div>
         </div>
 
-        <!-- PROFILE TAB -->
+        <!-- PROFILE TAB (enhanced) -->
         <div id="tab-profile" class="tab-content">
             <div class="profile-card">
-                <img src="{{ user.avatar }}" alt="{{ user.name }}" class="profile-avatar" />
-                <div class="profile-name">{{ user.name }}</div>
-                <div class="profile-email">{{ user.email }}</div>
+                <div class="profile-header">
+                    <img src="{{ user.avatar }}" alt="{{ user.name }}" class="profile-avatar" id="profileAvatar" />
+                    <div>
+                        <div class="profile-name" id="profileDisplayName">{{ user.name }}</div>
+                        <div class="profile-email" id="profileDisplayEmail">{{ user.email }}</div>
+                    </div>
+                </div>
+
+                <form id="profileForm" class="profile-form">
+                    <div class="field-group">
+                        <label for="pWeight">Weight (kg)</label>
+                        <input type="number" step="0.1" id="pWeight" placeholder="e.g. 75.0" />
+                    </div>
+                    <div class="field-group">
+                        <label for="pFtp">FTP (watts)</label>
+                        <input type="number" step="1" id="pFtp" placeholder="e.g. 250" />
+                    </div>
+                    <div class="field-group">
+                        <label for="pBikeName">Bike Name</label>
+                        <input type="text" id="pBikeName" placeholder="e.g. Road Bike" />
+                    </div>
+                    <div class="field-group">
+                        <label for="pBikeWeight">Bike Weight (kg)</label>
+                        <input type="number" step="0.1" id="pBikeWeight" placeholder="e.g. 8.5" />
+                    </div>
+                    <div class="field-group">
+                        <label for="pWheelCirc">Wheel Circumference (mm)</label>
+                        <input type="number" step="1" id="pWheelCirc" placeholder="e.g. 2105" />
+                    </div>
+                    <div class="field-group">
+                        <label for="pCrankLen">Crank Length (mm)</label>
+                        <input type="number" step="1" id="pCrankLen" placeholder="e.g. 172.5" />
+                    </div>
+                    <div class="field-group">
+                        <label for="pMaxHR">Max Heart Rate (bpm)</label>
+                        <input type="number" step="1" id="pMaxHR" placeholder="e.g. 190" />
+                    </div>
+                    <div class="field-group">
+                        <label for="pGender">Gender</label>
+                        <select id="pGender">
+                            <option value="">--</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="field-group full-width">
+                        <label for="pNotes">Notes / Bike Details</label>
+                        <input type="text" id="pNotes" placeholder="e.g. Shimano groupset, tubeless" />
+                    </div>
+                </form>
+
                 <div class="profile-actions">
+                    <button class="save-btn" onclick="saveProfile()">💾 Save Profile</button>
                     <button id="sensorBtnProfile" onclick="connectSensor()">🔍 Search Sensors</button>
                     <button onclick="toggleDarkMode()">🌙 Toggle Theme</button>
                     <a href="/auth/logout" style="text-decoration:none;"><button>🚪 Logout</button></a>
@@ -371,7 +440,7 @@
             </div>
         </div>
 
-        <!-- ACTIVITIES TAB (same as home list but standalone) -->
+        <!-- ACTIVITIES TAB -->
         <div id="tab-activities" class="tab-content">
             <div class="rides-section">
                 <div class="rides-header">
@@ -482,20 +551,19 @@
         tabBtns.forEach(btn => {
             btn.addEventListener('click', function() {
                 const tab = this.dataset.tab;
-                // update buttons
                 tabBtns.forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
-                // update contents
                 Object.keys(tabContents).forEach(key => {
                     tabContents[key].classList.toggle('active', key === tab);
                 });
-                // if maps tab, init map
                 if (tab === 'maps') {
                     setTimeout(initMapsTabMap, 200);
                 }
-                // if activities tab, load rides if not loaded
                 if (tab === 'activities') {
                     loadActivitiesTab();
+                }
+                if (tab === 'profile') {
+                    loadProfile(); // refresh profile data when tab opens
                 }
             });
         });
@@ -509,7 +577,6 @@
                 mapsTabMap.invalidateSize();
                 return;
             }
-            // Try to get user location, else use default
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
                     mapsTabMap = L.map('mapsTabMap').setView([pos.coords.latitude, pos.coords.longitude], 13);
@@ -531,7 +598,6 @@
                 attribution: isDark ? '&copy; CartoDB' : '&copy; OpenStreetMap',
                 maxZoom: 19
             }).addTo(map);
-            // Add a marker with a message
             L.marker(map.getCenter()).addTo(map)
                 .bindPopup('📍 Your location<br>Rides will appear here')
                 .openPopup();
@@ -543,7 +609,6 @@
             if (allRides && allRides.length > 0) {
                 renderRidesInContainer(allRides, 'rideListActivities');
             } else {
-                // load rides if not loaded
                 loadRidesForActivities();
             }
         }
@@ -616,6 +681,9 @@
         let sensorData = { heartRate: null, cadence: null, power: null, speed: null };
         let deviceIdCounter = 0;
         let isScanning = false;
+
+        // ── Profile Data ────────────────────────────────────
+        let profileData = {};
 
         // ── Activity Types ─────────────────────────────────
         async function loadRideTypes() {
@@ -703,7 +771,6 @@
                 updateBadgeCounts();
                 updateStats(allRides);
                 renderRides(allRides);
-                // Also update activities tab if it's active
                 if (document.getElementById('tab-activities').classList.contains('active')) {
                     renderRidesInContainer(allRides, 'rideListActivities');
                     document.getElementById('rideCountActivities').textContent = `${allRides.length} activities`;
@@ -866,6 +933,66 @@
             document.getElementById('recHR').textContent = sensorData.heartRate !== null ? sensorData.heartRate : '--';
             document.getElementById('recCadence').textContent = sensorData.cadence !== null ? sensorData.cadence : '--';
             document.getElementById('recPower').textContent = sensorData.power !== null ? sensorData.power : '--';
+        }
+
+        // ── Profile Management ─────────────────────────────
+        async function loadProfile() {
+            try {
+                const response = await fetch('/profile');
+                if (!response.ok) throw new Error('Failed to fetch profile');
+                profileData = await response.json();
+                // Populate form fields
+                document.getElementById('pWeight').value = profileData.weight || '';
+                document.getElementById('pFtp').value = profileData.ftp || '';
+                document.getElementById('pBikeName').value = profileData.bike_name || '';
+                document.getElementById('pBikeWeight').value = profileData.bike_weight || '';
+                document.getElementById('pWheelCirc').value = profileData.wheel_circumference || '';
+                document.getElementById('pCrankLen').value = profileData.crank_length || '';
+                document.getElementById('pMaxHR').value = profileData.max_heart_rate || '';
+                document.getElementById('pGender').value = profileData.gender || '';
+                document.getElementById('pNotes').value = profileData.notes || '';
+            } catch (error) {
+                console.warn('Could not load profile, using defaults:', error);
+                // Set default empty values
+                document.getElementById('pWeight').value = '';
+                document.getElementById('pFtp').value = '';
+                document.getElementById('pBikeName').value = '';
+                document.getElementById('pBikeWeight').value = '';
+                document.getElementById('pWheelCirc').value = '';
+                document.getElementById('pCrankLen').value = '';
+                document.getElementById('pMaxHR').value = '';
+                document.getElementById('pGender').value = '';
+                document.getElementById('pNotes').value = '';
+                // We'll keep profileData as empty object
+            }
+        }
+
+        async function saveProfile() {
+            const data = {
+                weight: parseFloat(document.getElementById('pWeight').value) || 0,
+                ftp: parseInt(document.getElementById('pFtp').value) || 0,
+                bike_name: document.getElementById('pBikeName').value.trim(),
+                bike_weight: parseFloat(document.getElementById('pBikeWeight').value) || 0,
+                wheel_circumference: parseInt(document.getElementById('pWheelCirc').value) || 2105,
+                crank_length: parseFloat(document.getElementById('pCrankLen').value) || 172.5,
+                max_heart_rate: parseInt(document.getElementById('pMaxHR').value) || 0,
+                gender: document.getElementById('pGender').value,
+                notes: document.getElementById('pNotes').value.trim()
+            };
+            try {
+                const response = await fetch('/profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (!response.ok) throw new Error('Save failed');
+                const result = await response.json();
+                profileData = result;
+                showToast('✅ Profile saved!', 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('❌ Failed to save profile', 'error');
+            }
         }
 
         // ── Sensor Connection (corrected service name) ────
@@ -1267,7 +1394,8 @@
             await loadRideTypes();
             await loadRides();
             setInterval(loadRides, 30000);
-            // init maps tab map if active by default? but it's not active, will init on tab switch.
+            // Load profile when app starts
+            await loadProfile();
         }
         init();
     </script>
