@@ -825,7 +825,7 @@ def share_ride(ride_id):
     route = ride.get('route', [])
 
     width, height = 1080, 1920
-    img = Image.new('RGBA', (width, height), (13, 13, 13, 255))
+    img = Image.new('RGBA', (width, height), (0, 0, 0, 0))  # fully transparent — for IG story overlay
     draw = ImageDraw.Draw(img)
 
     # ── Fonts ──────────────────────────────────────────
