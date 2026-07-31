@@ -1339,13 +1339,14 @@
             }
             isScanning = true;
             try {
+                // Fixed: use correct standard service name: 'cycling_speed_and_cadence' (with underscores)
                 const device = await navigator.bluetooth.requestDevice({
                     filters: [
                         { services: ['heart_rate'] },
-                        { services: ['cycling_speed_cadence'] },
+                        { services: ['cycling_speed_and_cadence'] },
                         { services: ['cycling_power'] }
                     ],
-                    optionalServices: ['heart_rate', 'cycling_speed_cadence', 'cycling_power']
+                    optionalServices: ['heart_rate', 'cycling_speed_and_cadence', 'cycling_power']
                 });
                 showToast(`Connecting to ${device.name || 'Device'}...`, 'info');
                 const server = await device.gatt.connect();
@@ -1410,7 +1411,7 @@
             } catch (e) { console.warn(`[${devId}] HR service not found`); }
 
             try {
-                const cscService = await server.getPrimaryService('cycling_speed_cadence');
+                const cscService = await server.getPrimaryService('cycling_speed_and_cadence');
                 const cscChar = await cscService.getCharacteristic('csc_measurement');
                 await cscChar.startNotifications();
                 cscChar.addEventListener('characteristicvaluechanged', event => {
