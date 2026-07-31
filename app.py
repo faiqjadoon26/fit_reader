@@ -825,79 +825,91 @@ def share_ride(ride_id):
     route = ride.get('route', [])
 
     width, height = 1080, 1920
-    img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+    img = Image.new('RGBA', (width, height), (13, 13, 13, 255))
     draw = ImageDraw.Draw(img)
 
-    try:
-        font_paths = [
-            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-            "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
-            "/System/Library/Fonts/Helvetica.ttc",
-            "C:/Windows/Fonts/Arial.ttf",
-        ]
-        font_large = None
+    # ── Fonts ──────────────────────────────────────────
+    font_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "C:/Windows/Fonts/Arial.ttf",
+    ]
+    def load_font(size):
         for path in font_paths:
             try:
-                font_large = ImageFont.truetype(path, 90)
-                break
-            except:
+                return ImageFont.truetype(path, size)
+            except Exception:
                 continue
-        if not font_large:
-            font_large = ImageFont.load_default()
-        font_medium = ImageFont.truetype(font_paths[0] if font_paths else None, 50) if font_large else ImageFont.load_default()
-        font_small = ImageFont.truetype(font_paths[0] if font_paths else None, 36) if font_large else ImageFont.load_default()
-    except:
-        font_large = ImageFont.load_default()
-        font_medium = ImageFont.load_default()
-        font_small = ImageFont.load_default()
+        return ImageFont.load_default()
 
-    draw.text((60, 60), ride_type_info['icon'], font=font_large, fill=(255, 255, 255, 255))
-    draw.text((180, 80), ride_type_info['name'], font=font_large, fill=(255, 255, 255, 255))
+    font_header = load_font(64)
+    font_value = load_font(68)
+    font_label = load_font(28)
+    font_footer = load_font(34)
 
+    def centered_text(y, text, font, fill, cx=width // 2):
+        bbox = draw.textbbox((0, 0), text, font=font)
+        w = bbox[2] - bbox[0]
+        draw.text((cx - w / 2, y), text, font=font, fill=fill)
+
+    # ── Header ─────────────────────────────────────────
+    centered_text(90, f"{ride_type_info['icon']}  {ride_type_info['name']}", font_header, (255, 255, 255, 255))
+
+    # ── Stats: 2 cols x 3 rows, centered as one block ──
     stats = [
-        ("Distance", f"{summary.get('distance_km', 0):.1f} km"),
+        ("Distance", f"{summary.get('distance_km', 0):.2f} km"),
         ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h"),
         ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m"),
         ("Calories", f"{summary.get('total_calories', 0)}"),
         ("Avg Power", f"{summary.get('avg_power', 0):.0f} W"),
-        ("Avg HR", f"{summary.get('avg_hr', 0)} bpm"),
+        ("Avg HR", f"{summary.get('avg_hr', 0):.0f} bpm" if summary.get('avg_hr') else "— bpm"),
     ]
-    x_start = 60
-    y_start = 220
-    col_width = (width - 120) // 2
-    row_height = 130
+    col_centers = [width * 0.28, width * 0.72]
+    row_start_y, row_height = 300, 190
     for i, (label, value) in enumerate(stats):
-        col = i % 2
-        row = i // 2
-        x = x_start + col * col_width
-        y = y_start + row * row_height
-        draw.text((x, y), value, font=font_medium, fill=(255, 255, 255, 255))
-        draw.text((x, y + 60), label, font=font_small, fill=(200, 200, 200, 255))
+        col, row = i % 2, i // 2
+        cx = col_centers[col]
+        y = row_start_y + row * row_height
+        centered_text(y, label.upper(), font_label, (150, 150, 155, 255), cx=cx)
+        centered_text(y + 40, value, font_value, (255, 255, 255, 255), cx=cx)
+
+    # ── Route: large, centered, dedicated lower-middle section ──
+    box_x0, box_y0 = 120, 950
+    box_x1, box_y1 = width - 120, 1550
+    box_w, box_h = box_x1 - box_x0, box_y1 - box_y0
 
     if len(route) > 1:
-        map_width, map_height = 400, 200
-        map_x = width - map_width - 60
-        map_y = height - map_height - 60
-        draw.rectangle([map_x-10, map_y-10, map_x+map_width+10, map_y+map_height+10], fill=(0,0,0,100))
         lats = [p[0] for p in route]
         lngs = [p[1] for p in route]
         min_lat, max_lat = min(lats), max(lats)
         min_lng, max_lng = min(lngs), max(lngs)
-        lat_range = max_lat - min_lat or 1
-        lng_range = max_lng - min_lng or 1
-        padding = 10
-        points = []
-        for lat, lng in route:
-            x = map_x + padding + (lng - min_lng) / lng_range * (map_width - 2*padding)
-            y = map_y + padding + (max_lat - lat) / lat_range * (map_height - 2*padding)
-            points.append((x, y))
-        if len(points) > 1:
-            for i in range(len(points)-1):
-                draw.line([points[i], points[i+1]], fill=(66, 153, 225, 255), width=4)
-        draw.ellipse([points[0][0]-8, points[0][1]-8, points[0][0]+8, points[0][1]+8], fill=(46, 204, 113, 255))
-        draw.ellipse([points[-1][0]-8, points[-1][1]-8, points[-1][0]+8, points[-1][1]+8], fill=(231, 76, 60, 255))
+        lat_range = (max_lat - min_lat) or 1e-6
+        lng_range = (max_lng - min_lng) or 1e-6
 
-    draw.text((60, height - 80), "🚴 Fit Reader", font=font_small, fill=(180, 180, 180, 200))
+        padding = 40
+        avail_w, avail_h = box_w - 2 * padding, box_h - 2 * padding
+        scale = min(avail_w / lng_range, avail_h / lat_range)  # preserves route shape
+
+        drawn_w, drawn_h = lng_range * scale, lat_range * scale
+        offset_x = box_x0 + padding + (avail_w - drawn_w) / 2
+        offset_y = box_y0 + padding + (avail_h - drawn_h) / 2
+
+        points = [
+            (offset_x + (lng - min_lng) * scale, offset_y + (max_lat - lat) * scale)
+            for lat, lng in route
+        ]
+
+        draw.line(points, fill=(252, 76, 2, 255), width=8, joint="curve")
+
+        r = 14
+        draw.ellipse([points[0][0]-r, points[0][1]-r, points[0][0]+r, points[0][1]+r], fill=(72, 187, 120, 255))
+        draw.ellipse([points[-1][0]-r, points[-1][1]-r, points[-1][0]+r, points[-1][1]+r], fill=(252, 76, 2, 255))
+    else:
+        centered_text((box_y0 + box_y1) // 2, "No GPS data available", font_footer, (120, 120, 125, 255))
+
+    # ── Footer logo ─────────────────────────────────────
+    centered_text(height - 130, f"{ride_type_info['icon']}  FIT READER", font_footer, (190, 190, 190, 255))
 
     buffer = BytesIO()
     img.save(buffer, format='PNG')
