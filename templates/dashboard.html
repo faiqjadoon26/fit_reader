@@ -15,7 +15,7 @@
             --line: #e7e7ea;
             --orange: #fc4c02;
             --orange-dark: #d84001;
-            --shadow: 0 2px 10px rgba(0,0,0,0.06);
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
             --radius: 10px;
             --transition: 0.25s ease;
             --tab-height: 64px;
@@ -26,9 +26,13 @@
             --text: #e8e8e8;
             --text-soft: #999999;
             --line: #2a2a2a;
-            --shadow: 0 2px 10px rgba(0,0,0,0.6);
+            --shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
         }
-        * { margin:0; padding:0; box-sizing:border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Roboto, Arial, sans-serif;
             background: var(--bg);
@@ -50,19 +54,75 @@
             z-index: 100;
             transition: background var(--transition), border-color var(--transition);
         }
-        .navbar-brand { font-size: 1.1rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; letter-spacing: -0.02em; }
-        .navbar-brand span { background: var(--orange); color: white; padding: 1px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 700; }
-        .navbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .user-info { display: flex; align-items: center; gap: 6px; }
-        .user-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); }
-        .username { font-weight: 600; font-size: 0.8rem; display: none; }
-        @media (min-width: 500px) { .username { display: inline; } }
-        .logout-btn { color: var(--text-soft); text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; transition: background 0.2s; }
-        .logout-btn:hover { background: #fff1ec; color: var(--orange-dark); }
+        .navbar-brand {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            letter-spacing: -0.02em;
+        }
+        .navbar-brand span {
+            background: var(--orange);
+            color: white;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 0.6rem;
+            font-weight: 700;
+        }
+        .navbar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--line);
+        }
+        .username {
+            font-weight: 600;
+            font-size: 0.8rem;
+            display: none;
+        }
+        @media (min-width: 500px) {
+            .username {
+                display: inline;
+            }
+        }
+        .logout-btn {
+            color: var(--text-soft);
+            text-decoration: none;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            transition: background 0.2s;
+        }
+        .logout-btn:hover {
+            background: #fff1ec;
+            color: var(--orange-dark);
+        }
 
-        .main-container { max-width: 1400px; margin: 0 auto; padding: 1rem 1rem 0; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 1rem 0;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
 
         .bottom-tabs {
             position: fixed;
@@ -96,11 +156,24 @@
             padding: 4px 0;
             position: relative;
         }
-        .tab-btn .tab-icon { font-size: 1.4rem; line-height: 1.2; }
-        .tab-btn .tab-label { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.03em; }
-        .tab-btn.active { color: var(--orange); }
-        .tab-btn.active .tab-icon { transform: scale(1.05); }
-        .tab-btn:active { opacity: 0.7; }
+        .tab-btn .tab-icon {
+            font-size: 1.4rem;
+            line-height: 1.2;
+        }
+        .tab-btn .tab-label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .tab-btn.active {
+            color: var(--orange);
+        }
+        .tab-btn.active .tab-icon {
+            transform: scale(1.05);
+        }
+        .tab-btn:active {
+            opacity: 0.7;
+        }
 
         .profile-card {
             background: var(--card);
@@ -117,14 +190,41 @@
             margin-bottom: 1.5rem;
             flex-wrap: wrap;
         }
-        .profile-avatar { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--orange); }
-        .profile-name { font-size: 1.2rem; font-weight: 700; }
-        .profile-email { color: var(--text-soft); font-size: 0.9rem; }
+        .profile-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--orange);
+        }
+        .profile-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        .profile-email {
+            color: var(--text-soft);
+            font-size: 0.9rem;
+        }
 
-        .profile-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem 1.2rem; }
-        .profile-form .full-width { grid-column: 1 / -1; }
-        .profile-form label { font-size: 0.75rem; font-weight: 600; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.03em; display: block; margin-bottom: 2px; }
-        .profile-form input, .profile-form select {
+        .profile-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem 1.2rem;
+        }
+        .profile-form .full-width {
+            grid-column: 1 / -1;
+        }
+        .profile-form label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .profile-form input,
+        .profile-form select {
             width: 100%;
             padding: 6px 10px;
             border: 1px solid var(--line);
@@ -134,8 +234,15 @@
             font-size: 0.9rem;
             transition: border-color 0.2s;
         }
-        .profile-form input:focus, .profile-form select:focus { outline: none; border-color: var(--orange); }
-        .profile-form .field-group { display: flex; flex-direction: column; }
+        .profile-form input:focus,
+        .profile-form select:focus {
+            outline: none;
+            border-color: var(--orange);
+        }
+        .profile-form .field-group {
+            display: flex;
+            flex-direction: column;
+        }
 
         .profile-actions {
             display: flex;
@@ -157,150 +264,966 @@
             align-items: center;
             gap: 8px;
         }
-        .profile-actions button:hover { border-color: var(--orange); background: var(--orange); color: white; }
-        .profile-actions .save-btn { background: var(--orange); color: white; border-color: var(--orange); }
-        .profile-actions .save-btn:hover { background: var(--orange-dark); }
-
-        .activity-selector { margin-bottom: 1rem; }
-        .activity-grid { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-        .activity-grid::-webkit-scrollbar { display: none; }
-        .activity-btn {
-            flex-shrink: 0; padding: 6px 14px; border: 1px solid var(--line); border-radius: 20px;
-            background: var(--card); cursor: pointer; transition: all 0.15s; font-size: 0.75rem;
-            font-weight: 600; color: var(--text-soft); display: flex; align-items: center; gap: 4px; white-space: nowrap;
+        .profile-actions button:hover {
+            border-color: var(--orange);
+            background: var(--orange);
+            color: white;
         }
-        .activity-btn:hover { border-color: var(--orange); }
-        .activity-btn.active { border-color: var(--orange); background: var(--orange); color: white; }
-        .activity-btn .badge { display: inline-block; background: rgba(255,255,255,0.3); color: inherit; font-size: 0.6rem; padding: 0px 6px; border-radius: 10px; }
-        .activity-btn:not(.active) .badge { background: #f0f0f2; color: var(--text-soft); }
+        .profile-actions .save-btn {
+            background: var(--orange);
+            color: white;
+            border-color: var(--orange);
+        }
+        .profile-actions .save-btn:hover {
+            background: var(--orange-dark);
+        }
+
+        .activity-selector {
+            margin-bottom: 1rem;
+        }
+        .activity-grid {
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+            scrollbar-width: none;
+        }
+        .activity-grid::-webkit-scrollbar {
+            display: none;
+        }
+        .activity-btn {
+            flex-shrink: 0;
+            padding: 6px 14px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: var(--card);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-soft);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            white-space: nowrap;
+        }
+        .activity-btn:hover {
+            border-color: var(--orange);
+        }
+        .activity-btn.active {
+            border-color: var(--orange);
+            background: var(--orange);
+            color: white;
+        }
+        .activity-btn .badge {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.3);
+            color: inherit;
+            font-size: 0.6rem;
+            padding: 0px 6px;
+            border-radius: 10px;
+        }
+        .activity-btn:not(.active) .badge {
+            background: #f0f0f2;
+            color: var(--text-soft);
+        }
 
         .stats-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-            margin-bottom: 1rem; overflow: hidden; transition: background var(--transition), border-color var(--transition);
-        }
-        .stat-card { padding: 0.7rem; text-align: center; border-right: 1px solid var(--line); }
-        .stat-card:last-child { border-right: none; }
-        .stat-label { font-size: 0.6rem; text-transform: uppercase; color: var(--text-soft); letter-spacing: 0.05em; font-weight: 700; }
-        .stat-value { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-top: 2px; }
-        .stat-unit { font-size: 0.65rem; color: var(--text-soft); font-weight: 500; }
-
-        .upload-section {
-            background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-            padding: 1rem; margin-bottom: 1rem; text-align: center;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            overflow: hidden;
             transition: background var(--transition), border-color var(--transition);
         }
-        .upload-section h2 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.2rem; }
-        .upload-section p { color: var(--text-soft); margin-bottom: 0.8rem; font-size: 0.8rem; }
-        .upload-btn-wrapper { position: relative; overflow: hidden; display: inline-block; }
-        .upload-btn-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
-        .upload-btn { background: var(--text); color: var(--card); padding: 8px 20px; border: none; border-radius: 30px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
-        .upload-btn:hover { background: #000; }
-        .upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .stat-card {
+            padding: 0.7rem;
+            text-align: center;
+            border-right: 1px solid var(--line);
+        }
+        .stat-card:last-child {
+            border-right: none;
+        }
+        .stat-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-top: 2px;
+        }
+        .stat-unit {
+            font-size: 0.65rem;
+            color: var(--text-soft);
+            font-weight: 500;
+        }
 
-        .rides-section { background: transparent; }
-        .rides-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 6px; }
-        .rides-header h2 { font-size: 1rem; font-weight: 800; }
-        .rides-header .ride-count { color: var(--text-soft); font-size: 0.75rem; }
-        .rides-header .filter-badge { background: #fff1ec; color: var(--orange-dark); padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
-        .ride-list { display: grid; gap: 10px; }
+        .upload-section {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+            transition: background var(--transition), border-color var(--transition);
+        }
+        .upload-section h2 {
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+        .upload-section p {
+            color: var(--text-soft);
+            margin-bottom: 0.8rem;
+            font-size: 0.8rem;
+        }
+        .upload-btn-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+        }
+        .upload-btn-wrapper input[type=file] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        .upload-btn {
+            background: var(--text);
+            color: var(--card);
+            padding: 8px 20px;
+            border: none;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .upload-btn:hover {
+            background: #000;
+        }
+        .upload-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .rides-section {
+            background: transparent;
+        }
+        .rides-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .rides-header h2 {
+            font-size: 1rem;
+            font-weight: 800;
+        }
+        .rides-header .ride-count {
+            color: var(--text-soft);
+            font-size: 0.75rem;
+        }
+        .rides-header .filter-badge {
+            background: #fff1ec;
+            color: var(--orange-dark);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+        }
+        .ride-list {
+            display: grid;
+            gap: 10px;
+        }
         .ride-item {
-            background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-            padding: 0.9rem; cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            padding: 0.9rem;
+            cursor: pointer;
+            transition: box-shadow 0.15s, border-color 0.15s;
         }
-        .ride-item:hover { border-color: #d0d0d5; box-shadow: var(--shadow); }
-        .ride-item .ride-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 0.6rem; }
-        .ride-item .ride-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
-        .ride-item .ride-title-block { min-width: 0; }
-        .ride-item .ride-name { font-weight: 700; word-break: break-word; font-size: 0.9rem; line-height: 1.3; }
-        .ride-item .ride-meta { display: flex; align-items: center; gap: 4px; color: var(--text-soft); font-size: 0.7rem; margin-top: 2px; flex-wrap: wrap; }
-        .ride-item .ride-type-badge { font-size: 0.55rem; padding: 1px 7px; border-radius: 10px; font-weight: 700; text-transform: uppercase; }
-        .ride-item .ride-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap: 6px; padding: 0.6rem 0; border-top: 1px solid var(--line); }
-        .ride-item .ride-stats .stat-block { display: flex; flex-direction: column; }
-        .ride-item .ride-stats .stat-block .stat-num-label { font-size: 0.55rem; text-transform: uppercase; color: var(--text-soft); font-weight: 700; letter-spacing: 0.03em; }
-        .ride-item .ride-stats .stat-block .stat-num-value { font-size: 0.9rem; font-weight: 800; color: var(--text); }
-        .ride-item .actions { display: flex; gap: 4px; align-items: center; justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 0.5rem; }
-        .action-btn { background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; color: var(--text-soft); }
-        .action-btn:hover { background: #f0f0f2; }
-        .delete-btn { background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; color: var(--text-soft); }
-        .delete-btn:hover { background: #fff1ec; color: var(--orange-dark); }
-        .no-rides { text-align: center; padding: 2rem; color: var(--text-soft); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
-        .no-rides .big-icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
-        .loading { text-align: center; padding: 1.5rem; color: var(--text-soft); }
-        .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--line); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .ride-item:hover {
+            border-color: #d0d0d5;
+            box-shadow: var(--shadow);
+        }
+        .ride-item .ride-card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 0.6rem;
+        }
+        .ride-item .ride-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .ride-item .ride-title-block {
+            min-width: 0;
+        }
+        .ride-item .ride-name {
+            font-weight: 700;
+            word-break: break-word;
+            font-size: 0.9rem;
+            line-height: 1.3;
+        }
+        .ride-item .ride-meta {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: var(--text-soft);
+            font-size: 0.7rem;
+            margin-top: 2px;
+            flex-wrap: wrap;
+        }
+        .ride-item .ride-type-badge {
+            font-size: 0.55rem;
+            padding: 1px 7px;
+            border-radius: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .ride-item .ride-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 6px;
+            padding: 0.6rem 0;
+            border-top: 1px solid var(--line);
+        }
+        .ride-item .ride-stats .stat-block {
+            display: flex;
+            flex-direction: column;
+        }
+        .ride-item .ride-stats .stat-block .stat-num-label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            color: var(--text-soft);
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+        .ride-item .ride-stats .stat-block .stat-num-value {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .ride-item .actions {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            justify-content: flex-end;
+            border-top: 1px solid var(--line);
+            padding-top: 0.5rem;
+        }
+        .action-btn {
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+            color: var(--text-soft);
+        }
+        .action-btn:hover {
+            background: #f0f0f2;
+        }
+        .delete-btn {
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: background 0.2s;
+            color: var(--text-soft);
+        }
+        .delete-btn:hover {
+            background: #fff1ec;
+            color: var(--orange-dark);
+        }
+        .no-rides {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-soft);
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+        }
+        .no-rides .big-icon {
+            font-size: 2.5rem;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .loading {
+            text-align: center;
+            padding: 1.5rem;
+            color: var(--text-soft);
+        }
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--line);
+            border-top-color: var(--orange);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
-        .toast { position: fixed; bottom: calc(var(--tab-height) + 16px); left: 50%; transform: translateX(-50%) translateY(100px); background: #2d3748; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s; z-index: 1100; max-width: 90%; text-align: center; font-weight: 500; font-size: 0.9rem; pointer-events: none; }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .toast.success { background: #48bb78; }
-        .toast.error { background: #fc8181; }
+        .toast {
+            position: fixed;
+            bottom: calc(var(--tab-height) + 16px);
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #2d3748;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1100;
+            max-width: 90%;
+            text-align: center;
+            font-weight: 500;
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        .toast.success {
+            background: #48bb78;
+        }
+        .toast.error {
+            background: #fc8181;
+        }
 
+        /* ── RECORD MODAL – COLORFUL & LARGER ── */
         .record-modal {
-            position: fixed; inset: 0; z-index: 1000; background: #121212;
-            display: none; flex-direction: column;
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: #0b0e1a;
+            display: none;
+            flex-direction: column;
         }
-        #recordMap { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; background: #1a1a2e; }
-        .record-modal-topbar { position: absolute; top: 0; left: 0; right: 0; z-index: 1000; display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); gap: 8px; background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent); pointer-events: none; }
-        .record-modal-topbar>* { pointer-events: auto; }
-        .modal-icon-btn { width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(0,0,0,0.6); color: white; font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; backdrop-filter: blur(4px); }
-        .modal-icon-btn:hover { background: rgba(255,255,255,0.2); }
-        .modal-center-controls { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; flex-wrap: wrap; }
-        .modal-select { background: rgba(0,0,0,0.6); border: none; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; backdrop-filter: blur(4px); outline: none; }
-        .modal-select option { background: #121212; color: white; }
-        .gps-status { font-size: 0.7rem; padding: 4px 12px; border-radius: 20px; font-weight: 500; background: rgba(0,0,0,0.6); color: #e2e8f0; backdrop-filter: blur(4px); white-space: nowrap; }
-        .gps-status.active { background: rgba(72,187,120,0.85); color: white; }
-        .gps-status.paused { background: rgba(237,137,54,0.85); color: white; }
-        .gps-status.error { background: rgba(229,62,62,0.85); color: white; }
-        .record-modal-stats-wrapper { position: absolute; bottom: 70px; left: 0; right: 0; z-index: 1000; background: linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.4) 80%, transparent); padding: 16px 12px 8px; pointer-events: none; }
-        .record-modal-stats-wrapper>* { pointer-events: auto; }
-        .record-modal-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
-        .record-modal-sensor-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); }
-        .modal-stat { text-align: center; color: white; }
-        .modal-stat-primary .record-stat-value { font-size: 1.6rem; }
-        .record-stat-label { font-size: 0.55rem; text-transform: uppercase; color: #cbd5e0; font-weight: 600; letter-spacing: 0.5px; }
-        .record-stat-value { font-size: 1.1rem; font-weight: 700; color: white; margin-top: 1px; font-variant-numeric: tabular-nums; }
-        .record-stat-value .stat-unit { color: #cbd5e0; font-size: 0.6rem; }
-        .record-modal-message { position: absolute; bottom: 55px; left: 0; right: 0; z-index: 1000; text-align: center; color: white; font-size: 0.75rem; background: rgba(0,0,0,0.6); padding: 4px; min-height: 1.2em; pointer-events: none; }
-        .record-modal-controls { position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; background: rgba(0,0,0,0.8); padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom)); backdrop-filter: blur(8px); pointer-events: none; }
-        .record-modal-controls>* { pointer-events: auto; }
+        #recordMap {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background: #12162a;
+        }
+        .record-modal-topbar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            padding-top: max(14px, env(safe-area-inset-top));
+            gap: 10px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent);
+            pointer-events: none;
+        }
+        .record-modal-topbar>* {
+            pointer-events: auto;
+        }
+        .modal-icon-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0, 0, 0, 0.65);
+            color: #fff;
+            font-size: 1.4rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            backdrop-filter: blur(6px);
+            transition: background 0.2s, transform 0.15s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        .modal-icon-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        .modal-icon-btn:active {
+            transform: scale(0.92);
+        }
+        .modal-center-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex: 1;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .modal-select {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1.5px solid rgba(255, 255, 255, 0.25);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+            outline: none;
+            min-height: 40px;
+            min-width: 100px;
+            background-color: #1a1f3a;
+            border-color: #fc4c02;
+            box-shadow: 0 0 12px rgba(252, 76, 2, 0.2);
+            letter-spacing: 0.3px;
+        }
+        .modal-select option {
+            background: #12162a;
+            color: #fff;
+            padding: 6px;
+        }
+        .gps-status {
+            font-size: 0.85rem;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-weight: 700;
+            background: rgba(0, 0, 0, 0.7);
+            color: #e2e8f0;
+            backdrop-filter: blur(6px);
+            white-space: nowrap;
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            letter-spacing: 0.3px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        .gps-status.active {
+            background: rgba(72, 187, 120, 0.9);
+            color: #fff;
+            border-color: #48bb78;
+            box-shadow: 0 0 20px rgba(72, 187, 120, 0.3);
+        }
+        .gps-status.paused {
+            background: rgba(237, 137, 54, 0.9);
+            color: #fff;
+            border-color: #ed8936;
+            box-shadow: 0 0 20px rgba(237, 137, 54, 0.3);
+        }
+        .gps-status.error {
+            background: rgba(229, 62, 62, 0.9);
+            color: #fff;
+            border-color: #e53e3e;
+            box-shadow: 0 0 20px rgba(229, 62, 62, 0.3);
+        }
+
+        .record-modal-stats-wrapper {
+            position: absolute;
+            bottom: 80px;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.92) 0%, rgba(0, 0, 0, 0.5) 70%, transparent 100%);
+            padding: 20px 16px 12px;
+            pointer-events: none;
+        }
+        .record-modal-stats-wrapper>* {
+            pointer-events: auto;
+        }
+        .record-modal-stats {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            background: rgba(18, 22, 42, 0.85);
+            border-radius: 16px;
+            padding: 14px 10px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+        .record-modal-sensor-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1.5px solid rgba(255, 255, 255, 0.1);
+            background: rgba(18, 22, 42, 0.7);
+            border-radius: 14px;
+            padding: 12px 10px;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .modal-stat {
+            text-align: center;
+            color: #fff;
+            padding: 4px 0;
+        }
+        .modal-stat-primary {
+            grid-column: span 2;
+            background: linear-gradient(135deg, rgba(252, 76, 2, 0.25), rgba(252, 76, 2, 0.05));
+            border-radius: 12px;
+            padding: 6px 4px;
+            border: 1px solid rgba(252, 76, 2, 0.2);
+        }
+        .modal-stat-primary .record-stat-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #ff8a5c;
+            text-shadow: 0 0 30px rgba(252, 76, 2, 0.3);
+        }
+        .record-stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: #94a3b8;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            margin-bottom: 2px;
+        }
+        .record-stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #f1f5f9;
+            margin-top: 2px;
+            font-variant-numeric: tabular-nums;
+        }
+        .record-stat-value .stat-unit {
+            color: #94a3b8;
+            font-size: 0.7rem;
+            font-weight: 500;
+            margin-left: 2px;
+        }
+        .record-modal-sensor-stats .modal-stat {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 8px 4px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        .record-modal-sensor-stats .record-stat-value {
+            font-size: 1.5rem;
+            color: #f1f5f9;
+        }
+        .record-modal-sensor-stats .record-stat-value .stat-unit {
+            font-size: 0.65rem;
+        }
+        /* Sensor value colors */
+        #recHR {
+            color: #f87171;
+        }
+        #recCadence {
+            color: #60a5fa;
+        }
+        #recPower {
+            color: #fbbf24;
+        }
+        .record-modal-message {
+            position: absolute;
+            bottom: 65px;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            text-align: center;
+            color: #facc15;
+            font-size: 0.95rem;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 12px;
+            min-height: 1.6em;
+            pointer-events: none;
+            backdrop-filter: blur(4px);
+            letter-spacing: 0.3px;
+        }
+        .record-modal-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 14px 18px;
+            padding-bottom: max(14px, env(safe-area-inset-bottom));
+            backdrop-filter: blur(12px);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            pointer-events: none;
+        }
+        .record-modal-controls>* {
+            pointer-events: auto;
+        }
+        .record-btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-width: 90px;
+            min-height: 54px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.5px;
+        }
+        .record-btn:active {
+            transform: scale(0.94);
+        }
+        .record-btn.start {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+        }
+        .record-btn.start:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 30px rgba(34, 197, 94, 0.5);
+        }
+        .record-btn.pause {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+        }
+        .record-btn.pause:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 30px rgba(245, 158, 11, 0.5);
+        }
+        .record-btn.resume {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+        }
+        .record-btn.resume:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 30px rgba(59, 130, 246, 0.5);
+        }
+        .record-btn.stop {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: #fff;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.4);
+        }
+        .record-btn.stop:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 30px rgba(239, 68, 68, 0.5);
+        }
+        .record-btn.discard {
+            background: rgba(255, 255, 255, 0.12);
+            color: #e2e8f0;
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        .record-btn.discard:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.04);
+        }
 
         .record-minimized-bar {
-            position: fixed; bottom: calc(var(--tab-height) + 12px); left: 50%; transform: translateX(-50%);
-            background: #2d3748; color: white; padding: 8px 16px; border-radius: 30px;
-            display: none; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            cursor: pointer; z-index: 900; font-size: 0.8rem; font-weight: 500; white-space: nowrap;
+            position: fixed;
+            bottom: calc(var(--tab-height) + 16px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #1a1f3a, #0b0e1a);
+            color: #fff;
+            padding: 14px 24px;
+            border-radius: 50px;
+            display: none;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.6);
+            cursor: pointer;
+            z-index: 900;
+            font-size: 1rem;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 1px solid rgba(252, 76, 2, 0.3);
+            backdrop-filter: blur(8px);
+            min-height: 56px;
         }
-        .pulse-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); animation: pulse 1.5s ease-in-out infinite; flex-shrink: 0; }
-        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
-        .minimized-expand { color: #a0aec0; font-size: 0.7rem; }
+        .record-minimized-bar:hover {
+            transform: translateX(-50%) scale(1.03);
+            border-color: rgba(252, 76, 2, 0.6);
+        }
+        .pulse-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 1.5s ease-in-out infinite;
+            flex-shrink: 0;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+        }
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.5;
+                transform: scale(0.7);
+            }
+        }
+        .minimized-expand {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-left: 4px;
+        }
 
-        .maps-container { height: 70vh; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; position: relative; }
-        #mapsTabMap { width: 100%; height: 100%; }
+        .maps-container {
+            height: 70vh;
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            overflow: hidden;
+            position: relative;
+        }
+        #mapsTabMap {
+            width: 100%;
+            height: 100%;
+        }
 
-        .record-tab-content { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; text-align: center; min-height: 60vh; }
-        .record-tab-content .big-record-btn { width: 80px; height: 80px; border-radius: 50%; background: var(--orange); color: white; font-size: 2.5rem; border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(252,76,2,0.4); transition: transform 0.2s; }
-        .record-tab-content .big-record-btn:active { transform: scale(0.9); }
+        .record-tab-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            text-align: center;
+            min-height: 60vh;
+        }
+        .record-tab-content .big-record-btn {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #fc4c02, #d84001);
+            color: white;
+            font-size: 3.2rem;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 6px 30px rgba(252, 76, 2, 0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .record-tab-content .big-record-btn:active {
+            transform: scale(0.88);
+            box-shadow: 0 2px 10px rgba(252, 76, 2, 0.3);
+        }
+        .record-tab-content .big-record-btn:hover {
+            transform: scale(1.04);
+            box-shadow: 0 8px 40px rgba(252, 76, 2, 0.6);
+        }
 
         @media (max-width: 600px) {
-            .profile-form { grid-template-columns: 1fr; }
-            .profile-form .full-width { grid-column: 1; }
+            .profile-form {
+                grid-template-columns: 1fr;
+            }
+            .profile-form .full-width {
+                grid-column: 1;
+            }
+            .record-modal-stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+                padding: 12px 8px;
+            }
+            .modal-stat-primary {
+                grid-column: span 3;
+            }
+            .modal-stat-primary .record-stat-value {
+                font-size: 2rem;
+            }
+            .record-modal-sensor-stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 6px;
+                padding: 10px 6px;
+            }
+            .record-modal-sensor-stats .record-stat-value {
+                font-size: 1.3rem;
+            }
+            .record-btn {
+                padding: 12px 20px;
+                font-size: 1rem;
+                min-width: 70px;
+                min-height: 48px;
+            }
+            .modal-select {
+                font-size: 0.75rem;
+                min-width: 80px;
+                padding: 6px 12px;
+                min-height: 36px;
+            }
+            .gps-status {
+                font-size: 0.7rem;
+                padding: 6px 14px;
+                min-height: 34px;
+            }
+            .modal-icon-btn {
+                width: 38px;
+                height: 38px;
+                font-size: 1.2rem;
+            }
+            .record-modal-topbar {
+                padding: 10px 12px;
+                gap: 6px;
+            }
+            .record-modal-stats-wrapper {
+                bottom: 72px;
+                padding: 14px 10px 8px;
+            }
+            .record-modal-controls {
+                padding: 10px 12px;
+                gap: 8px;
+                padding-bottom: max(10px, env(safe-area-inset-bottom));
+            }
+            .record-modal-message {
+                bottom: 58px;
+                font-size: 0.8rem;
+                padding: 6px 10px;
+            }
+            .record-minimized-bar {
+                padding: 12px 18px;
+                font-size: 0.85rem;
+                min-height: 48px;
+                gap: 10px;
+            }
+            .pulse-dot {
+                width: 10px;
+                height: 10px;
+            }
         }
         @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr 1fr; }
-            .stat-card { border-bottom: 1px solid var(--line); }
-            .stat-card:nth-child(2n) { border-right: none; }
-            .ride-item .ride-stats { grid-template-columns: repeat(2, 1fr); }
-            .navbar { padding: 0 0.6rem; height: 48px; }
-            .navbar-brand { font-size: 0.95rem; }
-            .main-container { padding: 0.6rem 0.6rem 0; }
-            .record-modal-stats { grid-template-columns: repeat(3, 1fr); }
-            .modal-stat-primary { grid-column: span 3; }
-            .modal-stat-primary .record-stat-value { font-size: 1.8rem; }
-            .profile-header { flex-direction: column; align-items: center; text-align: center; }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .stat-card {
+                border-bottom: 1px solid var(--line);
+            }
+            .stat-card:nth-child(2n) {
+                border-right: none;
+            }
+            .ride-item .ride-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .navbar {
+                padding: 0 0.6rem;
+                height: 48px;
+            }
+            .navbar-brand {
+                font-size: 0.95rem;
+            }
+            .main-container {
+                padding: 0.6rem 0.6rem 0;
+            }
+            .profile-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .record-modal-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .modal-stat-primary {
+                grid-column: span 2;
+            }
+            .modal-stat-primary .record-stat-value {
+                font-size: 1.8rem;
+            }
+            .record-modal-sensor-stats .record-stat-value {
+                font-size: 1.1rem;
+            }
+            .record-btn {
+                padding: 10px 16px;
+                font-size: 0.85rem;
+                min-width: 60px;
+                min-height: 42px;
+            }
+            .record-modal-topbar .modal-center-controls {
+                gap: 4px;
+            }
+            .modal-select {
+                font-size: 0.65rem;
+                min-width: 60px;
+                padding: 4px 8px;
+                min-height: 30px;
+            }
+            .gps-status {
+                font-size: 0.6rem;
+                padding: 4px 10px;
+                min-height: 28px;
+            }
+            .modal-icon-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 1rem;
+            }
         }
         @media (max-width: 400px) {
-            .record-modal-stats { grid-template-columns: repeat(2, 1fr); }
-            .modal-stat-primary { grid-column: span 2; }
+            .record-modal-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 4px;
+                padding: 8px 6px;
+            }
+            .modal-stat-primary {
+                grid-column: span 2;
+            }
+            .modal-stat-primary .record-stat-value {
+                font-size: 1.6rem;
+            }
+            .record-modal-sensor-stats {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 4px;
+                padding: 8px 4px;
+            }
+            .record-modal-sensor-stats .record-stat-value {
+                font-size: 1rem;
+            }
+            .record-btn {
+                padding: 8px 12px;
+                font-size: 0.75rem;
+                min-width: 50px;
+                min-height: 36px;
+            }
+            .record-modal-controls {
+                gap: 6px;
+                padding: 8px 8px;
+            }
         }
     </style>
 </head>
@@ -360,9 +1283,9 @@
         <!-- RECORD TAB -->
         <div id="tab-record" class="tab-content">
             <div class="record-tab-content">
-                <div style="margin-bottom:1rem;font-size:1.2rem;font-weight:600;">Start a New Ride</div>
+                <div style="margin-bottom:1rem;font-size:1.3rem;font-weight:700;color:var(--text);">Start a New Ride</div>
                 <button class="big-record-btn" onclick="openRecordingModal()">⏺</button>
-                <div style="margin-top:0.8rem;color:var(--text-soft);font-size:0.9rem;">Tap to open recording</div>
+                <div style="margin-top:0.8rem;color:var(--text-soft);font-size:0.95rem;font-weight:500;">Tap to open recording</div>
             </div>
         </div>
 
@@ -463,22 +1386,22 @@
             <div class="modal-center-controls">
                 <span class="gps-status" id="gpsStatus">GPS idle</span>
                 <select id="recRideTypeSelect" class="modal-select"></select>
-                <button class="modal-icon-btn" id="modalSensorBtn" onclick="connectSensor()" style="font-size:1rem;">📡</button>
+                <button class="modal-icon-btn" id="modalSensorBtn" onclick="connectSensor()" style="font-size:1.2rem;">📡</button>
             </div>
             <button class="modal-icon-btn" id="recFullscreenBtn" onclick="toggleFullscreen()">⛶</button>
         </div>
         <div class="record-modal-stats-wrapper">
             <div class="record-modal-stats">
-                <div class="modal-stat modal-stat-primary"><div class="record-stat-label">Duration</div><div class="record-stat-value" id="recDuration">00:00:00</div></div>
-                <div class="modal-stat"><div class="record-stat-label">Distance</div><div class="record-stat-value"><span id="recDistance">0.00</span> <span class="stat-unit">km</span></div></div>
-                <div class="modal-stat"><div class="record-stat-label">Speed</div><div class="record-stat-value"><span id="recSpeed">0.0</span> <span class="stat-unit">km/h</span></div></div>
-                <div class="modal-stat"><div class="record-stat-label">Avg</div><div class="record-stat-value"><span id="recAvgSpeed">0.0</span> <span class="stat-unit">km/h</span></div></div>
-                <div class="modal-stat"><div class="record-stat-label">Points</div><div class="record-stat-value" id="recPoints">0</div></div>
+                <div class="modal-stat modal-stat-primary"><div class="record-stat-label">⏱ Duration</div><div class="record-stat-value" id="recDuration">00:00:00</div></div>
+                <div class="modal-stat"><div class="record-stat-label">📏 Distance</div><div class="record-stat-value"><span id="recDistance">0.00</span> <span class="stat-unit">km</span></div></div>
+                <div class="modal-stat"><div class="record-stat-label">⚡ Speed</div><div class="record-stat-value"><span id="recSpeed">0.0</span> <span class="stat-unit">km/h</span></div></div>
+                <div class="modal-stat"><div class="record-stat-label">📊 Avg</div><div class="record-stat-value"><span id="recAvgSpeed">0.0</span> <span class="stat-unit">km/h</span></div></div>
+                <div class="modal-stat"><div class="record-stat-label">📍 Points</div><div class="record-stat-value" id="recPoints">0</div></div>
             </div>
             <div class="record-modal-sensor-stats">
-                <div class="modal-stat"><div class="record-stat-label">Heart Rate</div><div class="record-stat-value"><span id="recHR">--</span> <span class="stat-unit">bpm</span></div></div>
-                <div class="modal-stat"><div class="record-stat-label">Cadence</div><div class="record-stat-value"><span id="recCadence">--</span> <span class="stat-unit">rpm</span></div></div>
-                <div class="modal-stat"><div class="record-stat-label">Power</div><div class="record-stat-value"><span id="recPower">--</span> <span class="stat-unit">W</span></div></div>
+                <div class="modal-stat"><div class="record-stat-label">❤️ Heart Rate</div><div class="record-stat-value"><span id="recHR">--</span> <span class="stat-unit">bpm</span></div></div>
+                <div class="modal-stat"><div class="record-stat-label">🔄 Cadence</div><div class="record-stat-value"><span id="recCadence">--</span> <span class="stat-unit">rpm</span></div></div>
+                <div class="modal-stat"><div class="record-stat-label">⚡ Power</div><div class="record-stat-value"><span id="recPower">--</span> <span class="stat-unit">W</span></div></div>
             </div>
         </div>
         <div id="recordMessage" class="record-modal-message"></div>
@@ -500,7 +1423,8 @@
 
     <div class="toast" id="toast"></div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+    </script>
     <script>
         // ── Theme ──────────────────────────────────────────
         function applyTheme(theme) {
@@ -511,6 +1435,7 @@
             }
             localStorage.setItem('fit-reader-theme', theme);
         }
+
         function toggleDarkMode() {
             const isDark = document.body.classList.contains('dark-theme');
             applyTheme(isDark ? 'light' : 'dark');
@@ -562,6 +1487,7 @@
 
         // ── Maps Tab Map ────────────────────────────────────
         let mapsTabMap = null;
+
         function initMapsTabMap() {
             const container = document.getElementById('mapsTabMap');
             if (!container) return;
@@ -577,10 +1503,10 @@
                 () => {
                     mapsTabMap = L.map('mapsTabMap').setView([40.7128, -74.0060], 13);
                     setupMapLayers(mapsTabMap);
-                },
-                { enableHighAccuracy: true, timeout: 5000 }
+                }, { enableHighAccuracy: true, timeout: 5000 }
             );
         }
+
         function setupMapLayers(map) {
             const isDark = document.body.classList.contains('dark-theme');
             const tileUrl = isDark ?
@@ -610,38 +1536,41 @@
             const list = document.getElementById(containerId);
             if (!list) return;
             if (rides.length === 0) {
-                list.innerHTML = `<div class="no-rides"><span class="big-icon">🏃</span><p>No activities found</p></div>`;
+                list.innerHTML =
+                `<div class="no-rides"><span class="big-icon">🏃</span><p>No activities found</p></div>`;
                 return;
             }
             list.innerHTML = '';
             rides.forEach(ride => {
                 const summary = ride.summary || {};
-                const rideType = rideTypes.find(t => t.id === ride.ride_type) || { icon: '🚴', name: 'Cycling', color: '#fc4c02' };
+                const rideType = rideTypes.find(t => t.id === ride.ride_type) || { icon: '🚴', name: 'Cycling',
+                    color: '#fc4c02' };
                 const color = rideType.color || '#fc4c02';
                 const div = document.createElement('div');
                 div.className = 'ride-item';
-                const dateStr = ride.ride_date ? new Date(ride.ride_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown';
+                const dateStr = ride.ride_date ? new Date(ride.ride_date).toLocaleDateString(undefined, { month: 'short',
+                    day: 'numeric', year: 'numeric' }) : 'Unknown';
                 div.innerHTML = `
-                    <div class="ride-card-header">
-                        <div class="ride-icon" style="background: ${color}1a; color: ${color};">${rideType.icon}</div>
-                        <div class="ride-title-block">
-                            <div class="ride-name">${ride.filename || 'Unnamed'}</div>
-                            <div class="ride-meta"><span>${dateStr}</span><span class="ride-type-badge" style="background: ${color}1a; color: ${color};">${rideType.name}</span></div>
+                        <div class="ride-card-header">
+                            <div class="ride-icon" style="background: ${color}1a; color: ${color};">${rideType.icon}</div>
+                            <div class="ride-title-block">
+                                <div class="ride-name">${ride.filename || 'Unnamed'}</div>
+                                <div class="ride-meta"><span>${dateStr}</span><span class="ride-type-badge" style="background: ${color}1a; color: ${color};">${rideType.name}</span></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="ride-stats">
-                        <div class="stat-block"><span class="stat-num-label">Distance</span><span class="stat-num-value">${summary.distance_km || 0} km</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Elevation</span><span class="stat-num-value">${summary.elevation_gain || 0} m</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
-                    </div>
-                    <div class="actions">
-                        <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
-                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
-                    </div>
-                `;
+                        <div class="ride-stats">
+                            <div class="stat-block"><span class="stat-num-label">Distance</span><span class="stat-num-value">${summary.distance_km || 0} km</span></div>
+                            <div class="stat-block"><span class="stat-num-label">Elevation</span><span class="stat-num-value">${summary.elevation_gain || 0} m</span></div>
+                            <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
+                            <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
+                        </div>
+                        <div class="actions">
+                            <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
+                            <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
+                            <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
+                        </div>
+                    `;
                 div.onclick = () => viewSummary(ride.id);
                 list.appendChild(div);
             });
@@ -652,9 +1581,18 @@
         let rideTypes = [];
         let allRides = [];
         let uploadInProgress = false;
-        let recWatchId = null, recPoints = [], recStartTime = null, recElapsedBeforePause = 0, recTimerInterval = null;
-        let recTotalDistanceKm = 0, recLastPoint = null, recIsPaused = false, recIsRecording = false;
-        let recMap = null, recPolyline = null, recMarker = null;
+        let recWatchId = null,
+            recPoints = [],
+            recStartTime = null,
+            recElapsedBeforePause = 0,
+            recTimerInterval = null;
+        let recTotalDistanceKm = 0,
+            recLastPoint = null,
+            recIsPaused = false,
+            recIsRecording = false;
+        let recMap = null,
+            recPolyline = null,
+            recMarker = null;
         let mapInitialized = false;
 
         // ── Sensor State ────────────────────────────────────
@@ -691,7 +1629,8 @@
             rideTypes.forEach(type => {
                 const btn = document.createElement('button');
                 btn.className = `activity-btn ${selectedType === type.id ? 'active' : ''}`;
-                btn.innerHTML = `<span class="icon">${type.icon}</span> ${type.name} <span class="badge" id="badge-${type.id}">0</span>`;
+                btn.innerHTML =
+                    `<span class="icon">${type.icon}</span> ${type.name} <span class="badge" id="badge-${type.id}">0</span>`;
                 btn.onclick = () => selectType(type.id);
                 grid.appendChild(btn);
             });
@@ -748,7 +1687,10 @@
 
         // ── Stats & Rides ──────────────────────────────────
         function updateStats(rides) {
-            let totalRides = rides.length, totalDistance = 0, totalElevation = 0, totalCalories = 0;
+            let totalRides = rides.length,
+                totalDistance = 0,
+                totalElevation = 0,
+                totalCalories = 0;
             rides.forEach(ride => {
                 const s = ride.summary || {};
                 totalDistance += s.distance_km || 0;
@@ -756,15 +1698,18 @@
                 totalCalories += s.total_calories || 0;
             });
             document.getElementById('totalRides').textContent = totalRides;
-            document.getElementById('totalDistance').innerHTML = `${totalDistance.toFixed(1)} <span class="stat-unit">km</span>`;
-            document.getElementById('totalElevation').innerHTML = `${totalElevation.toFixed(0)} <span class="stat-unit">m</span>`;
+            document.getElementById('totalDistance').innerHTML =
+                `${totalDistance.toFixed(1)} <span class="stat-unit">km</span>`;
+            document.getElementById('totalElevation').innerHTML =
+            `${totalElevation.toFixed(0)} <span class="stat-unit">m</span>`;
             document.getElementById('totalCalories').textContent = Math.round(totalCalories);
             document.getElementById('rideCount').textContent = `${totalRides} activities`;
         }
 
         async function loadRides() {
             const rideList = document.getElementById('rideList');
-            rideList.innerHTML = `<div class="loading"><div class="spinner"></div><p style="margin-top:4px;font-size:0.8rem;">Loading...</p></div>`;
+            rideList.innerHTML =
+                `<div class="loading"><div class="spinner"></div><p style="margin-top:4px;font-size:0.8rem;">Loading...</p></div>`;
             try {
                 let url = '/my-rides';
                 if (selectedType !== 'all') url += `?type=${selectedType}`;
@@ -779,45 +1724,49 @@
                 }
             } catch (error) {
                 console.error(error);
-                rideList.innerHTML = `<div class="no-rides"><span class="big-icon">❌</span><p>Failed to load</p><button onclick="loadRides()" style="margin-top:8px;padding:6px 16px;background:var(--orange);color:#fff;border:none;border-radius:20px;cursor:pointer;font-weight:600;">Retry</button></div>`;
+                rideList.innerHTML =
+                    `<div class="no-rides"><span class="big-icon">❌</span><p>Failed to load</p><button onclick="loadRides()" style="margin-top:8px;padding:6px 16px;background:var(--orange);color:#fff;border:none;border-radius:20px;cursor:pointer;font-weight:600;">Retry</button></div>`;
             }
         }
 
         function renderRides(rides) {
             const rideList = document.getElementById('rideList');
             if (rides.length === 0) {
-                rideList.innerHTML = `<div class="no-rides"><span class="big-icon">🏃</span><p>No activities found</p><p style="font-size:0.8rem;margin-top:4px;">Upload your first FIT file!</p></div>`;
+                rideList.innerHTML =
+                    `<div class="no-rides"><span class="big-icon">🏃</span><p>No activities found</p><p style="font-size:0.8rem;margin-top:4px;">Upload your first FIT file!</p></div>`;
                 return;
             }
             rideList.innerHTML = '';
             rides.forEach(ride => {
                 const summary = ride.summary || {};
-                const rideType = rideTypes.find(t => t.id === ride.ride_type) || { icon: '🚴', name: 'Cycling', color: '#fc4c02' };
+                const rideType = rideTypes.find(t => t.id === ride.ride_type) || { icon: '🚴', name: 'Cycling',
+                    color: '#fc4c02' };
                 const color = rideType.color || '#fc4c02';
                 const div = document.createElement('div');
                 div.className = 'ride-item';
-                const dateStr = ride.ride_date ? new Date(ride.ride_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown';
+                const dateStr = ride.ride_date ? new Date(ride.ride_date).toLocaleDateString(undefined, { month: 'short',
+                    day: 'numeric', year: 'numeric' }) : 'Unknown';
                 div.innerHTML = `
-                    <div class="ride-card-header">
-                        <div class="ride-icon" style="background: ${color}1a; color: ${color};">${rideType.icon}</div>
-                        <div class="ride-title-block">
-                            <div class="ride-name">${ride.filename || 'Unnamed'}</div>
-                            <div class="ride-meta"><span>${dateStr}</span><span class="ride-type-badge" style="background: ${color}1a; color: ${color};">${rideType.name}</span></div>
+                        <div class="ride-card-header">
+                            <div class="ride-icon" style="background: ${color}1a; color: ${color};">${rideType.icon}</div>
+                            <div class="ride-title-block">
+                                <div class="ride-name">${ride.filename || 'Unnamed'}</div>
+                                <div class="ride-meta"><span>${dateStr}</span><span class="ride-type-badge" style="background: ${color}1a; color: ${color};">${rideType.name}</span></div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="ride-stats">
-                        <div class="stat-block"><span class="stat-num-label">Distance</span><span class="stat-num-value">${summary.distance_km || 0} km</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Elevation</span><span class="stat-num-value">${summary.elevation_gain || 0} m</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
-                    </div>
-                    <div class="actions">
-                        <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
-                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
-                    </div>
-                `;
+                        <div class="ride-stats">
+                            <div class="stat-block"><span class="stat-num-label">Distance</span><span class="stat-num-value">${summary.distance_km || 0} km</span></div>
+                            <div class="stat-block"><span class="stat-num-label">Elevation</span><span class="stat-num-value">${summary.elevation_gain || 0} m</span></div>
+                            <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
+                            <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
+                        </div>
+                        <div class="actions">
+                            <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
+                            <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
+                            <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
+                            <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
+                        </div>
+                    `;
                 div.onclick = () => viewSummary(ride.id);
                 rideList.appendChild(div);
             });
@@ -825,7 +1774,8 @@
 
         function updateBadgeCounts() {
             const counts = {};
-            allRides.forEach(ride => { const type = ride.ride_type || 'cycling'; counts[type] = (counts[type] || 0) + 1; });
+            allRides.forEach(ride => { const type = ride.ride_type || 'cycling';
+                counts[type] = (counts[type] || 0) + 1; });
             rideTypes.forEach(type => {
                 const badge = document.getElementById(`badge-${type.id}`);
                 if (badge) badge.textContent = counts[type.id] || 0;
@@ -837,7 +1787,8 @@
             const file = this.files[0];
             if (!file) return;
             if (uploadInProgress) { showToast('Upload in progress', 'error'); return; }
-            if (!file.name.toLowerCase().endsWith('.fit')) { showToast('Please select a .FIT file', 'error'); this.value = ''; return; }
+            if (!file.name.toLowerCase().endsWith('.fit')) { showToast('Please select a .FIT file', 'error');
+                this.value = ''; return; }
             uploadInProgress = true;
             const uploadBtn = document.getElementById('uploadBtn');
             const statusDiv = document.getElementById('uploadStatus');
@@ -854,7 +1805,8 @@
                 if (checkResult.is_duplicate) {
                     statusDiv.textContent = '⚠️ Duplicate detected!';
                     const userConfirmed = confirm(`Overwrite existing ride (ID: ${checkResult.duplicate_id})?`);
-                    if (userConfirmed) { overwrite = true; statusDiv.textContent = 'Overwriting...'; } else {
+                    if (userConfirmed) { overwrite = true;
+                        statusDiv.textContent = 'Overwriting...'; } else {
                         statusDiv.textContent = 'Cancelled';
                         uploadInProgress = false;
                         uploadBtn.disabled = false;
@@ -892,7 +1844,9 @@
 
         // ── Actions ────────────────────────────────────────
         function downloadRide(rideId) { window.location.href = `/download/${rideId}`; }
+
         function shareRide(rideId) { window.open(`/share/${rideId}`, '_blank'); }
+
         function viewSummary(rideId) { window.open(`/ride-summary/${rideId}`, '_blank'); }
 
         async function deleteRide(rideId) {
@@ -900,8 +1854,10 @@
             try {
                 const response = await fetch(`/ride/${rideId}`, { method: 'DELETE' });
                 const result = await response.json();
-                if (response.ok) { showToast('🗑️ Deleted', 'success'); await loadRides(); } else showToast(`❌ Failed: ${result.error || 'Unknown error'}`, 'error');
-            } catch (error) { console.error(error); showToast('❌ Delete failed', 'error'); }
+                if (response.ok) { showToast('🗑️ Deleted', 'success');
+                    await loadRides(); } else showToast(`❌ Failed: ${result.error || 'Unknown error'}`, 'error');
+            } catch (error) { console.error(error);
+                showToast('❌ Delete failed', 'error'); }
         }
 
         // ── Toast ──────────────────────────────────────────
@@ -926,8 +1882,9 @@
                 else mainBtn.style.borderColor = '';
             }
             if (modalBtn) {
-                if (hasDevices) { modalBtn.style.background = 'rgba(72,187,120,0.85)'; modalBtn.style.color = 'white'; }
-                else { modalBtn.style.background = 'rgba(0,0,0,0.6)'; modalBtn.style.color = 'white'; }
+                if (hasDevices) { modalBtn.style.background = 'rgba(72,187,120,0.85)';
+                    modalBtn.style.color = 'white'; } else { modalBtn.style.background = 'rgba(0,0,0,0.6)';
+                    modalBtn.style.color = 'white'; }
             }
         }
 
@@ -1018,12 +1975,15 @@
                 await setupSensorListeners(server, uniqueId);
                 server.addEventListener('gattserverdisconnected', () => {
                     const idx = connectedDevices.findIndex(d => d.id === uniqueId);
-                    if (idx > -1) { connectedDevices.splice(idx, 1); updateSensorBtnUI(); showToast(`⚠️ ${devInfo.name} disconnected`, 'error'); }
+                    if (idx > -1) { connectedDevices.splice(idx, 1);
+                        updateSensorBtnUI();
+                        showToast(`⚠️ ${devInfo.name} disconnected`, 'error'); }
                 });
             } catch (error) {
                 console.error("Connection error:", error);
                 let errorMsg = 'Connection failed';
-                if (error.name === 'NotFoundError' || error.name === 'AbortError' || error.message?.includes('cancel')) errorMsg = 'Scan cancelled';
+                if (error.name === 'NotFoundError' || error.name === 'AbortError' || error.message?.includes('cancel'))
+                    errorMsg = 'Scan cancelled';
                 else if (error.name === 'NotAllowedError') errorMsg = 'Permission denied.';
                 else if (error.name === 'SecurityError') errorMsg = 'HTTPS required.';
                 else if (error.name === 'NetworkError') errorMsg = 'Bluetooth hardware not found.';
@@ -1109,12 +2069,16 @@
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
             const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(
+                dLon / 2) ** 2;
             return R * 2 * Math.asin(Math.sqrt(a));
         }
 
         function initRecordMap(lat, lng) {
-            if (recMap) { recMap.remove(); recMap = null; recPolyline = null; recMarker = null; }
+            if (recMap) { recMap.remove();
+                recMap = null;
+                recPolyline = null;
+                recMarker = null; }
             const container = document.getElementById('recordMap');
             if (!container) return;
             container.style.width = '100%';
@@ -1126,13 +2090,20 @@
                 const rect = container.getBoundingClientRect();
                 if (rect.width === 0 || rect.height === 0) { setTimeout(() => initRecordMap(lat, lng), 100); return; }
                 try {
-                    recMap = L.map('recordMap', { center: [lat, lng], zoom: 16, zoomControl: true, fadeAnimation: true, attributionControl: true });
+                    recMap = L.map('recordMap', { center: [lat, lng], zoom: 16, zoomControl: true,
+                        fadeAnimation: true, attributionControl: true });
                     const isDark = document.body.classList.contains('dark-theme');
-                    const tileUrl = isDark ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-                    L.tileLayer(tileUrl, { attribution: isDark ? '&copy; CartoDB' : '&copy; OpenStreetMap', maxZoom: 19 }).addTo(recMap);
-                    recPolyline = L.polyline([], { color: '#fc4c02', weight: 4, opacity: 0.9, smoothFactor: 1 }).addTo(recMap);
-                    recMarker = L.circleMarker([lat, lng], { radius: 7, color: '#fff', weight: 2, fillColor: '#48bb78', fillOpacity: 1 }).addTo(recMap);
-                    setTimeout(() => { if (recMap) { recMap.invalidateSize(true); recMap.setView([lat, lng], 16); } }, 100);
+                    const tileUrl = isDark ?
+                        'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
+                        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                    L.tileLayer(tileUrl, { attribution: isDark ? '&copy; CartoDB' : '&copy; OpenStreetMap',
+                        maxZoom: 19 }).addTo(recMap);
+                    recPolyline = L.polyline([], { color: '#fc4c02', weight: 4, opacity: 0.9, smoothFactor: 1 })
+                    .addTo(recMap);
+                    recMarker = L.circleMarker([lat, lng], { radius: 7, color: '#fff', weight: 2,
+                        fillColor: '#48bb78', fillOpacity: 1 }).addTo(recMap);
+                    setTimeout(() => { if (recMap) { recMap.invalidateSize(true);
+                            recMap.setView([lat, lng], 16); } }, 100);
                     const resizeHandler = () => { if (recMap) recMap.invalidateSize(); };
                     window.addEventListener('resize', resizeHandler);
                     recMap._resizeHandler = resizeHandler;
@@ -1157,14 +2128,20 @@
 
         function teardownRecordMap() {
             if (recMap) {
-                if (recMap._resizeHandler) { window.removeEventListener('resize', recMap._resizeHandler); recMap._resizeHandler = null; }
-                recMap.remove(); recMap = null; recPolyline = null; recMarker = null; mapInitialized = false;
+                if (recMap._resizeHandler) { window.removeEventListener('resize', recMap._resizeHandler);
+                    recMap._resizeHandler = null; }
+                recMap.remove();
+                recMap = null;
+                recPolyline = null;
+                recMarker = null;
+                mapInitialized = false;
             }
         }
 
         function setGpsStatus(text, cls) {
             const el = document.getElementById('gpsStatus');
-            if (el) { el.textContent = text; el.className = `gps-status ${cls || ''}`; }
+            if (el) { el.textContent = text;
+                el.className = `gps-status ${cls || ''}`; }
         }
 
         function formatDuration(ms) {
@@ -1265,9 +2242,12 @@
             }
             setTimeout(() => {
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude); setGpsStatus('Ready', ''); },
-                    (err) => { console.warn('Map fallback:', err); initRecordMap(40.7128, -74.0060); setGpsStatus('Location unavailable', 'error'); },
-                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude);
+                        setGpsStatus('Ready', ''); },
+                    (err) => { console.warn('Map fallback:', err);
+                        initRecordMap(40.7128, -74.0060);
+                        setGpsStatus('Location unavailable', 'error'); }, { enableHighAccuracy: true,
+                        timeout: 5000, maximumAge: 60000 }
                 );
             }, 150);
             updateSensorUI();
@@ -1285,17 +2265,21 @@
             setGpsStatus('Acquiring GPS...', 'active');
             if (!recMap || !mapInitialized) {
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude); startGpsWatch(); },
-                    (err) => { console.warn('GPS fallback:', err); initRecordMap(40.7128, -74.0060); startGpsWatch(); },
-                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude);
+                        startGpsWatch(); },
+                    (err) => { console.warn('GPS fallback:', err);
+                        initRecordMap(40.7128, -74.0060);
+                        startGpsWatch(); }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
                 );
             } else startGpsWatch();
             recTimerInterval = setInterval(updateRecordUI, 1000);
         }
 
         function startGpsWatch() {
-            if (recWatchId !== null) { navigator.geolocation.clearWatch(recWatchId); recWatchId = null; }
-            recWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
+            if (recWatchId !== null) { navigator.geolocation.clearWatch(recWatchId);
+                recWatchId = null; }
+            recWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, { enableHighAccuracy: true,
+                maximumAge: 1000, timeout: 15000 });
         }
 
         function minimizeRecordModal() {
@@ -1313,7 +2297,8 @@
             if (!recIsRecording || recIsPaused) return;
             recIsPaused = true;
             recElapsedBeforePause += Date.now() - recStartTime;
-            if (recWatchId !== null) { navigator.geolocation.clearWatch(recWatchId); recWatchId = null; }
+            if (recWatchId !== null) { navigator.geolocation.clearWatch(recWatchId);
+                recWatchId = null; }
             setGpsStatus('Paused', 'paused');
             document.getElementById('recPauseBtn').style.display = 'none';
             document.getElementById('recResumeBtn').style.display = 'inline-block';
@@ -1326,9 +2311,11 @@
             recLastPoint = null;
             if (!recMap || !mapInitialized) {
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude); startGpsWatch(); },
-                    (err) => { console.warn('GPS fallback:', err); initRecordMap(40.7128, -74.0060); startGpsWatch(); },
-                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude);
+                        startGpsWatch(); },
+                    (err) => { console.warn('GPS fallback:', err);
+                        initRecordMap(40.7128, -74.0060);
+                        startGpsWatch(); }, { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
                 );
             } else startGpsWatch();
             setGpsStatus('GPS locked', 'active');
@@ -1337,8 +2324,10 @@
         }
 
         function stopGpsWatch() {
-            if (recWatchId !== null) { navigator.geolocation.clearWatch(recWatchId); recWatchId = null; }
-            if (recTimerInterval) { clearInterval(recTimerInterval); recTimerInterval = null; }
+            if (recWatchId !== null) { navigator.geolocation.clearWatch(recWatchId);
+                recWatchId = null; }
+            if (recTimerInterval) { clearInterval(recTimerInterval);
+                recTimerInterval = null; }
         }
 
         function resetRecordUI() {
@@ -1364,7 +2353,9 @@
         async function stopRecording() {
             if (!recIsRecording) return;
             stopGpsWatch();
-            if (recPoints.length < 2) { showToast('❌ Not enough GPS data', 'error'); recIsRecording = false; resetRecordUI(); return; }
+            if (recPoints.length < 2) { showToast('❌ Not enough GPS data', 'error');
+                recIsRecording = false;
+                resetRecordUI(); return; }
             const statusDiv = document.getElementById('recordMessage');
             statusDiv.textContent = 'Saving ride...';
             document.getElementById('recStopBtn').disabled = true;
@@ -1376,10 +2367,16 @@
                     body: JSON.stringify({ points: recPoints, ride_type: selectedRideType })
                 });
                 const result = await response.json();
-                if (response.ok) { showToast('✅ Ride saved!', 'success'); statusDiv.textContent = ''; await loadRides(); }
-                else { showToast(`❌ Failed: ${result.error || 'Unknown error'}`, 'error'); statusDiv.textContent = `❌ Error: ${result.error || 'Unknown error'}`; }
-            } catch (error) { console.error(error); showToast('❌ Save failed', 'error'); statusDiv.textContent = '❌ Save failed'; }
-            finally { document.getElementById('recStopBtn').disabled = false; recIsRecording = false; resetRecordUI(); }
+                if (response.ok) { showToast('✅ Ride saved!', 'success');
+                    statusDiv.textContent = '';
+                    await loadRides(); } else { showToast(`❌ Failed: ${result.error || 'Unknown error'}`, 'error');
+                    statusDiv.textContent = `❌ Error: ${result.error || 'Unknown error'}`; }
+            } catch (error) { console.error(error);
+                showToast('❌ Save failed', 'error');
+                statusDiv.textContent = '❌ Save failed'; } finally { document.getElementById('recStopBtn').disabled =
+                    false;
+                recIsRecording = false;
+                resetRecordUI(); }
         }
 
         function discardRecording() {
