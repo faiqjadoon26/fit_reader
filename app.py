@@ -857,22 +857,23 @@ def share_ride(ride_id):
     centered_text(90, f"{ride_type_info['icon']}  {ride_type_info['name']}", font_header, (255, 255, 255, 255))
 
     # ── Stats: 2 cols x 3 rows, centered as one block ──
+    # Each stat gets a semantic accent color for its value text
     stats = [
-        ("Distance", f"{summary.get('distance_km', 0):.2f} km"),
-        ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h"),
-        ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m"),
-        ("Calories", f"{summary.get('total_calories', 0)}"),
-        ("Avg Power", f"{summary.get('avg_power', 0):.0f} W"),
-        ("Avg HR", f"{summary.get('avg_hr', 0):.0f} bpm" if summary.get('avg_hr') else "— bpm"),
+        ("Distance", f"{summary.get('distance_km', 0):.2f} km", (255, 255, 255, 255)),   # white — headline stat
+        ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h", (66, 153, 225, 255)),   # blue
+        ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m", (241, 196, 15, 255)), # yellow
+        ("Calories", f"{summary.get('total_calories', 0)}", (255, 138, 101, 255)),       # orange
+        ("Avg Power", f"{summary.get('avg_power', 0):.0f} W", (155, 89, 182, 255)),      # purple
+        ("Avg HR", f"{summary.get('avg_hr', 0):.0f} bpm" if summary.get('avg_hr') else "— bpm", (231, 76, 60, 255)),  # red
     ]
     col_centers = [width * 0.28, width * 0.72]
     row_start_y, row_height = 300, 190
-    for i, (label, value) in enumerate(stats):
+    for i, (label, value, color) in enumerate(stats):
         col, row = i % 2, i // 2
         cx = col_centers[col]
         y = row_start_y + row * row_height
         centered_text(y, label.upper(), font_label, (150, 150, 155, 255), cx=cx)
-        centered_text(y + 40, value, font_value, (255, 255, 255, 255), cx=cx)
+        centered_text(y + 40, value, font_value, color, cx=cx)
 
     # ── Route: large, centered, dedicated lower-middle section ──
     box_x0, box_y0 = 120, 950
@@ -909,7 +910,7 @@ def share_ride(ride_id):
         centered_text((box_y0 + box_y1) // 2, "No GPS data available", font_footer, (120, 120, 125, 255))
 
     # ── Footer logo ─────────────────────────────────────
-    centered_text(height - 130, f"{ride_type_info['icon']}  FIT READER", font_footer, (190, 190, 190, 255))
+    centered_text(height - 130, f"{ride_type_info['icon']}  FIT READER", font_footer, (252, 76, 2, 255))  # brand orange
 
     buffer = BytesIO()
     img.save(buffer, format='PNG')
