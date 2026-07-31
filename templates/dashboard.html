@@ -63,7 +63,6 @@
 
         /* ── Main Container ── */
         .main-container { max-width: 1400px; margin: 0 auto; padding: 1rem 1rem 0; }
-        /* ── Tab Content ── */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
@@ -425,6 +424,10 @@
                             <option value="other">Other</option>
                         </select>
                     </div>
+                    <div class="field-group">
+                        <label for="pDefaultType">Default Activity Type</label>
+                        <select id="pDefaultType"></select>
+                    </div>
                     <div class="field-group full-width">
                         <label for="pNotes">Notes / Bike Details</label>
                         <input type="text" id="pNotes" placeholder="e.g. Shimano groupset, tubeless" />
@@ -512,10 +515,8 @@
         function applyTheme(theme) {
             if (theme === 'dark') {
                 document.body.classList.add('dark-theme');
-                document.getElementById('themeToggle')?.textContent('☀️');
             } else {
                 document.body.classList.remove('dark-theme');
-                document.getElementById('themeToggle')?.textContent('🌙');
             }
             localStorage.setItem('fit-reader-theme', theme);
         }
@@ -692,6 +693,7 @@
                 rideTypes = await response.json();
                 renderActivityButtons();
                 populateModalSelect();
+                populateProfileDefaultTypeSelect();
             } catch (error) {
                 console.error(error);
                 showToast('❌ Failed to load activity types', 'error');
@@ -722,9 +724,29 @@
                 const option = document.createElement('option');
                 option.value = type.id;
                 option.textContent = `${type.icon} ${type.name}`;
-                if (selectedType === type.id) option.selected = true;
                 select.appendChild(option);
             });
+            // Set default from profile if available
+            if (profileData.default_activity_type) {
+                select.value = profileData.default_activity_type;
+            } else if (selectedType !== 'all') {
+                select.value = selectedType;
+            }
+        }
+
+        function populateProfileDefaultTypeSelect() {
+            const select = document.getElementById('pDefaultType');
+            select.innerHTML = '';
+            rideTypes.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type.id;
+                option.textContent = `${type.icon} ${type.name}`;
+                select.appendChild(option);
+            });
+            // Set current value from profileData if available
+            if (profileData.default_activity_type) {
+                select.value = profileData.default_activity_type;
+            }
         }
 
         function selectType(typeId) {
@@ -951,6 +973,16 @@
                 document.getElementById('pMaxHR').value = profileData.max_heart_rate || '';
                 document.getElementById('pGender').value = profileData.gender || '';
                 document.getElementById('pNotes').value = profileData.notes || '';
+                // Default activity type
+                const defaultTypeSelect = document.getElementById('pDefaultType');
+                if (profileData.default_activity_type) {
+                    defaultTypeSelect.value = profileData.default_activity_type;
+                } else if (rideTypes.length > 0) {
+                    // default to first if not set
+                    defaultTypeSelect.value = rideTypes[0].id;
+                }
+                // Also update the recording modal select if it's already populated
+                populateModalSelect();
             } catch (error) {
                 console.warn('Could not load profile, using defaults:', error);
                 // Set default empty values
@@ -963,7 +995,11 @@
                 document.getElementById('pMaxHR').value = '';
                 document.getElementById('pGender').value = '';
                 document.getElementById('pNotes').value = '';
-                // We'll keep profileData as empty object
+                // Set default type to first available
+                const defaultTypeSelect = document.getElementById('pDefaultType');
+                if (rideTypes.length > 0) {
+                    defaultTypeSelect.value = rideTypes[0].id;
+                }
             }
         }
 
@@ -977,6 +1013,7 @@
                 crank_length: parseFloat(document.getElementById('pCrankLen').value) || 172.5,
                 max_heart_rate: parseInt(document.getElementById('pMaxHR').value) || 0,
                 gender: document.getElementById('pGender').value,
+                default_activity_type: document.getElementById('pDefaultType').value,
                 notes: document.getElementById('pNotes').value.trim()
             };
             try {
@@ -989,6 +1026,8 @@
                 const result = await response.json();
                 profileData = result;
                 showToast('✅ Profile saved!', 'success');
+                // Update the recording modal default
+                populateModalSelect();
             } catch (error) {
                 console.error(error);
                 showToast('❌ Failed to save profile', 'error');
@@ -1105,7 +1144,7 @@
             } catch (e) { console.warn(`[${devId}] Power not found`); }
         }
 
-        // ── Recording Logic (unchanged) ────────────────────
+        // ── Recording Logic ────────────────────────────────
         function haversineKm(lat1, lon1, lat2, lon2) {
             const R = 6371;
             const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -1254,6 +1293,10 @@
             document.getElementById('recResumeBtn').style.display = 'none';
             document.getElementById('recStopBtn').style.display = 'none';
             document.getElementById('recDiscardBtn').style.display = 'none';
+            // Set default activity type from profile
+            if (profileData.default_activity_type) {
+                document.getElementById('recRideTypeSelect').value = profileData.default_activity_type;
+            }
             const container = document.getElementById('recordMap');
             if (container) {
                 container.style.width = '100%';
@@ -1394,7 +1437,6 @@
             await loadRideTypes();
             await loadRides();
             setInterval(loadRides, 30000);
-            // Load profile when app starts
             await loadProfile();
         }
         init();
