@@ -681,10 +681,69 @@
             createChart('cadenceChart', 'Cadence (rpm)', streams.cadence, 'rgba(159, 122, 234, 0.2)', 'rgb(159, 122, 234)', true);
             createChart('powerChart', 'Power (W)', streams.power, 'rgba(246, 173, 85, 0.2)', 'rgb(246, 173, 85)', true);
             createChart('elevationChart', 'Elevation (m)', streams.elevation, 'rgba(72, 187, 120, 0.2)', 'rgb(72, 187, 120)', false);
-            createChart('tempChart', 'Temperature (°C)', streams.temperature, 'rgba(237, 137, 54, 0.2)', 'rgb(237, 137, 54)', false);
             createChart('gradeChart', 'Gradient (%)', streams.grade, 'rgba(107, 114, 128, 0.2)', 'rgb(107, 114, 128)', false);
             createChart('torqueChart', 'Torque (Nm)', streams.torque, 'rgba(236, 64, 122, 0.2)', 'rgb(236, 64, 122)', true);
             createChart('balanceChart', 'Left/Right Balance (%)', streams.left_right_balance, 'rgba(56, 189, 248, 0.2)', 'rgb(56, 189, 248)', true);
+        }
+
+        // ── Temperature Chart (with its own timestamps) ──
+        if (streams.temperature && streams.temperature.length > 0) {
+            const tempCanvas = document.getElementById('tempChart');
+            if (tempCanvas) {
+                // Try to use temperature-specific timestamps, or fall back to main timestamps
+                let tempLabels = streams.temperature_timestamps || streams.timestamps || [];
+                
+                // If using main timestamps, we need to subset them to match temperature length
+                if (!streams.temperature_timestamps && tempLabels.length > streams.temperature.length) {
+                    const step = Math.floor(tempLabels.length / streams.temperature.length);
+                    tempLabels = tempLabels.filter((_, i) => i % step === 0);
+                    // If we still don't have enough, use indices
+                    if (tempLabels.length < streams.temperature.length) {
+                        tempLabels = streams.temperature.map((_, i) => String(i));
+                    }
+                } else if (tempLabels.length < streams.temperature.length) {
+                    // Use indices as fallback
+                    tempLabels = streams.temperature.map((_, i) => String(i));
+                }
+                
+                try {
+                    const tempChart = new Chart(tempCanvas, {
+                        type: 'line',
+                        data: {
+                            labels: tempLabels,
+                            datasets: [{
+                                label: 'Temperature (°C)',
+                                data: streams.temperature,
+                                borderColor: 'rgb(237, 137, 54)',
+                                backgroundColor: 'rgba(237, 137, 54, 0.2)',
+                                fill: true,
+                                tension: 0.3,
+                                pointRadius: 0,
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { 
+                                    ticks: { color: textColor, maxTicksLimit: 10, font: { size: 8 } }, 
+                                    grid: { color: gridColor } 
+                                },
+                                y: { 
+                                    beginAtZero: false,
+                                    ticks: { color: textColor, font: { size: 8 } }, 
+                                    grid: { color: gridColor }
+                                }
+                            }
+                        }
+                    });
+                    chartInstances.push(tempChart);
+                } catch (e) {
+                    console.warn('Temperature chart error:', e);
+                }
+            }
         }
 
         // ── POWER ZONE COLOR COATING ──────────────────────
