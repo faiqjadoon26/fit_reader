@@ -41,12 +41,14 @@
             overflow-y: auto;
             transition: background var(--transition), color var(--transition);
         }
-        /* ── FULLSCREEN OVERRIDES (Fixed scrolling) ── */
         body.app-fullscreen {
-            /* Removed position:fixed + fixed dimensions – now uses natural flow */
             overflow-y: auto;
             min-height: 100vh;
             height: auto;
+        }
+        :fullscreen, :-webkit-full-screen {
+            overflow-y: auto !important;
+            height: 100% !important;
         }
 
         .navbar {
@@ -74,25 +76,12 @@
             transition: all 0.2s; white-space: nowrap;
         }
         .theme-btn:hover { border-color: var(--orange); background: var(--orange); color: white; }
-        .exit-fullscreen-btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 20px;
-            padding: 4px 12px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.7rem;
-            color: var(--text-soft);
-            transition: all 0.2s;
-            white-space: nowrap;
-            display: none;
+        .fullscreen-btn {
+            background: transparent; border: 1px solid var(--line); border-radius: 20px; padding: 4px 12px;
+            cursor: pointer; font-weight: 600; font-size: 0.75rem; color: var(--text);
+            transition: all 0.2s; white-space: nowrap;
         }
-        body.app-fullscreen .exit-fullscreen-btn { display: inline-block; }
-        .exit-fullscreen-btn:hover {
-            border-color: var(--orange);
-            background: var(--orange);
-            color: white;
-        }
+        .fullscreen-btn:hover { border-color: var(--orange); background: var(--orange); color: white; }
 
         .main-container { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
 
@@ -248,7 +237,7 @@
         .toast.error { background: #fc8181; }
 
         @media print {
-            .navbar, .actions, .toast, .exit-fullscreen-btn { display: none !important; }
+            .navbar, .actions, .toast { display: none !important; }
             body { background: white; padding: 0; }
             .summary-card { box-shadow: none; border: none; padding: 0; }
             .stat-card { background: #f5f5f5; }
@@ -287,7 +276,7 @@
         </div>
         <div class="navbar-right">
             <button class="theme-btn" id="themeToggle" onclick="toggleDarkMode()">🌙</button>
-            <button class="exit-fullscreen-btn" onclick="exitFullscreen()">⛶ Exit Fullscreen</button>
+            <button class="fullscreen-btn" id="fullscreenToggle" onclick="toggleFullscreen()">⛶ Fullscreen</button>
         </div>
     </nav>
 
@@ -522,40 +511,29 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // ── AUTO FULLSCREEN ON PAGE LOAD ──────────────────
-        document.addEventListener('DOMContentLoaded', function() {
-            enterFullscreen();
-            setTimeout(enterFullscreen, 500);
-            setTimeout(enterFullscreen, 1000);
-        });
-
-        document.addEventListener('click', function firstClick() {
-            enterFullscreen();
-            document.removeEventListener('click', firstClick);
-        });
-
-        document.addEventListener('touchstart', function firstTouch() {
-            enterFullscreen();
-            document.removeEventListener('touchstart', firstTouch);
-        });
-
-        function enterFullscreen() {
+        // ── Fullscreen (manual only — no auto-trigger, no forced overflow) ──
+        function toggleFullscreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(err => {
-                    console.log('Fullscreen requires user interaction');
+                    console.log('Fullscreen request failed:', err);
                 });
-                document.body.classList.add('app-fullscreen');
             } else {
-                document.body.classList.add('app-fullscreen');
+                document.exitFullscreen().catch(err => {});
             }
         }
 
-        function exitFullscreen() {
-            if (document.fullscreenElement) {
-                document.exitFullscreen().catch(err => {});
+        document.addEventListener('fullscreenchange', function() {
+            const isFullscreen = !!document.fullscreenElement;
+            document.getElementById('fullscreenToggle').textContent = isFullscreen ? '⛶ Exit Fullscreen' : '⛶ Fullscreen';
+            if (mapInstance) {
+                setTimeout(() => mapInstance.invalidateSize(), 300);
             }
-            document.body.classList.remove('app-fullscreen');
-        }
+            if (chartInstances.length > 0) {
+                setTimeout(() => {
+                    chartInstances.forEach(chart => chart.resize());
+                }, 350);
+            }
+        });
 
         // ── Theme ──────────────────────────────────────────
         function applyTheme(theme) {
@@ -708,26 +686,6 @@
             createChart('torqueChart', 'Torque (Nm)', streams.torque, 'rgba(236, 64, 122, 0.2)', 'rgb(236, 64, 122)', true);
             createChart('balanceChart', 'Left/Right Balance (%)', streams.left_right_balance, 'rgba(56, 189, 248, 0.2)', 'rgb(56, 189, 248)', true);
         }
-
-        // ── FULLSCREEN RESIZE HANDLER ──────────────────────
-        document.addEventListener('fullscreenchange', function() {
-            const isFullscreen = !!document.fullscreenElement;
-            if (isFullscreen) {
-                document.body.classList.add('app-fullscreen');
-            } else {
-                document.body.classList.remove('app-fullscreen');
-            }
-            
-            if (mapInstance) {
-                setTimeout(() => mapInstance.invalidateSize(), 300);
-            }
-            
-            if (chartInstances.length > 0) {
-                setTimeout(() => {
-                    chartInstances.forEach(chart => chart.resize());
-                }, 350);
-            }
-        });
 
         // ── POWER ZONE COLOR COATING ──────────────────────
         document.addEventListener('DOMContentLoaded', function() {
