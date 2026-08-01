@@ -36,6 +36,17 @@
             min-height: 100vh;
             transition: background var(--transition), color var(--transition);
         }
+        /* ── FULLSCREEN OVERRIDES ── */
+        body.app-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
 
         .navbar {
             background: var(--card);
@@ -55,13 +66,32 @@
         .back-btn:hover { color: var(--orange); }
         .navbar-brand { font-size: 1.1rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; letter-spacing: -0.02em; }
         .navbar-brand span { background: var(--orange); color: white; padding: 1px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 700; }
-        .navbar-right { display: flex; align-items: center; gap: 8px; }
+        .navbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .theme-btn {
             background: transparent; border: 1px solid var(--line); border-radius: 20px; padding: 4px 12px;
             cursor: pointer; font-weight: 600; font-size: 0.75rem; color: var(--text);
             transition: all 0.2s; white-space: nowrap;
         }
         .theme-btn:hover { border-color: var(--orange); background: var(--orange); color: white; }
+        .exit-fullscreen-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.7rem;
+            color: var(--text-soft);
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: none;
+        }
+        body.app-fullscreen .exit-fullscreen-btn { display: inline-block; }
+        .exit-fullscreen-btn:hover {
+            border-color: var(--orange);
+            background: var(--orange);
+            color: white;
+        }
 
         .main-container { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
 
@@ -143,13 +173,6 @@
             height: var(--chart-height) !important;
             max-height: 260px;
         }
-        .chart-full {
-            grid-column: 1 / -1;
-        }
-        .chart-full canvas {
-            height: 300px !important;
-            max-height: 320px;
-        }
 
         .zone-container {
             margin-top: 20px;
@@ -170,7 +193,7 @@
             text-align: center;
         }
         .zone-bars { display: flex; height: 30px; border-radius: 8px; overflow: hidden; margin-top: 10px; }
-        .zone-bar { display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: white; font-weight: 700; }
+        .zone-bar { display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: white; font-weight: 700; transition: width 0.5s ease; }
         .zone-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 12px; }
         .zone-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text); }
         .zone-color { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; }
@@ -224,7 +247,7 @@
         .toast.error { background: #fc8181; }
 
         @media print {
-            .navbar, .actions, .toast { display: none !important; }
+            .navbar, .actions, .toast, .exit-fullscreen-btn { display: none !important; }
             body { background: white; padding: 0; }
             .summary-card { box-shadow: none; border: none; padding: 0; }
             .stat-card { background: #f5f5f5; }
@@ -232,8 +255,6 @@
         }
         @media (max-width: 768px) {
             .charts-grid { grid-template-columns: 1fr; gap: 12px; }
-            .chart-full { grid-column: 1; }
-            .chart-full canvas { height: 220px !important; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
             .stat-card { padding: 10px 6px; }
             .stat-value { font-size: 1rem; }
@@ -254,7 +275,6 @@
         }
         @media (min-width: 769px) {
             :root { --chart-height: 260px; }
-            .chart-full canvas { height: 300px !important; }
         }
     </style>
 </head>
@@ -266,6 +286,7 @@
         </div>
         <div class="navbar-right">
             <button class="theme-btn" id="themeToggle" onclick="toggleDarkMode()">🌙</button>
+            <button class="exit-fullscreen-btn" onclick="exitFullscreen()">⛶ Exit Fullscreen</button>
         </div>
     </nav>
 
@@ -314,7 +335,7 @@
                 {% endif %}
             </div>
 
-            <!-- ALL Charts Grid -->
+            <!-- ALL Charts Grid (Combined Chart REMOVED) -->
             <div class="charts-grid">
                 <!-- Speed -->
                 {% if streams.speed and streams.speed|length > 0 %}
@@ -387,17 +408,11 @@
                     <canvas id="balanceChart"></canvas>
                 </div>
                 {% endif %}
-
-                <!-- Combined Metrics (Full Width) -->
-                <div class="chart-box chart-full">
-                    <h3>📊 Combined Metrics (Normalized %)</h3>
-                    <canvas id="combinedChart"></canvas>
-                </div>
             </div>
 
             <!-- Power Zones -->
             {% if zone_distribution and zone_distribution|length > 0 %}
-            <div class="zone-container">
+            <div class="zone-container" id="powerZonesContainer">
                 <h3>⚡ Power Zones</h3>
                 <div class="zone-bars">
                     {% for zone in zone_distribution %}
@@ -506,6 +521,41 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // ── AUTO FULLSCREEN ON PAGE LOAD ──────────────────
+        document.addEventListener('DOMContentLoaded', function() {
+            enterFullscreen();
+            setTimeout(enterFullscreen, 500);
+            setTimeout(enterFullscreen, 1000);
+        });
+
+        document.addEventListener('click', function firstClick() {
+            enterFullscreen();
+            document.removeEventListener('click', firstClick);
+        });
+
+        document.addEventListener('touchstart', function firstTouch() {
+            enterFullscreen();
+            document.removeEventListener('touchstart', firstTouch);
+        });
+
+        function enterFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log('Fullscreen requires user interaction');
+                });
+                document.body.classList.add('app-fullscreen');
+            } else {
+                document.body.classList.add('app-fullscreen');
+            }
+        }
+
+        function exitFullscreen() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(err => {});
+            }
+            document.body.classList.remove('app-fullscreen');
+        }
+
         // ── Theme ──────────────────────────────────────────
         function applyTheme(theme) {
             if (theme === 'dark') {
@@ -535,6 +585,7 @@
         }
 
         // ── Leaflet Map ────────────────────────────────────
+        let mapInstance = null;
         {% if route and route|length > 1 %}
         (function initMap() {
             const mapContainer = document.getElementById('map');
@@ -551,7 +602,7 @@
                     const route = {{ route|tojson }};
                     if (!route || route.length < 2) return;
                     
-                    const map = L.map('map').setView(route[0], 14);
+                    mapInstance = L.map('map').setView(route[0], 14);
                     const isDark = document.body.classList.contains('dark-theme');
                     const tileUrl = isDark ?
                         'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
@@ -559,23 +610,23 @@
                     L.tileLayer(tileUrl, {
                         attribution: isDark ? '&copy; CartoDB' : '&copy; OpenStreetMap',
                         maxZoom: 19
-                    }).addTo(map);
+                    }).addTo(mapInstance);
                     
-                    const polyline = L.polyline(route, { color: '#fc4c02', weight: 4, opacity: 0.9 }).addTo(map);
-                    map.fitBounds(polyline.getBounds());
+                    const polyline = L.polyline(route, { color: '#fc4c02', weight: 4, opacity: 0.9 }).addTo(mapInstance);
+                    mapInstance.fitBounds(polyline.getBounds());
                     
                     if (route.length > 0) {
                         L.circleMarker(route[0], { radius: 8, color: '#48bb78', fillColor: '#48bb78', fillOpacity: 1, weight: 2 })
-                            .addTo(map)
+                            .addTo(mapInstance)
                             .bindPopup('🏁 Start');
                         L.circleMarker(route[route.length - 1], { radius: 8, color: '#fc4c02', fillColor: '#fc4c02', fillOpacity: 1, weight: 2 })
-                            .addTo(map)
+                            .addTo(mapInstance)
                             .bindPopup('🏁 Finish');
                     }
                     
-                    setTimeout(() => map.invalidateSize(), 150);
+                    setTimeout(() => mapInstance.invalidateSize(), 150);
                     window.addEventListener('resize', () => {
-                        setTimeout(() => map.invalidateSize(), 200);
+                        setTimeout(() => mapInstance.invalidateSize(), 200);
                     });
                 } catch (e) {
                     console.warn('Map initialization failed:', e);
@@ -595,12 +646,15 @@
         const textColor = isDarkMode ? '#ccc' : '#666';
         const gridColor = isDarkMode ? '#2a2a2a' : '#e2e8f0';
 
+        // Store chart instances globally so we can resize them on fullscreen change
+        let chartInstances = [];
+
         function createChart(canvasId, label, data, color, borderColor, startAtZero = true, yMax = null) {
             const canvas = document.getElementById(canvasId);
             if (!canvas || !data || data.length === 0) return null;
             
             try {
-                return new Chart(canvas, {
+                const chart = new Chart(canvas, {
                     type: 'line',
                     data: {
                         labels: timestamps,
@@ -635,6 +689,8 @@
                         }
                     }
                 });
+                chartInstances.push(chart);
+                return chart;
             } catch (e) {
                 console.warn('Chart error for', canvasId, e);
                 return null;
@@ -652,94 +708,73 @@
             createChart('gradeChart', 'Gradient (%)', streams.grade, 'rgba(107, 114, 128, 0.2)', 'rgb(107, 114, 128)', false);
             createChart('torqueChart', 'Torque (Nm)', streams.torque, 'rgba(236, 64, 122, 0.2)', 'rgb(236, 64, 122)', true);
             createChart('balanceChart', 'Left/Right Balance (%)', streams.left_right_balance, 'rgba(56, 189, 248, 0.2)', 'rgb(56, 189, 248)', true);
-
-            // Combined Chart - Normalized values
-            const combinedCanvas = document.getElementById('combinedChart');
-            if (combinedCanvas && streams.speed && streams.speed.length > 0) {
-                const maxSpeed = Math.max(...streams.speed, 1);
-                const maxHR = Math.max(...(streams.heart_rate || [0]), 1);
-                const maxPower = Math.max(...(streams.power || [0]), 1);
-                const maxCadence = Math.max(...(streams.cadence || [0]), 1);
-                
-                try {
-                    new Chart(combinedCanvas, {
-                        type: 'line',
-                        data: {
-                            labels: timestamps,
-                            datasets: [
-                                {
-                                    label: 'Speed',
-                                    data: streams.speed.map(v => (v / maxSpeed) * 100),
-                                    borderColor: 'rgb(66, 153, 225)',
-                                    backgroundColor: 'rgba(66, 153, 225, 0.05)',
-                                    fill: false,
-                                    tension: 0.3,
-                                    pointRadius: 0,
-                                    borderWidth: 2
-                                },
-                                {
-                                    label: 'HR',
-                                    data: (streams.heart_rate || []).map(v => (v / maxHR) * 100),
-                                    borderColor: 'rgb(252, 129, 129)',
-                                    backgroundColor: 'rgba(252, 129, 129, 0.05)',
-                                    fill: false,
-                                    tension: 0.3,
-                                    pointRadius: 0,
-                                    borderWidth: 2
-                                },
-                                {
-                                    label: 'Power',
-                                    data: (streams.power || []).map(v => (v / maxPower) * 100),
-                                    borderColor: 'rgb(246, 173, 85)',
-                                    backgroundColor: 'rgba(246, 173, 85, 0.05)',
-                                    fill: false,
-                                    tension: 0.3,
-                                    pointRadius: 0,
-                                    borderWidth: 2
-                                },
-                                {
-                                    label: 'Cadence',
-                                    data: (streams.cadence || []).map(v => (v / maxCadence) * 100),
-                                    borderColor: 'rgb(159, 122, 234)',
-                                    backgroundColor: 'rgba(159, 122, 234, 0.05)',
-                                    fill: false,
-                                    tension: 0.3,
-                                    pointRadius: 0,
-                                    borderWidth: 2,
-                                    borderDash: [5, 5]
-                                }
-                            ]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: { 
-                                legend: { 
-                                    labels: { 
-                                        color: textColor,
-                                        font: { size: 9 }
-                                    } 
-                                } 
-                            },
-                            scales: {
-                                x: { 
-                                    ticks: { color: textColor, maxTicksLimit: 10, font: { size: 8 } }, 
-                                    grid: { color: gridColor } 
-                                },
-                                y: { 
-                                    beginAtZero: true,
-                                    max: 110,
-                                    ticks: { color: textColor, font: { size: 8 }, callback: function(value) { return value + '%'; } }, 
-                                    grid: { color: gridColor } 
-                                }
-                            }
-                        }
-                    });
-                } catch (e) {
-                    console.warn('Combined chart error:', e);
-                }
-            }
         }
+
+        // ── FULLSCREEN RESIZE HANDLER ──────────────────────
+        document.addEventListener('fullscreenchange', function() {
+            const isFullscreen = !!document.fullscreenElement;
+            if (isFullscreen) {
+                document.body.classList.add('app-fullscreen');
+            } else {
+                document.body.classList.remove('app-fullscreen');
+            }
+            
+            // Resize Map
+            if (mapInstance) {
+                setTimeout(() => mapInstance.invalidateSize(), 300);
+            }
+            
+            // Resize ALL Chart.js instances
+            if (chartInstances.length > 0) {
+                setTimeout(() => {
+                    chartInstances.forEach(chart => chart.resize());
+                }, 350);
+            }
+        });
+
+        // ── POWER ZONE COLOR COATING ──────────────────────
+        // This forces a cycling-standard color palette onto the Power Zones 
+        // (Z1=Green, Z2=Blue, Z3=Yellow, Z4=Orange, Z5=Red, Z6=Pink, Z7=Purple)
+        // regardless of what the backend sends.
+        document.addEventListener('DOMContentLoaded', function() {
+            const zoneContainer = document.getElementById('powerZonesContainer');
+            if (!zoneContainer) return;
+
+            const zoneColorMap = {
+                'Z1': '#22c55e', // Green
+                'Z2': '#3b82f6', // Blue
+                'Z3': '#facc15', // Yellow
+                'Z4': '#f97316', // Orange
+                'Z5': '#ef4444', // Red
+                'Z6': '#ec4899', // Pink
+                'Z7': '#8b5cf6'  // Purple
+            };
+
+            // Get all legend items and bars
+            const legendItems = zoneContainer.querySelectorAll('.zone-legend-item');
+            const bars = zoneContainer.querySelectorAll('.zone-bar');
+
+            legendItems.forEach((item, index) => {
+                const text = item.textContent.trim();
+                // Extract the zone name (e.g., "Z1 (10s)" -> "Z1")
+                const zoneMatch = text.match(/(Z[1-7])/);
+                if (zoneMatch) {
+                    const zoneKey = zoneMatch[0];
+                    const color = zoneColorMap[zoneKey] || '#888';
+                    
+                    // Apply color to the legend swatch
+                    const colorSpan = item.querySelector('.zone-color');
+                    if (colorSpan) {
+                        colorSpan.style.background = color;
+                    }
+                    
+                    // Apply color to the corresponding bar
+                    if (bars[index]) {
+                        bars[index].style.background = color;
+                    }
+                }
+            });
+        });
     </script>
 </body>
 </html>
