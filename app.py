@@ -714,7 +714,7 @@ def club():
         return jsonify({"error": "Invalid ride type"}), 400
     return jsonify(get_all_users_stats(ride_type))
 
-# ─── UPDATED: /save-live-ride with temperature support ────
+# ─── UPDATED: /save-live-ride with temperature and elevation support ────
 @app.route('/save-live-ride', methods=['POST'])
 @login_required
 def save_live_ride():
@@ -780,11 +780,21 @@ def save_live_ride():
             avg_temp = min_temp = max_temp = None
             has_temperature = False
 
+        # ── Elevation stats ──────────────────────────────────
+        if elevation_list:
+            min_elevation = round(min(elevation_list), 1)
+            max_elevation = round(max(elevation_list), 1)
+        else:
+            min_elevation = max_elevation = 0
+
         summary = {
             "max_speed": max_speed,
             "avg_speed": avg_speed,
             "avg_cadence": round(sum(valid_cad)/len(valid_cad), 1) if valid_cad else 0,
             "elevation_gain": round(total_climbing, 1),
+            "elevation_loss": 0,  # Not calculated in this version
+            "min_elevation": min_elevation,
+            "max_elevation": max_elevation,
             "total_calories": total_calories,
             "avg_power": round(sum(power_list)/len(power_list), 1),
             "max_power": round(max(power_list), 1),
