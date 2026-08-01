@@ -345,10 +345,10 @@
             border: 1px solid rgba(255,255,255,0.08);
             box-shadow: 0 4px 30px rgba(0,0,0,0.5);
         }
-        /* SENSOR STATS - 3 columns */
+        /* SENSOR STATS - 4 columns (HR, Cadence, Power, Temperature) */
         .record-modal-sensor-stats {
             display: grid; 
-            grid-template-columns: 1fr 1fr 1fr; 
+            grid-template-columns: 1fr 1fr 1fr 1fr; 
             gap: 6px;
             margin-top: 8px; 
             padding-top: 8px; 
@@ -447,6 +447,7 @@
         #recHR { color: #f87171; }
         #recCadence { color: #60a5fa; }
         #recPower { color: #fbbf24; }
+        #recTemp { color: #6ee7b7; } /* teal-ish */
         #recTimer { color: #ff8a5c; }
         #recTimer.paused { color: #facc15; }
         
@@ -544,7 +545,7 @@
             .modal-stat-primary .record-stat-value { font-size: 1.8rem; }
             .modal-stat-speed .record-stat-value { font-size: 1.8rem; }
             .record-modal-sensor-stats {
-                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-columns: 1fr 1fr 1fr 1fr;
                 gap: 4px;
                 padding: 6px 4px;
             }
@@ -570,7 +571,7 @@
             .modal-stat-primary .record-stat-value { font-size: 1.4rem; }
             .modal-stat-speed .record-stat-value { font-size: 1.4rem; }
             .record-modal-sensor-stats {
-                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-columns: 1fr 1fr 1fr 1fr;
                 gap: 3px;
                 padding: 4px 3px;
             }
@@ -785,7 +786,7 @@
                 </div>
             </div>
             
-            <!-- ROW 2: DISTANCE (FULL WIDTH - NEW DEDICATED ROW) -->
+            <!-- ROW 2: DISTANCE (FULL WIDTH) -->
             <div class="record-modal-sensor-stats" style="grid-template-columns: 1fr !important; margin-top: 8px; border-top: 1.5px solid rgba(255,255,255,0.1); padding-top: 8px;">
                 <div class="modal-stat modal-stat-distance">
                     <div class="record-stat-label">📏 Distance</div>
@@ -793,8 +794,8 @@
                 </div>
             </div>
 
-            <!-- ROW 3: HR, CADENCE & POWER -->
-            <div class="record-modal-sensor-stats" style="grid-template-columns: 1fr 1fr 1fr !important; margin-top: 8px;">
+            <!-- ROW 3: HR, CADENCE, POWER, TEMPERATURE (4 columns) -->
+            <div class="record-modal-sensor-stats" style="grid-template-columns: 1fr 1fr 1fr 1fr !important; margin-top: 8px;">
                 <div class="modal-stat modal-stat-sensor-left">
                     <div class="record-stat-label">❤️ HR</div>
                     <div class="record-stat-value"><span id="recHR">--</span> <span class="stat-unit">bpm</span></div>
@@ -803,9 +804,13 @@
                     <div class="record-stat-label">🔄 Cadence</div>
                     <div class="record-stat-value"><span id="recCadence">--</span> <span class="stat-unit">rpm</span></div>
                 </div>
-                <div class="modal-stat modal-stat-sensor-right">
+                <div class="modal-stat">
                     <div class="record-stat-label">⚡ Power</div>
                     <div class="record-stat-value"><span id="recPower">--</span> <span class="stat-unit">W</span></div>
+                </div>
+                <div class="modal-stat modal-stat-sensor-right">
+                    <div class="record-stat-label">🌡️ Temp</div>
+                    <div class="record-stat-value"><span id="recTemp">--</span> <span class="stat-unit">°C</span></div>
                 </div>
             </div>
             
@@ -1040,6 +1045,11 @@
         let recMap = null, recPolyline = null, recMarker = null;
         let mapInitialized = false;
         let currentMapStyle = 'standard';
+
+        // ── Temperature polling state ──────────────────────
+        let tempPollInterval = null;
+        const tempStream = [];
+        let currentTemp = null;
 
         // Map style configurations
         const mapStyles = {
@@ -1372,11 +1382,11 @@
             } else {
                 document.getElementById('recPower').textContent = sensorData.power !== null ? sensorData.power : '--';
             }
-            if (sensorConnectionState.speed && sensorData.speed === null) {
-                // Don't update recSpeed here - it's managed by recording logic
-            } else {
-                // Only update if not recording or if speed is available
-            }
+            updateTemperatureUI();
+        }
+
+        function updateTemperatureUI() {
+            document.getElementById('recTemp').textContent = currentTemp !== null ? currentTemp.toFixed(1) : '--';
         }
 
         function clearSensorValue(sensorKey) {
@@ -1744,11 +1754,9 @@
             const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
             
             if (recIsPaused) {
-                // Show average speed when paused
                 document.getElementById('recSpeed').textContent = avgSpeed.toFixed(1);
                 document.getElementById('recSpeed').classList.add('paused');
             } else if (recLastPoint && recLastPoint.speed !== undefined) {
-                // Show current speed when recording
                 document.getElementById('recSpeed').textContent = recLastPoint.speed.toFixed(1);
                 document.getElementById('recSpeed').classList.remove('paused');
             }
@@ -1761,6 +1769,50 @@
             }
         }
 
+        // ── Temperature polling (Open‑Meteo) ──────────────
+        function startTemperaturePolling(recordingStartTime) {
+            if (tempPollInterval) clearInterval(tempPollInterval);
+            tempPollInterval = setInterval(async () => {
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const { latitude, longitude } = pos.coords;
+                    try {
+                        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m`;
+                        const res = await fetch(url);
+                        const data = await res.json();
+                        const temp = data.current?.temperature_2m;
+                        if (temp !== undefined) {
+                            currentTemp = temp;
+                            tempStream.push({
+                                timestamp: Date.now(),
+                                elapsed_s: Math.round((Date.now() - recordingStartTime) / 1000),
+                                temp_c: temp
+                            });
+                            updateTemperatureUI();
+                        }
+                    } catch (err) {
+                        console.warn('Temperature fetch failed:', err);
+                    }
+                }, () => {
+                    console.warn('Geolocation unavailable for temperature poll');
+                });
+            }, 60000); // every 60s
+        }
+
+        function stopTemperaturePolling() {
+            if (tempPollInterval) {
+                clearInterval(tempPollInterval);
+                tempPollInterval = null;
+            }
+        }
+
+        function resetTemperatureState() {
+            stopTemperaturePolling();
+            currentTemp = null;
+            tempStream.length = 0;
+            updateTemperatureUI();
+        }
+
+        // ── GPS and Recording ──────────────────────────────
         function onGpsPosition(position) {
             const coords = position.coords;
             const lat = coords.latitude;
@@ -1788,7 +1840,6 @@
             if (!recMap || !mapInitialized) initRecordMap(lat, lng);
             else updateRecordMap(lat, lng);
             
-            // Only update speed if not paused (when paused, it shows avg speed)
             if (!recIsPaused) {
                 document.getElementById('recSpeed').textContent = speedKmh.toFixed(1);
                 document.getElementById('recSpeed').classList.remove('paused');
@@ -1817,6 +1868,7 @@
         }
 
         function openRecordingModal() {
+            // Reset everything
             recPoints = [];
             recTotalDistanceKm = 0;
             recLastPoint = null;
@@ -1824,6 +1876,7 @@
             recIsPaused = false;
             recIsRecording = false;
             recStartTime = null;
+            resetTemperatureState();
             teardownRecordMap();
             document.getElementById('recordModal').style.display = 'flex';
             document.getElementById('recordMinimizedBar').style.display = 'none';
@@ -1839,6 +1892,10 @@
             document.getElementById('recSpeed').textContent = '0.0';
             document.getElementById('recSpeed').classList.remove('paused');
             document.getElementById('recDistance').innerHTML = '0.00 <span class="stat-unit">km</span>';
+            document.getElementById('recHR').textContent = '--';
+            document.getElementById('recCadence').textContent = '--';
+            document.getElementById('recPower').textContent = '--';
+            document.getElementById('recTemp').textContent = '--';
             if (profileData.default_activity_type) {
                 document.getElementById('recRideTypeSelect').value = profileData.default_activity_type;
             }
@@ -1863,6 +1920,8 @@
             if (!('geolocation' in navigator)) { showToast('❌ Geolocation not supported', 'error'); return; }
             recIsRecording = true;
             recStartTime = Date.now();
+            // Start temperature polling
+            startTemperaturePolling(recStartTime);
             document.getElementById('recStartRecordingBtn').style.display = 'none';
             document.getElementById('recPauseBtn').style.display = 'inline-block';
             document.getElementById('recStopBtn').style.display = 'inline-block';
@@ -1904,7 +1963,6 @@
             document.getElementById('recPauseBtn').style.display = 'none';
             document.getElementById('recResumeBtn').style.display = 'inline-block';
             
-            // Show average speed in the speed position when paused
             const elapsedHours = currentElapsedMs() / 3600000;
             const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
             document.getElementById('recSpeed').textContent = avgSpeed.toFixed(1);
@@ -1928,7 +1986,6 @@
             document.getElementById('recPauseBtn').style.display = 'inline-block';
             document.getElementById('recResumeBtn').style.display = 'none';
             
-            // Restore current speed if available
             if (recLastPoint && recLastPoint.speed !== undefined) {
                 document.getElementById('recSpeed').textContent = recLastPoint.speed.toFixed(1);
             } else {
@@ -1944,6 +2001,8 @@
         }
 
         function resetRecordUI() {
+            stopGpsWatch();
+            stopTemperaturePolling();
             document.getElementById('recStartRecordingBtn').style.display = 'none';
             document.getElementById('recPauseBtn').style.display = 'none';
             document.getElementById('recResumeBtn').style.display = 'none';
@@ -1957,25 +2016,34 @@
             document.getElementById('recHR').textContent = '--';
             document.getElementById('recCadence').textContent = '--';
             document.getElementById('recPower').textContent = '--';
+            document.getElementById('recTemp').textContent = '--';
             setGpsStatus('GPS idle', '');
             document.getElementById('recordModal').style.display = 'none';
             document.getElementById('recordMinimizedBar').style.display = 'none';
             teardownRecordMap();
+            // Clear temp data
+            resetTemperatureState();
         }
 
         async function stopRecording() {
             if (!recIsRecording) return;
             stopGpsWatch();
+            stopTemperaturePolling();
             if (recPoints.length < 2) { showToast('❌ Not enough GPS data', 'error'); recIsRecording = false; resetRecordUI(); return; }
             const statusDiv = document.getElementById('recordMessage');
             statusDiv.textContent = 'Saving ride...';
             document.getElementById('recStopBtn').disabled = true;
             const selectedRideType = document.getElementById('recRideTypeSelect').value;
             try {
+                const payload = { 
+                    points: recPoints, 
+                    ride_type: selectedRideType,
+                    temperature: tempStream  // include temperature stream
+                };
                 const response = await fetch('/save-live-ride', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ points: recPoints, ride_type: selectedRideType })
+                    body: JSON.stringify(payload)
                 });
                 const result = await response.json();
                 if (response.ok) { showToast('✅ Ride saved!', 'success'); statusDiv.textContent = ''; await loadRides(); }
@@ -1987,6 +2055,7 @@
         function discardRecording() {
             if (!confirm('Discard recording?')) return;
             stopGpsWatch();
+            stopTemperaturePolling();
             recIsRecording = false;
             recPoints = [];
             document.getElementById('recordMessage').textContent = 'Discarded';
