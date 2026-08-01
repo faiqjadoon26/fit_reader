@@ -19,6 +19,7 @@
             --radius: 10px;
             --transition: 0.25s ease;
             --tab-height: 64px;
+            --navbar-height: 56px;
         }
         .dark-theme {
             --bg: #0d0d0d;
@@ -30,37 +31,35 @@
         }
         * { margin:0; padding:0; box-sizing:border-box; }
         html, body {
-            width: 100%;
             height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Roboto, Arial, sans-serif;
             background: var(--bg);
             color: var(--text);
             transition: background var(--transition), color var(--transition);
-            overflow-x: hidden;
-        }
-        body.app-fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            width: 100vw;
-            height: 100vh;
             overflow: hidden;
         }
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        :fullscreen, :-webkit-full-screen {
+            overflow: hidden !important;
+            height: 100% !important;
+        }
 
+        /* ── Navbar ── */
         .navbar {
             background: var(--card);
             border-bottom: 1px solid var(--line);
             padding: 0 1rem;
-            height: 56px;
+            height: var(--navbar-height);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            flex-shrink: 0;
             transition: background var(--transition), border-color var(--transition);
+            z-index: 100;
         }
         .navbar-brand { font-size: 1.1rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; letter-spacing: -0.02em; }
         .navbar-brand span { background: var(--orange); color: white; padding: 1px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 700; }
@@ -81,33 +80,53 @@
             display: none;
         }
         body.app-fullscreen .fullscreen-badge { display: inline-block; }
+        .exit-fullscreen-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.7rem;
+            color: var(--text-soft);
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: none;
+        }
+        body.app-fullscreen .exit-fullscreen-btn { display: inline-block; }
+        .exit-fullscreen-btn:hover {
+            border-color: var(--orange);
+            background: var(--orange);
+            color: white;
+        }
 
-        .main-container { 
-            max-width: 1400px; 
-            margin: 0 auto; 
-            padding: 1rem 1rem 0;
-            height: calc(100vh - 56px - var(--tab-height));
+        /* ── Main content (scrollable) ── */
+        .main-container {
+            flex: 1;
             overflow-y: auto;
             overflow-x: hidden;
+            padding: 1rem 1rem 0.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
             -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
         }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
+        /* ── Bottom tabs ── */
         .bottom-tabs {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            flex-shrink: 0;
             height: var(--tab-height);
             background: var(--card);
             border-top: 1px solid var(--line);
             display: flex;
             align-items: stretch;
             justify-content: space-around;
-            z-index: 900;
             transition: background var(--transition), border-color var(--transition);
             padding-bottom: env(safe-area-inset-bottom);
+            z-index: 900;
         }
         .tab-btn {
             flex: 1;
@@ -132,6 +151,7 @@
         .tab-btn.active .tab-icon { transform: scale(1.05); }
         .tab-btn:active { opacity: 0.7; }
 
+        /* ── Profile, upload, rides, stats (unchanged) ── */
         .profile-card {
             background: var(--card);
             border: 1px solid var(--line);
@@ -265,7 +285,7 @@
         .toast.success { background: #48bb78; }
         .toast.error { background: #fc8181; }
 
-        /* ── RECORD MODAL ── */
+        /* ── Record Modal ── */
         .record-modal {
             position: fixed; inset: 0; z-index: 1000; background: #0b0e1a;
             display: none; flex-direction: column;
@@ -332,8 +352,6 @@
             padding: 14px 14px 10px; pointer-events: none;
         }
         .record-modal-stats-wrapper>* { pointer-events: auto; }
-        
-        /* MAIN STATS - TIMER AND SPEED ONLY (2 columns) */
         .record-modal-stats {
             display: grid; 
             grid-template-columns: 1fr 1fr; 
@@ -345,7 +363,6 @@
             border: 1px solid rgba(255,255,255,0.08);
             box-shadow: 0 4px 30px rgba(0,0,0,0.5);
         }
-        /* SENSOR STATS - 4 columns (HR, Cadence, Power, Temperature) */
         .record-modal-sensor-stats {
             display: grid; 
             grid-template-columns: 1fr 1fr 1fr 1fr; 
@@ -378,7 +395,6 @@
             text-shadow: 0 0 30px rgba(252,76,2,0.3);
             font-variant-numeric: tabular-nums;
         }
-        /* Speed stat - also primary */
         .modal-stat-speed {
             grid-column: span 1; 
             background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(56, 189, 248, 0.05));
@@ -434,7 +450,6 @@
         .record-modal-sensor-stats .record-stat-label {
             font-size: 0.45rem;
         }
-        /* Distance in full row - green and larger */
         .modal-stat-distance {
             grid-column: 1 !important;
             background: linear-gradient(135deg, rgba(52, 211, 153, 0.2), rgba(52, 211, 153, 0.05)) !important;
@@ -447,7 +462,7 @@
         #recHR { color: #f87171; }
         #recCadence { color: #60a5fa; }
         #recPower { color: #fbbf24; }
-        #recTemp { color: #6ee7b7; } /* teal-ish */
+        #recTemp { color: #6ee7b7; }
         #recTimer { color: #ff8a5c; }
         #recTimer.paused { color: #facc15; }
         
@@ -517,26 +532,7 @@
         .record-tab-content .big-record-btn:active { transform: scale(0.88); box-shadow: 0 2px 10px rgba(252,76,2,0.3); }
         .record-tab-content .big-record-btn:hover { transform: scale(1.04); box-shadow: 0 8px 40px rgba(252,76,2,0.6); }
 
-        .exit-fullscreen-btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 20px;
-            padding: 4px 12px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.7rem;
-            color: var(--text-soft);
-            transition: all 0.2s;
-            white-space: nowrap;
-            display: none;
-        }
-        body.app-fullscreen .exit-fullscreen-btn { display: inline-block; }
-        .exit-fullscreen-btn:hover {
-            border-color: var(--orange);
-            background: var(--orange);
-            color: white;
-        }
-
+        /* ── Responsive ── */
         @media (max-width: 768px) {
             .record-modal-stats {
                 gap: 4px;
@@ -562,6 +558,8 @@
             .map-style-btn { font-size: 0.5rem; padding: 3px 8px; }
             .record-minimized-bar { padding: 10px 14px; font-size: 0.75rem; min-height: 40px; gap: 8px; }
             .topbar-row .modal-center-controls { gap: 4px; }
+            .main-container { padding: 0.8rem 0.8rem 0.3rem; }
+            .profile-form { grid-template-columns: 1fr; }
         }
         @media (max-width: 480px) {
             .record-modal-stats {
@@ -597,9 +595,8 @@
         </div>
     </nav>
 
-    <!-- MAIN CONTENT -->
+    <!-- MAIN CONTENT (scrollable) -->
     <div class="main-container">
-
         <!-- HOME TAB -->
         <div id="tab-home" class="tab-content active">
             <div class="activity-selector"><div class="activity-grid" id="activityGrid"></div></div>
@@ -1749,7 +1746,6 @@
             const minimizedText = document.getElementById('minimizedText');
             if (minimizedText) minimizedText.textContent = `Recording... ${durationStr} · ${recTotalDistanceKm.toFixed(2)} km`;
             
-            // Update speed - show current speed when recording, or avg speed when paused
             const elapsedHours = currentElapsedMs() / 3600000;
             const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
             
@@ -1795,7 +1791,7 @@
                 }, () => {
                     console.warn('Geolocation unavailable for temperature poll');
                 });
-            }, 60000); // every 60s
+            }, 60000);
         }
 
         function stopTemperaturePolling() {
@@ -1868,7 +1864,6 @@
         }
 
         function openRecordingModal() {
-            // Reset everything
             recPoints = [];
             recTotalDistanceKm = 0;
             recLastPoint = null;
@@ -1920,7 +1915,6 @@
             if (!('geolocation' in navigator)) { showToast('❌ Geolocation not supported', 'error'); return; }
             recIsRecording = true;
             recStartTime = Date.now();
-            // Start temperature polling
             startTemperaturePolling(recStartTime);
             document.getElementById('recStartRecordingBtn').style.display = 'none';
             document.getElementById('recPauseBtn').style.display = 'inline-block';
@@ -2021,7 +2015,6 @@
             document.getElementById('recordModal').style.display = 'none';
             document.getElementById('recordMinimizedBar').style.display = 'none';
             teardownRecordMap();
-            // Clear temp data
             resetTemperatureState();
         }
 
@@ -2038,7 +2031,7 @@
                 const payload = { 
                     points: recPoints, 
                     ride_type: selectedRideType,
-                    temperature: tempStream  // include temperature stream
+                    temperature: tempStream
                 };
                 const response = await fetch('/save-live-ride', {
                     method: 'POST',
