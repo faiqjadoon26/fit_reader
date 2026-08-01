@@ -360,20 +360,16 @@
                 {% endif %}
 
                 <!-- Elevation -->
-                {% if streams.elevation and streams.elevation|length > 0 %}
                 <div class="chart-box">
                     <h3>⛰️ Elevation (m)</h3>
                     <canvas id="elevationChart"></canvas>
                 </div>
-                {% endif %}
 
                 <!-- Temperature -->
-                {% if streams.temperature and streams.temperature|length > 0 %}
                 <div class="chart-box">
                     <h3>🌡️ Temperature (°C)</h3>
                     <canvas id="tempChart"></canvas>
                 </div>
-                {% endif %}
 
                 <!-- Gradient/Incline -->
                 {% if streams.grade and streams.grade|length > 0 %}
@@ -511,7 +507,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // ── Fullscreen (manual only — no auto-trigger, no forced overflow) ──
+        // ── Fullscreen ──────────────────────────────────
         function toggleFullscreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(err => {
@@ -629,7 +625,17 @@
 
         function createChart(canvasId, label, data, color, borderColor, startAtZero = true, yMax = null) {
             const canvas = document.getElementById(canvasId);
-            if (!canvas || !data || data.length === 0) return null;
+            if (!canvas) return null;
+            
+            // If no data, show empty chart with message
+            if (!data || data.length === 0) {
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = isDarkMode ? '#666' : '#999';
+                ctx.font = '14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('No data', canvas.width/2, canvas.height/2);
+                return null;
+            }
             
             try {
                 const chart = new Chart(canvas, {
@@ -675,35 +681,40 @@
             }
         }
 
-        if (timestamps.length > 0) {
-            createChart('speedChart', 'Speed (km/h)', streams.speed, 'rgba(66, 153, 225, 0.2)', 'rgb(66, 153, 225)', true);
-            createChart('hrChart', 'Heart Rate (bpm)', streams.heart_rate, 'rgba(252, 129, 129, 0.2)', 'rgb(252, 129, 129)', true);
-            createChart('cadenceChart', 'Cadence (rpm)', streams.cadence, 'rgba(159, 122, 234, 0.2)', 'rgb(159, 122, 234)', true);
-            createChart('powerChart', 'Power (W)', streams.power, 'rgba(246, 173, 85, 0.2)', 'rgb(246, 173, 85)', true);
-            createChart('elevationChart', 'Elevation (m)', streams.elevation, 'rgba(72, 187, 120, 0.2)', 'rgb(72, 187, 120)', false);
-            createChart('gradeChart', 'Gradient (%)', streams.grade, 'rgba(107, 114, 128, 0.2)', 'rgb(107, 114, 128)', false);
-            createChart('torqueChart', 'Torque (Nm)', streams.torque, 'rgba(236, 64, 122, 0.2)', 'rgb(236, 64, 122)', true);
-            createChart('balanceChart', 'Left/Right Balance (%)', streams.left_right_balance, 'rgba(56, 189, 248, 0.2)', 'rgb(56, 189, 248)', true);
-        }
+        // Create all standard charts
+        createChart('speedChart', 'Speed (km/h)', streams.speed, 'rgba(66, 153, 225, 0.2)', 'rgb(66, 153, 225)', true);
+        createChart('hrChart', 'Heart Rate (bpm)', streams.heart_rate, 'rgba(252, 129, 129, 0.2)', 'rgb(252, 129, 129)', true);
+        createChart('cadenceChart', 'Cadence (rpm)', streams.cadence, 'rgba(159, 122, 234, 0.2)', 'rgb(159, 122, 234)', true);
+        createChart('powerChart', 'Power (W)', streams.power, 'rgba(246, 173, 85, 0.2)', 'rgb(246, 173, 85)', true);
+        createChart('elevationChart', 'Elevation (m)', streams.elevation, 'rgba(72, 187, 120, 0.2)', 'rgb(72, 187, 120)', false);
+        createChart('gradeChart', 'Gradient (%)', streams.grade, 'rgba(107, 114, 128, 0.2)', 'rgb(107, 114, 128)', false);
+        createChart('torqueChart', 'Torque (Nm)', streams.torque, 'rgba(236, 64, 122, 0.2)', 'rgb(236, 64, 122)', true);
+        createChart('balanceChart', 'Left/Right Balance (%)', streams.left_right_balance, 'rgba(56, 189, 248, 0.2)', 'rgb(56, 189, 248)', true);
 
         // ── Temperature Chart (with its own timestamps) ──
-        if (streams.temperature && streams.temperature.length > 0) {
-            const tempCanvas = document.getElementById('tempChart');
-            if (tempCanvas) {
-                // Try to use temperature-specific timestamps, or fall back to main timestamps
-                let tempLabels = streams.temperature_timestamps || streams.timestamps || [];
-                
-                // If using main timestamps, we need to subset them to match temperature length
-                if (!streams.temperature_timestamps && tempLabels.length > streams.temperature.length) {
-                    const step = Math.floor(tempLabels.length / streams.temperature.length);
-                    tempLabels = tempLabels.filter((_, i) => i % step === 0);
-                    // If we still don't have enough, use indices
-                    if (tempLabels.length < streams.temperature.length) {
-                        tempLabels = streams.temperature.map((_, i) => String(i));
+        const tempCanvas = document.getElementById('tempChart');
+        if (tempCanvas) {
+            let tempData = streams.temperature || [];
+            let tempLabels = streams.temperature_timestamps || [];
+            
+            // If no temperature data, show empty chart with message
+            if (tempData.length === 0) {
+                const ctx = tempCanvas.getContext('2d');
+                ctx.fillStyle = isDarkMode ? '#666' : '#999';
+                ctx.font = '14px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('No temperature data', tempCanvas.width/2, tempCanvas.height/2);
+            } else {
+                // Try to use temperature-specific timestamps
+                if (tempLabels.length === 0 && timestamps.length > 0) {
+                    // Fall back to GPS timestamps, subsampled
+                    const step = Math.floor(timestamps.length / tempData.length);
+                    tempLabels = timestamps.filter((_, i) => i % step === 0);
+                    if (tempLabels.length < tempData.length) {
+                        tempLabels = tempData.map((_, i) => String(i));
                     }
-                } else if (tempLabels.length < streams.temperature.length) {
-                    // Use indices as fallback
-                    tempLabels = streams.temperature.map((_, i) => String(i));
+                } else if (tempLabels.length < tempData.length) {
+                    tempLabels = tempData.map((_, i) => String(i));
                 }
                 
                 try {
@@ -713,7 +724,7 @@
                             labels: tempLabels,
                             datasets: [{
                                 label: 'Temperature (°C)',
-                                data: streams.temperature,
+                                data: tempData,
                                 borderColor: 'rgb(237, 137, 54)',
                                 backgroundColor: 'rgba(237, 137, 54, 0.2)',
                                 fill: true,
