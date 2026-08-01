@@ -732,6 +732,10 @@ def save_live_ride():
         # ── Extract temperature stream ──────────────────────
         temperature_stream = data.get('temperature', [])  # list of {timestamp, elapsed_s, temp_c}
 
+        # Extract just the values and timestamps
+        temperature_values = [t['temp_c'] for t in temperature_stream if 'temp_c' in t]
+        temperature_timestamps = [t['timestamp'] for t in temperature_stream if 'temp_c' in t]
+
         profile = get_user_profile(session['user']['username'])
 
         timestamps = [p['timestamp'] for p in points]
@@ -767,16 +771,11 @@ def save_live_ride():
         zone_distribution = classify_power_zones(power_list, ftp)
 
         # ── Temperature stats ──────────────────────────────
-        if temperature_stream:
-            temps = [t['temp_c'] for t in temperature_stream if 'temp_c' in t]
-            if temps:
-                avg_temp = round(sum(temps) / len(temps), 1)
-                min_temp = round(min(temps), 1)
-                max_temp = round(max(temps), 1)
-                has_temperature = True
-            else:
-                avg_temp = min_temp = max_temp = None
-                has_temperature = False
+        if temperature_values:
+            avg_temp = round(sum(temperature_values) / len(temperature_values), 1)
+            min_temp = round(min(temperature_values), 1)
+            max_temp = round(max(temperature_values), 1)
+            has_temperature = True
         else:
             avg_temp = min_temp = max_temp = None
             has_temperature = False
@@ -802,19 +801,26 @@ def save_live_ride():
         file_hash = hashlib.md5(json.dumps(points).encode()).hexdigest()
         filename = f"live_ride_{file_hash[:8]}.json"
 
+        # ── Build streams with temperature values ──────────
+        streams = {
+            "timestamps": timestamps,
+            "speed": speeds_kmh,
+            "cadence": cadence_list,
+            "elevation": elevation_list,
+            "power": [round(float(p), 1) for p in power_list],
+            "heart_rate": hr_list,
+        }
+        
+        # Only add temperature streams if we have data
+        if temperature_values:
+            streams["temperature"] = temperature_values
+            streams["temperature_timestamps"] = temperature_timestamps
+
         ride_data = {
             "filename": filename,
             "file_hash": file_hash,
             "summary": summary,
-            "streams": {
-                "timestamps": timestamps,
-                "speed": speeds_kmh,
-                "cadence": cadence_list,
-                "elevation": elevation_list,
-                "power": [round(float(p), 1) for p in power_list],
-                "heart_rate": hr_list,
-                "temperature": temperature_stream,   # store full stream for chart
-            },
+            "streams": streams,
             "zone_distribution": zone_distribution,
             "route": route
         }
