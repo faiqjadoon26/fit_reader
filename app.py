@@ -444,6 +444,7 @@ def parse_ride(file_path, profile):
         "avg_hr": round(float(valid_hr.mean()), 0) if len(valid_hr) > 0 else None,
         "max_hr": round(float(valid_hr.max()), 0) if len(valid_hr) > 0 else None,
         "avg_temp": round(float(valid_temp.mean()), 1) if len(valid_temp) > 0 else None,
+        "min_temp": round(float(valid_temp.min()), 1) if len(valid_temp) > 0 else None,
         "max_temp": round(float(valid_temp.max()), 1) if len(valid_temp) > 0 else None,
         "has_temperature": has_temperature,
         "has_hr": has_hr,
@@ -713,6 +714,7 @@ def club():
         return jsonify({"error": "Invalid ride type"}), 400
     return jsonify(get_all_users_stats(ride_type))
 
+# ─── UPDATED: /save-live-ride with temperature support ────
 @app.route('/save-live-ride', methods=['POST'])
 @login_required
 def save_live_ride():
@@ -726,13 +728,19 @@ def save_live_ride():
         ride_type = data.get('ride_type', 'cycling')
         if ride_type not in VALID_RIDE_TYPES:
             ride_type = 'cycling'
+
+        # ── Extract temperature stream ──────────────────────
+        temperature_stream = data.get('temperature', [])  # list of {timestamp, elapsed_s, temp_c}
+
         profile = get_user_profile(session['user']['username'])
+
         timestamps = [p['timestamp'] for p in points]
         speeds_kmh = [float(p.get('speed_kmh', 0)) for p in points]
         hr_list = [int(p.get('heart_rate', 0)) for p in points]
         cadence_list = [int(p.get('cadence', 0)) for p in points]
         route = [[float(p['lat']), float(p['lng'])] for p in points if p.get('lat') and p.get('lng')]
         elevation_list = [float(p.get('altitude', 0)) for p in points]
+
         total_dist = 0.0
         for i in range(1, len(points)):
             p1, p2 = points[i-1], points[i]
@@ -742,16 +750,37 @@ def save_live_ride():
                 dlat, dlon = lat2 - lat1, lon2 - lon1
                 a = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
                 total_dist += 6371 * 2 * math.asin(math.sqrt(a))
+
         elev_diffs = [max(0, elevation_list[i] - elevation_list[i-1]) for i in range(1, len(elevation_list))]
         total_climbing = sum(elev_diffs)
+
         df_temp = pd.DataFrame({'speed_kmh': speeds_kmh})
         power_list, total_calories = calculate_calories_and_power(df_temp, profile)
+
         avg_speed = round(sum(speeds_kmh) / len(speeds_kmh), 1) if speeds_kmh else 0
         max_speed = round(max(speeds_kmh), 1) if speeds_kmh else 0
+
         valid_hr = [h for h in hr_list if 30 < h < 220]
         valid_cad = [c for c in cadence_list if c > 0]
+
         ftp = float(profile.get('ftp', 200))
         zone_distribution = classify_power_zones(power_list, ftp)
+
+        # ── Temperature stats ──────────────────────────────
+        if temperature_stream:
+            temps = [t['temp_c'] for t in temperature_stream if 'temp_c' in t]
+            if temps:
+                avg_temp = round(sum(temps) / len(temps), 1)
+                min_temp = round(min(temps), 1)
+                max_temp = round(max(temps), 1)
+                has_temperature = True
+            else:
+                avg_temp = min_temp = max_temp = None
+                has_temperature = False
+        else:
+            avg_temp = min_temp = max_temp = None
+            has_temperature = False
+
         summary = {
             "max_speed": max_speed,
             "avg_speed": avg_speed,
@@ -763,13 +792,16 @@ def save_live_ride():
             "distance_km": round(total_dist, 2),
             "avg_hr": round(sum(valid_hr)/len(valid_hr), 0) if valid_hr else None,
             "max_hr": round(max(valid_hr), 0) if valid_hr else None,
-            "avg_temp": None,
-            "max_temp": None,
-            "has_temperature": False,
+            "avg_temp": avg_temp,
+            "min_temp": min_temp,
+            "max_temp": max_temp,
+            "has_temperature": has_temperature,
             "has_hr": len(valid_hr) > 0,
         }
+
         file_hash = hashlib.md5(json.dumps(points).encode()).hexdigest()
         filename = f"live_ride_{file_hash[:8]}.json"
+
         ride_data = {
             "filename": filename,
             "file_hash": file_hash,
@@ -781,13 +813,15 @@ def save_live_ride():
                 "elevation": elevation_list,
                 "power": [round(float(p), 1) for p in power_list],
                 "heart_rate": hr_list,
-                "temperature": [],
+                "temperature": temperature_stream,   # store full stream for chart
             },
             "zone_distribution": zone_distribution,
             "route": route
         }
+
         ride_id = save_user_ride(session['user']['username'], ride_data, ride_type)
         return jsonify({"status": "saved", "id": ride_id, "ride_type": ride_type})
+
     except Exception as e:
         err = traceback.format_exc()
         print(err)
@@ -857,14 +891,13 @@ def share_ride(ride_id):
     centered_text(90, f"{ride_type_info['icon']}  {ride_type_info['name']}", font_header, (255, 255, 255, 255))
 
     # ── Stats: 2 cols x 3 rows, centered as one block ──
-    # Each stat gets a semantic accent color for its value text
     stats = [
-        ("Distance", f"{summary.get('distance_km', 0):.2f} km", (255, 255, 255, 255)),   # white — headline stat
-        ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h", (66, 153, 225, 255)),   # blue
-        ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m", (241, 196, 15, 255)), # yellow
-        ("Calories", f"{summary.get('total_calories', 0)}", (255, 138, 101, 255)),       # orange
-        ("Avg Power", f"{summary.get('avg_power', 0):.0f} W", (155, 89, 182, 255)),      # purple
-        ("Avg HR", f"{summary.get('avg_hr', 0):.0f} bpm" if summary.get('avg_hr') else "— bpm", (231, 76, 60, 255)),  # red
+        ("Distance", f"{summary.get('distance_km', 0):.2f} km", (255, 255, 255, 255)),
+        ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h", (66, 153, 225, 255)),
+        ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m", (241, 196, 15, 255)),
+        ("Calories", f"{summary.get('total_calories', 0)}", (255, 138, 101, 255)),
+        ("Avg Power", f"{summary.get('avg_power', 0):.0f} W", (155, 89, 182, 255)),
+        ("Avg HR", f"{summary.get('avg_hr', 0):.0f} bpm" if summary.get('avg_hr') else "— bpm", (231, 76, 60, 255)),
     ]
     col_centers = [width * 0.28, width * 0.72]
     row_start_y, row_height = 300, 190
@@ -890,7 +923,7 @@ def share_ride(ride_id):
 
         padding = 40
         avail_w, avail_h = box_w - 2 * padding, box_h - 2 * padding
-        scale = min(avail_w / lng_range, avail_h / lat_range)  # preserves route shape
+        scale = min(avail_w / lng_range, avail_h / lat_range)
 
         drawn_w, drawn_h = lng_range * scale, lat_range * scale
         offset_x = box_x0 + padding + (avail_w - drawn_w) / 2
@@ -910,7 +943,7 @@ def share_ride(ride_id):
         centered_text((box_y0 + box_y1) // 2, "No GPS data available", font_footer, (120, 120, 125, 255))
 
     # ── Footer logo ─────────────────────────────────────
-    centered_text(height - 130, f"{ride_type_info['icon']}  FIT READER", font_footer, (252, 76, 2, 255))  # brand orange
+    centered_text(height - 130, f"{ride_type_info['icon']}  FIT READER", font_footer, (252, 76, 2, 255))
 
     buffer = BytesIO()
     img.save(buffer, format='PNG')
