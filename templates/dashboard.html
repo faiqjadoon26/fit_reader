@@ -333,10 +333,10 @@
         }
         .record-modal-stats-wrapper>* { pointer-events: auto; }
         
-        /* MAIN STATS - TWO PRIMARY: TIMER AND SPEED */
+        /* MAIN STATS - TIMER AND SPEED ONLY (2 columns) */
         .record-modal-stats {
             display: grid; 
-            grid-template-columns: 1.5fr 1.5fr 1fr; 
+            grid-template-columns: 1fr 1fr; 
             gap: 8px;
             background: rgba(18,22,42,0.85); 
             border-radius: 14px; 
@@ -345,9 +345,10 @@
             border: 1px solid rgba(255,255,255,0.08);
             box-shadow: 0 4px 30px rgba(0,0,0,0.5);
         }
+        /* SENSOR STATS + DISTANCE - 3 columns with distance in middle */
         .record-modal-sensor-stats {
             display: grid; 
-            grid-template-columns: 1fr 1fr 1fr; 
+            grid-template-columns: 1fr 1.2fr 1fr; 
             gap: 6px;
             margin-top: 8px; 
             padding-top: 8px; 
@@ -371,7 +372,7 @@
             border: 1px solid rgba(252,76,2,0.2);
         }
         .modal-stat-primary .record-stat-value { 
-            font-size: 2.2rem; 
+            font-size: 2.4rem; 
             font-weight: 800; 
             color: #ff8a5c; 
             text-shadow: 0 0 30px rgba(252,76,2,0.3);
@@ -386,7 +387,7 @@
             border: 1px solid rgba(56, 189, 248, 0.2);
         }
         .modal-stat-speed .record-stat-value { 
-            font-size: 2.2rem; 
+            font-size: 2.4rem; 
             font-weight: 800; 
             color: #60a5fa; 
             text-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
@@ -405,7 +406,7 @@
             margin-bottom: 1px; 
         }
         .record-stat-value { 
-            font-size: 1.4rem; 
+            font-size: 1.3rem; 
             font-weight: 700; 
             color: #f1f5f9; 
             margin-top: 1px; 
@@ -413,14 +414,14 @@
         }
         .record-stat-value .stat-unit { 
             color: #94a3b8; 
-            font-size: 0.65rem; 
+            font-size: 0.6rem; 
             font-weight: 500; 
             margin-left: 2px; 
         }
         .record-modal-sensor-stats .modal-stat { 
             background: rgba(255,255,255,0.05); 
             border-radius: 10px; 
-            padding: 4px 2px; 
+            padding: 6px 2px; 
             border: 1px solid rgba(255,255,255,0.06); 
         }
         .record-modal-sensor-stats .record-stat-value { 
@@ -433,13 +434,28 @@
         .record-modal-sensor-stats .record-stat-label {
             font-size: 0.45rem;
         }
+        /* Distance in middle - green and larger */
+        .modal-stat-distance {
+            grid-column: 1;
+            background: linear-gradient(135deg, rgba(52, 211, 153, 0.2), rgba(52, 211, 153, 0.05)) !important;
+            border: 1px solid rgba(52, 211, 153, 0.2) !important;
+        }
+        .modal-stat-distance .record-stat-value { 
+            color: #34d399 !important; 
+            font-size: 1.6rem !important;
+        }
+        /* Sensor stats on sides */
+        .modal-stat-sensor-left {
+            grid-column: 1;
+        }
+        .modal-stat-sensor-right {
+            grid-column: 3;
+        }
         #recHR { color: #f87171; }
         #recCadence { color: #60a5fa; }
         #recPower { color: #fbbf24; }
         #recTimer { color: #ff8a5c; }
         #recTimer.paused { color: #facc15; }
-        /* Distance stat */
-        #recDistance { color: #34d399; }
         
         .record-modal-message {
             position: absolute; bottom: 58px; left: 0; right: 0; z-index: 1000;
@@ -529,19 +545,18 @@
 
         @media (max-width: 768px) {
             .record-modal-stats {
-                grid-template-columns: 1fr 1fr 1fr;
                 gap: 4px;
-                padding: 8px 4px;
+                padding: 8px 6px;
             }
-            .modal-stat-primary .record-stat-value { font-size: 1.6rem; }
-            .modal-stat-speed .record-stat-value { font-size: 1.6rem; }
-            .record-stat-value { font-size: 1.2rem; }
-            .record-modal-sensor-stats .record-stat-value { font-size: 1rem; }
+            .modal-stat-primary .record-stat-value { font-size: 1.8rem; }
+            .modal-stat-speed .record-stat-value { font-size: 1.8rem; }
             .record-modal-sensor-stats {
-                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-columns: 1fr 1.2fr 1fr;
                 gap: 4px;
                 padding: 6px 4px;
             }
+            .modal-stat-distance .record-stat-value { font-size: 1.4rem !important; }
+            .record-modal-sensor-stats .record-stat-value { font-size: 1rem; }
             .record-btn { padding: 10px 16px; font-size: 0.85rem; min-width: 60px; min-height: 42px; }
             .modal-select { font-size: 0.65rem; min-width: 60px; padding: 4px 8px; min-height: 30px; }
             .gps-status { font-size: 0.6rem; padding: 4px 10px; min-height: 28px; }
@@ -556,19 +571,18 @@
         }
         @media (max-width: 480px) {
             .record-modal-stats {
-                grid-template-columns: 1fr 1fr;
                 gap: 3px;
-                padding: 6px 3px;
+                padding: 6px 4px;
             }
             .modal-stat-primary .record-stat-value { font-size: 1.4rem; }
             .modal-stat-speed .record-stat-value { font-size: 1.4rem; }
-            .record-stat-value { font-size: 1rem; }
-            .record-modal-sensor-stats .record-stat-value { font-size: 0.9rem; }
             .record-modal-sensor-stats {
-                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-columns: 1fr 1.2fr 1fr;
                 gap: 3px;
                 padding: 4px 3px;
             }
+            .modal-stat-distance .record-stat-value { font-size: 1.2rem !important; }
+            .record-modal-sensor-stats .record-stat-value { font-size: 0.9rem; }
             .record-stat-label { font-size: 0.4rem; }
             .record-modal-sensor-stats .record-stat-label { font-size: 0.4rem; }
         }
@@ -763,7 +777,7 @@
             </div>
         </div>
         <div class="record-modal-stats-wrapper">
-            <!-- MAIN STATS - TIMER, SPEED, DISTANCE -->
+            <!-- MAIN STATS - TIMER AND SPEED ONLY (2 columns) -->
             <div class="record-modal-stats">
                 <div class="modal-stat modal-stat-primary">
                     <div class="record-stat-label">⏱️ Timer</div>
@@ -773,16 +787,28 @@
                     <div class="record-stat-label">⚡ Speed</div>
                     <div class="record-stat-value"><span id="recSpeed" class="">0.0</span> <span class="stat-unit">km/h</span></div>
                 </div>
-                <div class="modal-stat">
+            </div>
+            <!-- SENSOR STATS + DISTANCE IN MIDDLE (3 columns) -->
+            <div class="record-modal-sensor-stats">
+                <div class="modal-stat modal-stat-sensor-left">
+                    <div class="record-stat-label">❤️ HR</div>
+                    <div class="record-stat-value"><span id="recHR">--</span> <span class="stat-unit">bpm</span></div>
+                </div>
+                <div class="modal-stat modal-stat-distance">
                     <div class="record-stat-label">📏 Distance</div>
                     <div class="record-stat-value" id="recDistance">0.00 <span class="stat-unit">km</span></div>
                 </div>
+                <div class="modal-stat modal-stat-sensor-right">
+                    <div class="record-stat-label">🔄 Cadence</div>
+                    <div class="record-stat-value"><span id="recCadence">--</span> <span class="stat-unit">rpm</span></div>
+                </div>
             </div>
-            <!-- SENSOR STATS - SEPARATE ROW -->
-            <div class="record-modal-sensor-stats">
-                <div class="modal-stat"><div class="record-stat-label">❤️ HR</div><div class="record-stat-value"><span id="recHR">--</span> <span class="stat-unit">bpm</span></div></div>
-                <div class="modal-stat"><div class="record-stat-label">🔄 Cadence</div><div class="record-stat-value"><span id="recCadence">--</span> <span class="stat-unit">rpm</span></div></div>
-                <div class="modal-stat"><div class="record-stat-label">⚡ Power</div><div class="record-stat-value"><span id="recPower">--</span> <span class="stat-unit">W</span></div></div>
+            <!-- POWER in its own row below -->
+            <div class="record-modal-sensor-stats" style="margin-top: 4px; border-top: none; padding-top: 4px;">
+                <div class="modal-stat" style="grid-column: 2;">
+                    <div class="record-stat-label">⚡ Power</div>
+                    <div class="record-stat-value"><span id="recPower">--</span> <span class="stat-unit">W</span></div>
+                </div>
             </div>
         </div>
         <div id="recordMessage" class="record-modal-message"></div>
@@ -1709,7 +1735,7 @@
         function updateRecordUI() {
             const durationStr = formatDuration(currentElapsedMs());
             document.getElementById('recTimer').textContent = durationStr;
-            document.getElementById('recDistance').textContent = recTotalDistanceKm.toFixed(2) + ' km';
+            document.getElementById('recDistance').innerHTML = recTotalDistanceKm.toFixed(2) + ' <span class="stat-unit">km</span>';
             const minimizedText = document.getElementById('minimizedText');
             if (minimizedText) minimizedText.textContent = `Recording... ${durationStr} · ${recTotalDistanceKm.toFixed(2)} km`;
             
@@ -1812,7 +1838,7 @@
             document.getElementById('recTimer').classList.remove('paused');
             document.getElementById('recSpeed').textContent = '0.0';
             document.getElementById('recSpeed').classList.remove('paused');
-            document.getElementById('recDistance').textContent = '0.00 km';
+            document.getElementById('recDistance').innerHTML = '0.00 <span class="stat-unit">km</span>';
             if (profileData.default_activity_type) {
                 document.getElementById('recRideTypeSelect').value = profileData.default_activity_type;
             }
@@ -1925,7 +1951,7 @@
             document.getElementById('recDiscardBtn').style.display = 'none';
             document.getElementById('recTimer').textContent = '00:00:00';
             document.getElementById('recTimer').classList.remove('paused');
-            document.getElementById('recDistance').textContent = '0.00 km';
+            document.getElementById('recDistance').innerHTML = '0.00 <span class="stat-unit">km</span>';
             document.getElementById('recSpeed').textContent = '0.0';
             document.getElementById('recSpeed').classList.remove('paused');
             document.getElementById('recHR').textContent = '--';
