@@ -36,7 +36,7 @@
             min-height: 100vh;
             transition: background var(--transition), color var(--transition);
         }
-        /* ── FULLSCREEN OVERRIDES ── */
+        /* ── FULLSCREEN OVERRIDES (Fixed scrolling) ── */
         body.app-fullscreen {
             position: fixed;
             top: 0;
@@ -45,7 +45,7 @@
             bottom: 0;
             width: 100vw;
             height: 100vh;
-            overflow: hidden;
+            overflow-y: auto; /* Changed from 'hidden' to allow scrolling */
         }
 
         .navbar {
