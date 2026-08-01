@@ -1,2068 +1,1009 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Fit Reader</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <style>
-        /* ── Reset & Theme ── */
-        :root {
-            --bg: #f7f7f9;
-            --card: #ffffff;
-            --text: #242428;
-            --text-soft: #6b6b70;
-            --line: #e7e7ea;
-            --orange: #fc4c02;
-            --orange-dark: #d84001;
-            --shadow: 0 2px 10px rgba(0,0,0,0.06);
-            --radius: 10px;
-            --transition: 0.25s ease;
-            --tab-height: 64px;
-            --navbar-height: 56px;
-        }
-        .dark-theme {
-            --bg: #0d0d0d;
-            --card: #1a1a1a;
-            --text: #e8e8e8;
-            --text-soft: #999999;
-            --line: #2a2a2a;
-            --shadow: 0 2px 10px rgba(0,0,0,0.6);
-        }
-        * { margin:0; padding:0; box-sizing:border-box; }
-        html, body {
-            height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Roboto, Arial, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            transition: background var(--transition), color var(--transition);
-            overflow: hidden;
-        }
-        body {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-        }
-        :fullscreen, :-webkit-full-screen {
-            overflow: hidden !important;
-            height: 100% !important;
-        }
+from flask import Flask, render_template, request, jsonify, redirect, url_for, session, send_file
+from fitparse import FitFile
+import pandas as pd
+import os
+import json
+import requests
+import hashlib
+import traceback
+from functools import wraps
+import psycopg2
+from psycopg2.extras import Json
+from datetime import datetime
+import math
+from io import BytesIO
 
-        /* ── Navbar ── */
-        .navbar {
-            background: var(--card);
-            border-bottom: 1px solid var(--line);
-            padding: 0 1rem;
-            height: var(--navbar-height);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            flex-shrink: 0;
-            transition: background var(--transition), border-color var(--transition);
-            z-index: 100;
-        }
-        .navbar-brand { font-size: 1.1rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; letter-spacing: -0.02em; }
-        .navbar-brand span { background: var(--orange); color: white; padding: 1px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 700; }
-        .navbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .user-info { display: flex; align-items: center; gap: 6px; }
-        .user-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); }
-        .username { font-weight: 600; font-size: 0.8rem; display: none; }
-        @media (min-width: 500px) { .username { display: inline; } }
-        .logout-btn { color: var(--text-soft); text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; transition: background 0.2s; }
-        .logout-btn:hover { background: #fff1ec; color: var(--orange-dark); }
-        .fullscreen-badge {
-            background: rgba(252,76,2,0.15);
-            color: var(--orange);
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 0.6rem;
-            font-weight: 700;
-            display: none;
-        }
-        body.app-fullscreen .fullscreen-badge { display: inline-block; }
-        .exit-fullscreen-btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 20px;
-            padding: 4px 12px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 0.7rem;
-            color: var(--text-soft);
-            transition: all 0.2s;
-            white-space: nowrap;
-            display: none;
-        }
-        body.app-fullscreen .exit-fullscreen-btn { display: inline-block; }
-        .exit-fullscreen-btn:hover {
-            border-color: var(--orange);
-            background: var(--orange);
-            color: white;
-        }
+app = Flask(__name__)
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'cycling_dashboard_secret_2024_xk9_fallback')
 
-        /* ── Main content (scrollable) ── */
-        .main-container {
-            flex: 1;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: 1rem 1rem 0.5rem;
-            max-width: 1400px;
-            margin: 0 auto;
-            width: 100%;
-            -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
-        }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+# ─── IMPORTANT: Increase upload limit to 100 MB ────────────
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
-        /* ── Bottom tabs ── */
-        .bottom-tabs {
-            flex-shrink: 0;
-            height: var(--tab-height);
-            background: var(--card);
-            border-top: 1px solid var(--line);
-            display: flex;
-            align-items: stretch;
-            justify-content: space-around;
-            transition: background var(--transition), border-color var(--transition);
-            padding-bottom: env(safe-area-inset-bottom);
-            z-index: 900;
-        }
-        .tab-btn {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 1px;
-            background: transparent;
-            border: none;
-            color: var(--text-soft);
-            font-size: 0.6rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: color 0.2s, background 0.2s;
-            padding: 4px 0;
-            position: relative;
-        }
-        .tab-btn .tab-icon { font-size: 1.4rem; line-height: 1.2; }
-        .tab-btn .tab-label { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.03em; }
-        .tab-btn.active { color: var(--orange); }
-        .tab-btn.active .tab-icon { transform: scale(1.05); }
-        .tab-btn:active { opacity: 0.7; }
+# ── Database Connection ───────────────────────────────────────
+def get_db_connection():
+    database_url = os.environ.get('DATABASE_URL')
+    if not database_url:
+        raise ValueError("DATABASE_URL environment variable not set!")
+    conn = psycopg2.connect(database_url, sslmode='require')
+    return conn
 
-        /* ── Profile, upload, rides, stats (unchanged) ── */
-        .profile-card {
-            background: var(--card);
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            transition: background var(--transition), border-color var(--transition);
-        }
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            flex-wrap: wrap;
-        }
-        .profile-avatar { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--orange); }
-        .profile-name { font-size: 1.2rem; font-weight: 700; }
-        .profile-email { color: var(--text-soft); font-size: 0.9rem; }
+def init_db():
+    """Create tables if they don't exist"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            username VARCHAR(100) PRIMARY KEY,
+            github_name VARCHAR(200),
+            avatar_url TEXT,
+            email VARCHAR(200),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            profile JSONB DEFAULT '{}'::jsonb
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS rides (
+            id SERIAL PRIMARY KEY,
+            username VARCHAR(100) REFERENCES users(username) ON DELETE CASCADE,
+            filename VARCHAR(255) NOT NULL,
+            file_hash VARCHAR(64) NOT NULL,
+            ride_type VARCHAR(50) DEFAULT 'cycling',
+            ride_date TIMESTAMP,
+            summary JSONB NOT NULL,
+            streams JSONB NOT NULL,
+            zone_distribution JSONB NOT NULL,
+            route JSONB,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(username, file_hash)
+        )
+    """)
+    cur.execute("""
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name='rides' AND column_name='ride_type'
+    """)
+    if not cur.fetchone():
+        cur.execute("ALTER TABLE rides ADD COLUMN ride_type VARCHAR(50) DEFAULT 'cycling'")
+    cur.execute("""
+        CREATE INDEX IF NOT EXISTS idx_rides_username ON rides(username);
+        CREATE INDEX IF NOT EXISTS idx_rides_date ON rides(ride_date);
+        CREATE INDEX IF NOT EXISTS idx_rides_type ON rides(ride_type);
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
+    print("[DB] Database initialized successfully!")
 
-        .profile-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem 1.2rem; }
-        .profile-form .full-width { grid-column: 1 / -1; }
-        .profile-form label { font-size: 0.75rem; font-weight: 600; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.03em; display: block; margin-bottom: 2px; }
-        .profile-form input, .profile-form select {
-            width: 100%;
-            padding: 6px 10px;
-            border: 1px solid var(--line);
-            border-radius: 6px;
-            background: var(--bg);
-            color: var(--text);
-            font-size: 0.9rem;
-            transition: border-color 0.2s;
-        }
-        .profile-form input:focus, .profile-form select:focus { outline: none; border-color: var(--orange); }
-        .profile-form .field-group { display: flex; flex-direction: column; }
+# ─── Lazy DB init ─────────────────────────────────────────────
+_db_initialized = False
 
-        .profile-actions {
-            display: flex;
-            gap: 8px;
-            margin-top: 1.5rem;
-            flex-wrap: wrap;
-        }
-        .profile-actions button {
-            background: var(--bg);
-            border: 1px solid var(--line);
-            border-radius: 30px;
-            padding: 10px 20px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            color: var(--text);
-            cursor: pointer;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .profile-actions button:hover { border-color: var(--orange); background: var(--orange); color: white; }
-        .profile-actions .save-btn { background: var(--orange); color: white; border-color: var(--orange); }
-        .profile-actions .save-btn:hover { background: var(--orange-dark); }
+@app.before_request
+def initialize_db():
+    global _db_initialized
+    if not _db_initialized:
+        try:
+            init_db()
+            _db_initialized = True
+        except Exception as e:
+            print(f"[DB] Init failed: {e}")
 
-        .activity-selector { margin-bottom: 1rem; }
-        .activity-grid { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-        .activity-grid::-webkit-scrollbar { display: none; }
-        .activity-btn {
-            flex-shrink: 0; padding: 6px 14px; border: 1px solid var(--line); border-radius: 20px;
-            background: var(--card); cursor: pointer; transition: all 0.15s; font-size: 0.75rem;
-            font-weight: 600; color: var(--text-soft); display: flex; align-items: center; gap: 4px; white-space: nowrap;
-        }
-        .activity-btn:hover { border-color: var(--orange); }
-        .activity-btn.active { border-color: var(--orange); background: var(--orange); color: white; }
-        .activity-btn .badge { display: inline-block; background: rgba(255,255,255,0.3); color: inherit; font-size: 0.6rem; padding: 0px 6px; border-radius: 10px; }
-        .activity-btn:not(.active) .badge { background: #f0f0f2; color: var(--text-soft); }
+# ── GitHub OAuth ──────────────────────────────────────────────
+GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID')
+GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
+GITHUB_AUTH_URL = 'https://github.com/login/oauth/authorize'
+GITHUB_TOKEN_URL = 'https://github.com/login/oauth/access_token'
+GITHUB_API_URL = 'https://api.github.com/user'
 
-        .stats-grid {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-            margin-bottom: 1rem; overflow: hidden; transition: background var(--transition), border-color var(--transition);
-        }
-        .stat-card { padding: 0.7rem; text-align: center; border-right: 1px solid var(--line); }
-        .stat-card:last-child { border-right: none; }
-        .stat-label { font-size: 0.6rem; text-transform: uppercase; color: var(--text-soft); letter-spacing: 0.05em; font-weight: 700; }
-        .stat-value { font-size: 1.2rem; font-weight: 800; color: var(--text); margin-top: 2px; }
-        .stat-unit { font-size: 0.65rem; color: var(--text-soft); font-weight: 500; }
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-        .upload-section {
-            background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-            padding: 1rem; margin-bottom: 1rem; text-align: center;
-            transition: background var(--transition), border-color var(--transition);
-        }
-        .upload-section h2 { font-size: 0.9rem; font-weight: 700; margin-bottom: 0.2rem; }
-        .upload-section p { color: var(--text-soft); margin-bottom: 0.8rem; font-size: 0.8rem; }
-        .upload-btn-wrapper { position: relative; overflow: hidden; display: inline-block; }
-        .upload-btn-wrapper input[type=file] { position: absolute; left: 0; top: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
-        .upload-btn { background: var(--text); color: var(--card); padding: 8px 20px; border: none; border-radius: 30px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; gap: 6px; }
-        .upload-btn:hover { background: #000; }
-        .upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+# ── Valid Ride Types ──────────────────────────────────────────
+VALID_RIDE_TYPES = [
+    'cycling', 'running', 'swimming', 'hiking', 'walking',
+    'skiing', 'snowboarding', 'kayaking', 'rowing', 'yoga',
+    'strength', 'elliptical'
+]
 
-        .rides-section { background: transparent; }
-        .rides-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 6px; }
-        .rides-header h2 { font-size: 1rem; font-weight: 800; }
-        .rides-header .ride-count { color: var(--text-soft); font-size: 0.75rem; }
-        .rides-header .filter-badge { background: #fff1ec; color: var(--orange-dark); padding: 2px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; }
-        .ride-list { display: grid; gap: 10px; }
-        .ride-item {
-            background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-            padding: 0.9rem; cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s;
-        }
-        .ride-item:hover { border-color: #d0d0d5; box-shadow: var(--shadow); }
-        .ride-item .ride-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 0.6rem; }
-        .ride-item .ride-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0; }
-        .ride-item .ride-title-block { min-width: 0; }
-        .ride-item .ride-name { font-weight: 700; word-break: break-word; font-size: 0.9rem; line-height: 1.3; }
-        .ride-item .ride-meta { display: flex; align-items: center; gap: 4px; color: var(--text-soft); font-size: 0.7rem; margin-top: 2px; flex-wrap: wrap; }
-        .ride-item .ride-type-badge { font-size: 0.55rem; padding: 1px 7px; border-radius: 10px; font-weight: 700; text-transform: uppercase; }
-        .ride-item .ride-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); gap: 6px; padding: 0.6rem 0; border-top: 1px solid var(--line); }
-        .ride-item .ride-stats .stat-block { display: flex; flex-direction: column; }
-        .ride-item .ride-stats .stat-block .stat-num-label { font-size: 0.55rem; text-transform: uppercase; color: var(--text-soft); font-weight: 700; letter-spacing: 0.03em; }
-        .ride-item .ride-stats .stat-block .stat-num-value { font-size: 0.9rem; font-weight: 800; color: var(--text); }
-        .ride-item .actions { display: flex; gap: 4px; align-items: center; justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 0.5rem; }
-        .action-btn { background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; color: var(--text-soft); }
-        .action-btn:hover { background: #f0f0f2; }
-        .delete-btn { background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; color: var(--text-soft); }
-        .delete-btn:hover { background: #fff1ec; color: var(--orange-dark); }
-        .no-rides { text-align: center; padding: 2rem; color: var(--text-soft); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
-        .no-rides .big-icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
-        .loading { text-align: center; padding: 1.5rem; color: var(--text-soft); }
-        .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--line); border-top-color: var(--orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+RIDE_TYPES_INFO = [
+    {"id": "cycling", "name": "Cycling", "icon": "🚴", "color": "#3498db"},
+    {"id": "running", "name": "Running", "icon": "🏃", "color": "#e74c3c"},
+    {"id": "swimming", "name": "Swimming", "icon": "🏊", "color": "#2ecc71"},
+    {"id": "hiking", "name": "Hiking", "icon": "🥾", "color": "#f39c12"},
+    {"id": "walking", "name": "Walking", "icon": "🚶", "color": "#27ae60"},
+    {"id": "skiing", "name": "Skiing", "icon": "⛷️", "color": "#8e44ad"},
+    {"id": "snowboarding", "name": "Snowboarding", "icon": "🏂", "color": "#3498db"},
+    {"id": "kayaking", "name": "Kayaking", "icon": "🚣", "color": "#1abc9c"},
+    {"id": "rowing", "name": "Rowing", "icon": "🚣‍♂️", "color": "#16a085"},
+    {"id": "yoga", "name": "Yoga", "icon": "🧘", "color": "#9b59b6"},
+    {"id": "strength", "name": "Strength", "icon": "💪", "color": "#e67e22"},
+    {"id": "elliptical", "name": "Elliptical", "icon": "🚶", "color": "#2c3e50"}
+]
 
-        .toast { position: fixed; bottom: calc(var(--tab-height) + 16px); left: 50%; transform: translateX(-50%) translateY(100px); background: #2d3748; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s; z-index: 1100; max-width: 90%; text-align: center; font-weight: 500; font-size: 0.9rem; pointer-events: none; }
-        .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-        .toast.success { background: #48bb78; }
-        .toast.error { background: #fc8181; }
+# ── Decorators ────────────────────────────────────────────────
+def login_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'user' not in session:
+            return redirect(url_for('index'))
+        return f(*args, **kwargs)
+    return decorated
 
-        /* ── Record Modal ── */
-        .record-modal {
-            position: fixed; inset: 0; z-index: 1000; background: #0b0e1a;
-            display: none; flex-direction: column;
-            width: 100vw;
-            height: 100vh;
-        }
-        #recordMap { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; background: #12162a; }
-        .record-modal-topbar {
-            position: absolute; top: 0; left: 0; right: 0; z-index: 1000;
-            display: flex; flex-direction: column; padding: 12px 14px; padding-top: max(12px, env(safe-area-inset-top));
-            gap: 8px; background: linear-gradient(to bottom, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.4) 80%, transparent 100%);
-            pointer-events: none;
-        }
-        .record-modal-topbar>* { pointer-events: auto; }
-        .topbar-row {
-            display: flex; align-items: center; justify-content: space-between; gap: 8px;
-        }
-        .topbar-row .modal-center-controls {
-            display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; flex-wrap: wrap;
-        }
-        .modal-icon-btn {
-            width: 40px; height: 40px; border-radius: 50%; border: none;
-            background: rgba(0,0,0,0.65); color: #fff; font-size: 1.2rem;
-            cursor: pointer; display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0; backdrop-filter: blur(6px); transition: background 0.2s, transform 0.15s;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        }
-        .modal-icon-btn:hover { background: rgba(255,255,255,0.2); transform: scale(1.05); }
-        .modal-icon-btn:active { transform: scale(0.92); }
-        .modal-select {
-            background: rgba(0,0,0,0.7); border: 1.5px solid rgba(255,255,255,0.25);
-            color: #fff; padding: 6px 12px; border-radius: 30px; font-size: 0.75rem;
-            font-weight: 600; cursor: pointer; backdrop-filter: blur(6px); outline: none;
-            min-height: 36px; min-width: 80px; background-color: #1a1f3a; border-color: #fc4c02;
-            box-shadow: 0 0 12px rgba(252,76,2,0.2);
-        }
-        .modal-select option { background: #12162a; color: #fff; padding: 6px; }
-        .gps-status {
-            font-size: 0.75rem; padding: 6px 14px; border-radius: 30px; font-weight: 700;
-            background: rgba(0,0,0,0.7); color: #e2e8f0; backdrop-filter: blur(6px);
-            white-space: nowrap; border: 1.5px solid rgba(255,255,255,0.15);
-            min-height: 36px; display: flex; align-items: center; letter-spacing: 0.3px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        }
-        .gps-status.active { background: rgba(72,187,120,0.9); color: #fff; border-color: #48bb78; box-shadow: 0 0 20px rgba(72,187,120,0.3); }
-        .gps-status.paused { background: rgba(237,137,54,0.9); color: #fff; border-color: #ed8936; box-shadow: 0 0 20px rgba(237,137,54,0.3); }
-        .gps-status.error { background: rgba(229,62,62,0.9); color: #fff; border-color: #e53e3e; box-shadow: 0 0 20px rgba(229,62,62,0.3); }
+# ── Database Helpers ──────────────────────────────────────────
+def get_user_profile(username):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT profile FROM users WHERE username = %s", (username,))
+    result = cur.fetchone()
+    cur.close()
+    conn.close()
+    return result[0] if result else {}
 
-        .map-style-row {
-            display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; padding: 0 4px;
-        }
-        .map-style-btn {
-            padding: 4px 10px; border: 1px solid rgba(255,255,255,0.2); border-radius: 14px;
-            background: rgba(0,0,0,0.5); color: #cbd5e0; font-size: 0.6rem; font-weight: 600;
-            cursor: pointer; transition: all 0.2s; backdrop-filter: blur(4px);
-            white-space: nowrap;
-        }
-        .map-style-btn:hover { border-color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.1); color: #fff; }
-        .map-style-btn.active { border-color: #fc4c02; background: rgba(252,76,2,0.3); color: #fc4c02; }
+def save_user_profile(username, profile):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE users SET profile = %s WHERE username = %s", (Json(profile), username))
+    conn.commit()
+    cur.close()
+    conn.close()
 
-        .record-modal-stats-wrapper {
-            position: absolute; bottom: 70px; left: 0; right: 0; z-index: 1000;
-            background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 70%, transparent 100%);
-            padding: 14px 14px 10px; pointer-events: none;
-        }
-        .record-modal-stats-wrapper>* { pointer-events: auto; }
-        .record-modal-stats {
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 8px;
-            background: rgba(18,22,42,0.85); 
-            border-radius: 14px; 
-            padding: 12px 10px;
-            backdrop-filter: blur(12px); 
-            border: 1px solid rgba(255,255,255,0.08);
-            box-shadow: 0 4px 30px rgba(0,0,0,0.5);
-        }
-        .record-modal-sensor-stats {
-            display: grid; 
-            grid-template-columns: 1fr 1fr 1fr 1fr; 
-            gap: 6px;
-            margin-top: 8px; 
-            padding-top: 8px; 
-            border-top: 1.5px solid rgba(255,255,255,0.1);
-            background: rgba(18,22,42,0.7); 
-            border-radius: 12px; 
-            padding: 8px 8px;
-            backdrop-filter: blur(8px); 
-            border: 1px solid rgba(255,255,255,0.06);
-        }
-        .modal-stat { 
-            text-align: center; 
-            color: #fff; 
-            padding: 2px 0; 
-        }
-        .modal-stat-primary {
-            grid-column: span 1; 
-            background: linear-gradient(135deg, rgba(252,76,2,0.25), rgba(252,76,2,0.05));
-            border-radius: 12px; 
-            padding: 6px 4px; 
-            border: 1px solid rgba(252,76,2,0.2);
-        }
-        .modal-stat-primary .record-stat-value { 
-            font-size: 2.4rem; 
-            font-weight: 800; 
-            color: #ff8a5c; 
-            text-shadow: 0 0 30px rgba(252,76,2,0.3);
-            font-variant-numeric: tabular-nums;
-        }
-        .modal-stat-speed {
-            grid-column: span 1; 
-            background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(56, 189, 248, 0.05));
-            border-radius: 12px; 
-            padding: 6px 4px; 
-            border: 1px solid rgba(56, 189, 248, 0.2);
-        }
-        .modal-stat-speed .record-stat-value { 
-            font-size: 2.4rem; 
-            font-weight: 800; 
-            color: #60a5fa; 
-            text-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
-            font-variant-numeric: tabular-nums;
-        }
-        .modal-stat-speed .record-stat-value.paused { 
-            color: #94a3b8; 
-            text-shadow: none;
-        }
-        .record-stat-label { 
-            font-size: 0.55rem; 
-            text-transform: uppercase; 
-            color: #94a3b8; 
-            font-weight: 700; 
-            letter-spacing: 0.5px; 
-            margin-bottom: 1px; 
-        }
-        .record-stat-value { 
-            font-size: 1.3rem; 
-            font-weight: 700; 
-            color: #f1f5f9; 
-            margin-top: 1px; 
-            font-variant-numeric: tabular-nums;
-        }
-        .record-stat-value .stat-unit { 
-            color: #94a3b8; 
-            font-size: 0.6rem; 
-            font-weight: 500; 
-            margin-left: 2px; 
-        }
-        .record-modal-sensor-stats .modal-stat { 
-            background: rgba(255,255,255,0.05); 
-            border-radius: 10px; 
-            padding: 6px 2px; 
-            border: 1px solid rgba(255,255,255,0.06); 
-        }
-        .record-modal-sensor-stats .record-stat-value { 
-            font-size: 1.2rem; 
-            color: #f1f5f9; 
-        }
-        .record-modal-sensor-stats .record-stat-value .stat-unit { 
-            font-size: 0.5rem; 
-        }
-        .record-modal-sensor-stats .record-stat-label {
-            font-size: 0.45rem;
-        }
-        .modal-stat-distance {
-            grid-column: 1 !important;
-            background: linear-gradient(135deg, rgba(52, 211, 153, 0.2), rgba(52, 211, 153, 0.05)) !important;
-            border: 1px solid rgba(52, 211, 153, 0.2) !important;
-        }
-        .modal-stat-distance .record-stat-value { 
-            color: #34d399 !important; 
-            font-size: 1.6rem !important;
-        }
-        #recHR { color: #f87171; }
-        #recCadence { color: #60a5fa; }
-        #recPower { color: #fbbf24; }
-        #recTemp { color: #6ee7b7; }
-        #recTimer { color: #ff8a5c; }
-        #recTimer.paused { color: #facc15; }
-        
-        .record-modal-message {
-            position: absolute; bottom: 58px; left: 0; right: 0; z-index: 1000;
-            text-align: center; color: #facc15; font-size: 0.85rem; font-weight: 600;
-            background: rgba(0,0,0,0.6); padding: 6px 12px; min-height: 1.4em;
-            pointer-events: none; backdrop-filter: blur(4px);
-        }
-        .record-modal-controls {
-            position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
-            display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;
-            background: rgba(0,0,0,0.85); padding: 12px 14px; padding-bottom: max(12px, env(safe-area-inset-bottom));
-            backdrop-filter: blur(12px); border-top: 1px solid rgba(255,255,255,0.06);
-            pointer-events: none;
-        }
-        .record-modal-controls>* { pointer-events: auto; }
-        .record-btn {
-            padding: 12px 24px; border: none; border-radius: 50px; font-size: 1rem;
-            font-weight: 700; cursor: pointer; transition: all 0.2s;
-            display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-            min-width: 80px; min-height: 48px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            letter-spacing: 0.5px;
-        }
-        .record-btn:active { transform: scale(0.94); }
-        .record-btn.start { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; box-shadow: 0 4px 20px rgba(34,197,94,0.4); }
-        .record-btn.start:hover { transform: scale(1.04); box-shadow: 0 6px 30px rgba(34,197,94,0.5); }
-        .record-btn.pause { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; box-shadow: 0 4px 20px rgba(245,158,11,0.4); }
-        .record-btn.pause:hover { transform: scale(1.04); box-shadow: 0 6px 30px rgba(245,158,11,0.5); }
-        .record-btn.resume { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; box-shadow: 0 4px 20px rgba(59,130,246,0.4); }
-        .record-btn.resume:hover { transform: scale(1.04); box-shadow: 0 6px 30px rgba(59,130,246,0.5); }
-        .record-btn.stop { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; box-shadow: 0 4px 20px rgba(239,68,68,0.4); }
-        .record-btn.stop:hover { transform: scale(1.04); box-shadow: 0 6px 30px rgba(239,68,68,0.5); }
-        .record-btn.discard { background: rgba(255,255,255,0.12); color: #e2e8f0; border: 1.5px solid rgba(255,255,255,0.15); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
-        .record-btn.discard:hover { background: rgba(255,255,255,0.2); transform: scale(1.04); }
+def create_or_update_user(username, name, avatar, email):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO users (username, github_name, avatar_url, email)
+        VALUES (%s, %s, %s, %s)
+        ON CONFLICT (username) DO UPDATE SET
+            github_name = EXCLUDED.github_name,
+            avatar_url = EXCLUDED.avatar_url,
+            email = EXCLUDED.email
+    """, (username, name, avatar, email))
+    conn.commit()
+    cur.close()
+    conn.close()
 
-        .record-minimized-bar {
-            position: fixed; bottom: calc(var(--tab-height) + 16px); left: 50%; transform: translateX(-50%);
-            background: linear-gradient(135deg, #1a1f3a, #0b0e1a); color: #fff;
-            padding: 12px 20px; border-radius: 50px; display: none; align-items: center;
-            gap: 12px; box-shadow: 0 6px 30px rgba(0,0,0,0.6); cursor: pointer;
-            z-index: 900; font-size: 0.9rem; font-weight: 600; white-space: nowrap;
-            border: 1px solid rgba(252,76,2,0.3); backdrop-filter: blur(8px); min-height: 48px;
-        }
-        .record-minimized-bar:hover { transform: translateX(-50%) scale(1.03); border-color: rgba(252,76,2,0.6); }
-        .pulse-dot {
-            width: 10px; height: 10px; border-radius: 50%; background: #22c55e;
-            animation: pulse 1.5s ease-in-out infinite; flex-shrink: 0;
-            box-shadow: 0 0 20px rgba(34,197,94,0.5);
-        }
-        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
-        .minimized-expand { color: #94a3b8; font-size: 0.8rem; margin-left: 4px; }
+def get_user_rides(username, ride_type=None):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    if ride_type:
+        cur.execute("""
+            SELECT id, filename, file_hash, ride_type, summary, streams, zone_distribution, route, ride_date, created_at
+            FROM rides WHERE username = %s AND ride_type = %s
+            ORDER BY ride_date DESC, created_at DESC
+        """, (username, ride_type))
+    else:
+        cur.execute("""
+            SELECT id, filename, file_hash, ride_type, summary, streams, zone_distribution, route, ride_date, created_at
+            FROM rides WHERE username = %s
+            ORDER BY ride_date DESC, created_at DESC
+        """, (username,))
+    rides = cur.fetchall()
+    cur.close()
+    conn.close()
+    return [{
+        "id": r[0],
+        "filename": r[1],
+        "file_hash": r[2],
+        "ride_type": r[3],
+        "summary": r[4],
+        "streams": r[5],
+        "zone_distribution": r[6],
+        "route": r[7],
+        "ride_date": r[8].isoformat() if r[8] else None,
+        "created_at": r[9].isoformat() if r[9] else None
+    } for r in rides]
 
-        .maps-container { height: 70vh; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; position: relative; }
-        #mapsTabMap { width: 100%; height: 100%; }
+def save_user_ride(username, ride_data, ride_type='cycling'):
+    if ride_type not in VALID_RIDE_TYPES:
+        ride_type = 'cycling'
+    conn = get_db_connection()
+    cur = conn.cursor()
+    ride_date = None
+    timestamps = ride_data.get('streams', {}).get('timestamps', [])
+    if timestamps:
+        try:
+            ride_date = datetime.fromisoformat(timestamps[0])
+        except:
+            ride_date = datetime.now()
+    else:
+        ride_date = datetime.now()
+    cur.execute("""
+        INSERT INTO rides (username, filename, file_hash, ride_type, ride_date, summary, streams, zone_distribution, route)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (username, file_hash) DO UPDATE SET
+            filename = EXCLUDED.filename,
+            ride_type = EXCLUDED.ride_type,
+            ride_date = EXCLUDED.ride_date,
+            summary = EXCLUDED.summary,
+            streams = EXCLUDED.streams,
+            zone_distribution = EXCLUDED.zone_distribution,
+            route = EXCLUDED.route
+        RETURNING id
+    """, (
+        username,
+        ride_data['filename'],
+        ride_data['file_hash'],
+        ride_type,
+        ride_date,
+        Json(ride_data['summary']),
+        Json(ride_data['streams']),
+        Json(ride_data['zone_distribution']),
+        Json(ride_data.get('route', []))
+    ))
+    ride_id = cur.fetchone()[0]
+    conn.commit()
+    cur.close()
+    conn.close()
+    return ride_id
 
-        .record-tab-content {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 2rem; text-align: center; min-height: 60vh;
-        }
-        .record-tab-content .big-record-btn {
-            width: 90px; height: 90px; border-radius: 50%;
-            background: linear-gradient(135deg, #fc4c02, #d84001); color: white; font-size: 3rem;
-            border: none; cursor: pointer; box-shadow: 0 6px 30px rgba(252,76,2,0.5);
-            transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; justify-content: center;
-        }
-        .record-tab-content .big-record-btn:active { transform: scale(0.88); box-shadow: 0 2px 10px rgba(252,76,2,0.3); }
-        .record-tab-content .big-record-btn:hover { transform: scale(1.04); box-shadow: 0 8px 40px rgba(252,76,2,0.6); }
+def delete_user_ride(username, ride_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM rides WHERE username = %s AND id = %s RETURNING filename", (username, ride_id))
+    result = cur.fetchone()
+    conn.commit()
+    cur.close()
+    conn.close()
+    return result[0] if result else None
 
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .record-modal-stats {
-                gap: 4px;
-                padding: 8px 6px;
+def get_all_users_stats(ride_type=None):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    if ride_type and ride_type in VALID_RIDE_TYPES:
+        cur.execute("""
+            SELECT u.username, COUNT(r.id) as total_rides,
+                   COALESCE(MAX((r.summary->>'avg_speed')::float), 0) as best_avg_speed,
+                   COALESCE(MAX((r.summary->>'max_speed')::float), 0) as best_max_speed,
+                   COALESCE(SUM((r.summary->>'elevation_gain')::float), 0) as total_elevation,
+                   COALESCE(SUM((r.summary->>'total_calories')::float), 0) as total_calories,
+                   r.ride_type
+            FROM users u LEFT JOIN rides r ON u.username = r.username
+            WHERE r.id IS NOT NULL AND r.ride_type = %s
+            GROUP BY u.username, r.ride_type
+            ORDER BY best_avg_speed DESC
+        """, (ride_type,))
+    else:
+        cur.execute("""
+            SELECT u.username, COUNT(r.id) as total_rides,
+                   COALESCE(MAX((r.summary->>'avg_speed')::float), 0) as best_avg_speed,
+                   COALESCE(MAX((r.summary->>'max_speed')::float), 0) as best_max_speed,
+                   COALESCE(SUM((r.summary->>'elevation_gain')::float), 0) as total_elevation,
+                   COALESCE(SUM((r.summary->>'total_calories')::float), 0) as total_calories,
+                   r.ride_type
+            FROM users u LEFT JOIN rides r ON u.username = r.username
+            WHERE r.id IS NOT NULL
+            GROUP BY u.username, r.ride_type
+            ORDER BY best_avg_speed DESC
+        """)
+    results = cur.fetchall()
+    cur.close()
+    conn.close()
+    return [{
+        "username": r[0],
+        "total_rides": r[1],
+        "best_avg_speed": round(r[2], 1),
+        "best_max_speed": round(r[3], 1),
+        "total_elevation": round(r[4], 1),
+        "total_calories": round(r[5], 0),
+        "ride_type": r[6]
+    } for r in results]
+
+def get_stats_by_type(username):
+    rides = get_user_rides(username)
+    stats = {}
+    for ride in rides:
+        rt = ride.get('ride_type', 'cycling')
+        if rt not in stats:
+            stats[rt] = {"count": 0, "total_distance": 0, "total_elevation": 0, "total_calories": 0}
+        s = ride.get('summary', {})
+        stats[rt]["count"] += 1
+        stats[rt]["total_distance"] += s.get('distance_km', 0)
+        stats[rt]["total_elevation"] += s.get('elevation_gain', 0)
+        stats[rt]["total_calories"] += s.get('total_calories', 0)
+    return stats
+
+# ── Core parsing functions ────────────────────────────────────
+def get_file_hash(data):
+    return hashlib.md5(data).hexdigest()
+
+def calculate_calories_and_power(df, profile):
+    weight = float(profile.get('weight', 75))
+    bike_type = profile.get('bike_type', 'road')
+    cda_map = {'road': 0.32, 'mountain': 0.50, 'hybrid': 0.40, 'gravel': 0.36}
+    crr_map = {'road': 0.004, 'mountain': 0.012, 'hybrid': 0.007, 'gravel': 0.007}
+    CdA = cda_map.get(bike_type, 0.32)
+    Crr = crr_map.get(bike_type, 0.004)
+    air_density = 1.225
+    gravity = 9.81
+    total_mass = weight + 9
+    efficiency = 0.97
+    speeds_ms = df['speed_kmh'] / 3.6
+    P_drag = 0.5 * air_density * CdA * speeds_ms ** 3
+    P_roll = Crr * total_mass * gravity * speeds_ms
+    power = (P_drag + P_roll) / efficiency
+    power = power.clip(lower=0).round(1)
+    calories_series = power / (4.184 * 1000 * 0.25)
+    total_calories = round(float(calories_series.sum()), 0)
+    return [float(x) for x in power.tolist()], int(total_calories)
+
+def get_power_zones(ftp=200):
+    return [
+        {'zone': 'Z1 Recovery',  'min': 0,          'max': ftp * 0.55},
+        {'zone': 'Z2 Endurance', 'min': ftp * 0.55, 'max': ftp * 0.75},
+        {'zone': 'Z3 Tempo',     'min': ftp * 0.75, 'max': ftp * 0.90},
+        {'zone': 'Z4 Threshold', 'min': ftp * 0.90, 'max': ftp * 1.05},
+        {'zone': 'Z5 VO2 Max',   'min': ftp * 1.05, 'max': 9999},
+    ]
+
+def classify_power_zones(power_list, ftp=200):
+    zones = get_power_zones(ftp)
+    zone_time = {z['zone']: 0 for z in zones}
+    for p in power_list:
+        for z in zones:
+            if z['min'] <= p < z['max']:
+                zone_time[z['zone']] += 1
+                break
+    total = sum(zone_time.values()) or 1
+    return [{'zone': k, 'seconds': v, 'pct': round(v / total * 100, 1)} for k, v in zone_time.items()]
+
+def parse_ride(file_path, profile):
+    fitfile = FitFile(file_path)
+    data_points = []
+    for record in fitfile.get_messages('record'):
+        record_data = {}
+        for field in record:
+            if field.name in ['timestamp', 'cadence', 'speed', 'enhanced_altitude',
+                              'altitude', 'position_lat', 'position_long',
+                              'temperature', 'heart_rate', 'power', 'distance']:
+                record_data[field.name] = field.value
+        data_points.append(record_data)
+
+    df = pd.DataFrame(data_points)
+    df.dropna(subset=['timestamp'], inplace=True)
+
+    if 'enhanced_altitude' in df.columns:
+        df['elevation'] = pd.to_numeric(df['enhanced_altitude'], errors='coerce').fillna(0)
+    elif 'altitude' in df.columns:
+        df['elevation'] = pd.to_numeric(df['altitude'], errors='coerce').fillna(0)
+    else:
+        df['elevation'] = 0.0
+
+    if 'speed' in df.columns:
+        df['speed_kmh'] = pd.to_numeric(df['speed'], errors='coerce').fillna(0) * 3.6
+    else:
+        df['speed_kmh'] = 0.0
+
+    if 'cadence' in df.columns:
+        df['cadence'] = pd.to_numeric(df['cadence'], errors='coerce').fillna(0)
+    else:
+        df['cadence'] = 0.0
+
+    if 'temperature' in df.columns:
+        df['temperature'] = pd.to_numeric(df['temperature'], errors='coerce').ffill().fillna(0)
+        has_temperature = bool((df['temperature'] != 0).any())
+    else:
+        df['temperature'] = 0.0
+        has_temperature = False
+
+    if 'heart_rate' in df.columns:
+        df['heart_rate'] = pd.to_numeric(df['heart_rate'], errors='coerce').fillna(0)
+        has_hr = bool((df['heart_rate'] > 0).any())
+    else:
+        df['heart_rate'] = 0.0
+        has_hr = False
+
+    if 'position_lat' in df.columns and 'position_long' in df.columns:
+        df['lat'] = pd.to_numeric(df['position_lat'], errors='coerce') * (180 / 2 ** 31)
+        df['lng'] = pd.to_numeric(df['position_long'], errors='coerce') * (180 / 2 ** 31)
+        route_df = df.dropna(subset=['lat', 'lng']).copy()
+    else:
+        df['lat'] = float('nan')
+        df['lng'] = float('nan')
+        route_df = pd.DataFrame(columns=['lat', 'lng'])
+
+    df['elevation_diff'] = df['elevation'].diff()
+    total_climbing = float(df['elevation_diff'][df['elevation_diff'] > 0].sum())
+
+    if 'distance' in df.columns:
+        dist_series = pd.to_numeric(df['distance'], errors='coerce')
+        if dist_series.max() > 0:
+            total_distance = round(float(dist_series.max()) / 1000, 2)
+        else:
+            total_distance = round(float(df['speed_kmh'].sum()) / 3600, 2)
+    else:
+        total_distance = round(float(df['speed_kmh'].sum()) / 3600, 2)
+
+    if 'power' in df.columns:
+        pwr_series = pd.to_numeric(df['power'], errors='coerce').fillna(0)
+        if pwr_series.sum() > 0:
+            power_list = [float(x) for x in pwr_series.tolist()]
+            cal_series = pd.Series(power_list) / (4.184 * 1000 * 0.25)
+            total_calories = int(round(float(cal_series.sum()), 0))
+        else:
+            power_list, total_calories = calculate_calories_and_power(df, profile)
+    else:
+        power_list, total_calories = calculate_calories_and_power(df, profile)
+
+    avg_power = round(float(pd.Series(power_list).mean()), 1)
+    max_power = round(float(pd.Series(power_list).max()), 1)
+    ftp = float(profile.get('ftp', 200))
+    zone_distribution = classify_power_zones(power_list, ftp)
+
+    valid_cadence = df['cadence'][df['cadence'] > 0]
+    valid_hr = df['heart_rate'][(df['heart_rate'] > 30) & (df['heart_rate'] < 220)] if has_hr else pd.Series([], dtype=float)
+    valid_temp = df['temperature'][df['temperature'] != 0] if has_temperature else pd.Series([], dtype=float)
+
+    summary = {
+        "max_speed": round(float(df['speed_kmh'].max()), 1),
+        "avg_speed": round(float(df['speed_kmh'].mean()), 1),
+        "avg_cadence": round(float(valid_cadence.mean()), 1) if len(valid_cadence) > 0 else 0,
+        "elevation_gain": round(total_climbing, 1),
+        "total_calories": total_calories,
+        "avg_power": avg_power,
+        "max_power": max_power,
+        "distance_km": total_distance,
+        "avg_hr": round(float(valid_hr.mean()), 0) if len(valid_hr) > 0 else None,
+        "max_hr": round(float(valid_hr.max()), 0) if len(valid_hr) > 0 else None,
+        "avg_temp": round(float(valid_temp.mean()), 1) if len(valid_temp) > 0 else None,
+        "min_temp": round(float(valid_temp.min()), 1) if len(valid_temp) > 0 else None,
+        "max_temp": round(float(valid_temp.max()), 1) if len(valid_temp) > 0 else None,
+        "has_temperature": has_temperature,
+        "has_hr": has_hr,
+    }
+
+    MAX_POINTS = 300
+    if len(df) > MAX_POINTS:
+        step = max(1, len(df) // MAX_POINTS)
+        df_ds = df.iloc[::step].reset_index(drop=True)
+        power_ds = power_list[::step][:len(df_ds)]
+    else:
+        df_ds = df
+        power_ds = power_list
+
+    timestamps = pd.to_datetime(df_ds['timestamp']).dt.strftime('%H:%M:%S').tolist()
+    map_route = [[float(r), float(c)] for r, c in route_df[['lat', 'lng']].values.tolist()] if len(route_df) > 0 else []
+
+    return {
+        "summary": summary,
+        "streams": {
+            "timestamps": timestamps,
+            "speed": [round(float(x), 1) for x in df_ds['speed_kmh'].tolist()],
+            "cadence": [int(float(x)) for x in df_ds['cadence'].tolist()],
+            "elevation": [round(float(x), 1) for x in df_ds['elevation'].tolist()],
+            "power": [round(float(x), 1) for x in power_ds],
+            "temperature": [round(float(x), 1) for x in df_ds['temperature'].tolist()] if has_temperature else [],
+            "heart_rate": [int(float(x)) for x in df_ds['heart_rate'].tolist()] if has_hr else [],
+        },
+        "zone_distribution": zone_distribution,
+        "route": map_route
+    }
+
+# ── Routes ─────────────────────────────────────────────────────
+@app.route('/')
+def index():
+    if 'user' in session:
+        return redirect(url_for('dashboard'))
+    return render_template('landing.html')
+
+@app.route('/auth/login')
+def auth_login():
+    return redirect(f'{GITHUB_AUTH_URL}?client_id={GITHUB_CLIENT_ID}&scope=read:user')
+
+@app.route('/auth/callback')
+def auth_callback():
+    code = request.args.get('code')
+    if not code:
+        return redirect(url_for('index'))
+    token_response = requests.post(GITHUB_TOKEN_URL, data={
+        'client_id': GITHUB_CLIENT_ID,
+        'client_secret': GITHUB_CLIENT_SECRET,
+        'code': code
+    }, headers={'Accept': 'application/json'})
+    token_data = token_response.json()
+    access_token = token_data.get('access_token')
+    if not access_token:
+        return redirect(url_for('index'))
+    user_response = requests.get(GITHUB_API_URL, headers={
+        'Authorization': f'token {access_token}', 'Accept': 'application/json'
+    })
+    user_data = user_response.json()
+    username = user_data.get('login')
+    name = user_data.get('name') or username
+    avatar = user_data.get('avatar_url')
+    email = user_data.get('email', '')
+    create_or_update_user(username, name, avatar, email)
+    session['user'] = {
+        'username': username,
+        'name': name,
+        'avatar': avatar,
+        'email': email
+    }
+    return redirect(url_for('dashboard'))
+
+@app.route('/auth/logout')
+def auth_logout():
+    session.clear()
+    return redirect(url_for('index'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('dashboard.html', user=session['user'])
+
+@app.route('/profile', methods=['GET'])
+@login_required
+def get_profile():
+    return jsonify(get_user_profile(session['user']['username']))
+
+@app.route('/profile', methods=['POST'])
+@login_required
+def update_profile():
+    data = request.get_json()
+    allowed = ['weight', 'bike_type', 'bike_computer', 'sensors', 'ftp', 'bike_name']
+    profile = {k: data[k] for k in allowed if k in data}
+    save_user_profile(session['user']['username'], profile)
+    return jsonify({"status": "saved"})
+
+@app.route('/ride-types')
+def get_ride_types():
+    return jsonify(RIDE_TYPES_INFO)
+
+@app.route('/rides/filter/<ride_type>')
+@login_required
+def get_rides_by_type(ride_type):
+    if ride_type not in VALID_RIDE_TYPES:
+        return jsonify({"error": "Invalid ride type"}), 400
+    rides = get_user_rides(session['user']['username'], ride_type)
+    return jsonify([{
+        "id": r["id"],
+        "filename": r["filename"],
+        "ride_type": r["ride_type"],
+        "summary": r["summary"]
+    } for r in rides])
+
+@app.route('/ride/<int:ride_id>', methods=['PUT'])
+@login_required
+def update_ride_type(ride_id):
+    data = request.get_json()
+    ride_type = data.get('ride_type')
+    if ride_type not in VALID_RIDE_TYPES:
+        return jsonify({"error": "Invalid ride type"}), 400
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("UPDATE rides SET ride_type = %s WHERE username = %s AND id = %s RETURNING id",
+                (ride_type, session['user']['username'], ride_id))
+    if cur.fetchone():
+        conn.commit()
+        cur.close()
+        conn.close()
+        return jsonify({"status": "updated", "ride_type": ride_type})
+    else:
+        conn.rollback()
+        cur.close()
+        conn.close()
+        return jsonify({"error": "Ride not found"}), 404
+
+@app.route('/stats/by-type')
+@login_required
+def stats_by_type():
+    return jsonify(get_stats_by_type(session['user']['username']))
+
+@app.route('/check-duplicate', methods=['POST'])
+@login_required
+def check_duplicate():
+    file = request.files.get('fitfile')
+    if not file:
+        return jsonify({"error": "No file"}), 400
+    file_bytes = file.read()
+    file_hash = get_file_hash(file_bytes)
+    rides = get_user_rides(session['user']['username'])
+    duplicate = next((r for r in rides if r.get('file_hash') == file_hash), None)
+    return jsonify({
+        "is_duplicate": duplicate is not None,
+        "duplicate_id": duplicate.get('id') if duplicate else None,
+    })
+
+@app.route('/upload', methods=['POST'])
+@login_required
+def upload_file():
+    try:
+        file = request.files.get('fitfile')
+        if not file:
+            return jsonify({"error": "No file uploaded"}), 400
+        ride_type = request.form.get('ride_type', 'cycling')
+        if ride_type not in VALID_RIDE_TYPES:
+            ride_type = 'cycling'
+        overwrite_id = request.form.get('overwrite_id')
+        filename = file.filename
+        file_bytes = file.read()
+        file_hash = get_file_hash(file_bytes)
+        if overwrite_id:
+            delete_user_ride(session['user']['username'], int(overwrite_id))
+        final_path = os.path.join(UPLOAD_FOLDER, filename)
+        with open(final_path, 'wb') as f:
+            f.write(file_bytes)
+        profile = get_user_profile(session['user']['username'])
+        stats = parse_ride(final_path, profile)
+        ride_data = {
+            "filename": filename,
+            "file_hash": file_hash,
+            "summary": stats["summary"],
+            "streams": stats["streams"],
+            "zone_distribution": stats["zone_distribution"],
+            "route": stats["route"]
+        }
+        ride_id = save_user_ride(session['user']['username'], ride_data, ride_type)
+        stats["ride_type"] = ride_type
+        stats["id"] = ride_id
+        return jsonify(stats)
+    except Exception as e:
+        import traceback
+        err = traceback.format_exc()
+        print(err)
+        return jsonify({"error": str(e), "trace": err}), 500
+
+@app.route('/my-rides')
+@login_required
+def my_rides():
+    ride_type = request.args.get('type')
+    if ride_type and ride_type not in VALID_RIDE_TYPES:
+        return jsonify({"error": "Invalid ride type"}), 400
+    rides = get_user_rides(session['user']['username'], ride_type)
+    return jsonify([{
+        "id": r["id"],
+        "filename": r["filename"],
+        "ride_type": r["ride_type"],
+        "summary": r["summary"]
+    } for r in rides])
+
+@app.route('/ride/<int:ride_id>')
+@login_required
+def get_ride(ride_id):
+    rides = get_user_rides(session['user']['username'])
+    ride = next((r for r in rides if r.get('id') == ride_id), None)
+    if not ride:
+        return jsonify({"error": "Ride not found"}), 404
+    return jsonify(ride)
+
+@app.route('/ride/<int:ride_id>', methods=['DELETE'])
+@login_required
+def delete_ride(ride_id):
+    filename = delete_user_ride(session['user']['username'], ride_id)
+    if filename:
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    return jsonify({"status": "deleted", "id": ride_id})
+
+@app.route('/recalculate-all', methods=['POST'])
+@login_required
+def recalculate_all():
+    username = session['user']['username']
+    profile = get_user_profile(username)
+    rides = get_user_rides(username)
+    if not profile.get('weight') or not profile.get('bike_type'):
+        return jsonify({"error": "Please set your weight and bike type in Profile first"}), 400
+    results = {"updated": 0, "skipped": 0, "errors": []}
+    for ride in rides:
+        file_path = os.path.join(UPLOAD_FOLDER, ride.get('filename', ''))
+        if not os.path.exists(file_path):
+            results["skipped"] += 1
+            results["errors"].append(f"Ride #{ride.get('id')}: file not found on disk")
+            continue
+        try:
+            stats = parse_ride(file_path, profile)
+            ride_data = {
+                "filename": ride['filename'],
+                "file_hash": ride['file_hash'],
+                "summary": stats["summary"],
+                "streams": stats["streams"],
+                "zone_distribution": stats["zone_distribution"],
+                "route": stats["route"]
             }
-            .modal-stat-primary .record-stat-value { font-size: 1.8rem; }
-            .modal-stat-speed .record-stat-value { font-size: 1.8rem; }
-            .record-modal-sensor-stats {
-                grid-template-columns: 1fr 1fr 1fr 1fr;
-                gap: 4px;
-                padding: 6px 4px;
-            }
-            .modal-stat-distance .record-stat-value { font-size: 1.4rem !important; }
-            .record-modal-sensor-stats .record-stat-value { font-size: 1rem; }
-            .record-btn { padding: 10px 16px; font-size: 0.85rem; min-width: 60px; min-height: 42px; }
-            .modal-select { font-size: 0.65rem; min-width: 60px; padding: 4px 8px; min-height: 30px; }
-            .gps-status { font-size: 0.6rem; padding: 4px 10px; min-height: 28px; }
-            .modal-icon-btn { width: 34px; height: 34px; font-size: 1rem; }
-            .record-modal-topbar { padding: 8px 10px; gap: 4px; }
-            .record-modal-stats-wrapper { bottom: 62px; padding: 10px 8px 6px; }
-            .record-modal-controls { padding: 8px 10px; gap: 6px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-            .record-modal-message { bottom: 52px; font-size: 0.7rem; padding: 4px 8px; }
-            .map-style-btn { font-size: 0.5rem; padding: 3px 8px; }
-            .record-minimized-bar { padding: 10px 14px; font-size: 0.75rem; min-height: 40px; gap: 8px; }
-            .topbar-row .modal-center-controls { gap: 4px; }
-            .main-container { padding: 0.8rem 0.8rem 0.3rem; }
-            .profile-form { grid-template-columns: 1fr; }
-        }
-        @media (max-width: 480px) {
-            .record-modal-stats {
-                gap: 3px;
-                padding: 6px 4px;
-            }
-            .modal-stat-primary .record-stat-value { font-size: 1.4rem; }
-            .modal-stat-speed .record-stat-value { font-size: 1.4rem; }
-            .record-modal-sensor-stats {
-                grid-template-columns: 1fr 1fr 1fr 1fr;
-                gap: 3px;
-                padding: 4px 3px;
-            }
-            .modal-stat-distance .record-stat-value { font-size: 1.2rem !important; }
-            .record-modal-sensor-stats .record-stat-value { font-size: 0.9rem; }
-            .record-stat-label { font-size: 0.4rem; }
-            .record-modal-sensor-stats .record-stat-label { font-size: 0.4rem; }
-        }
-    </style>
-</head>
-<body>
-    <!-- TOP NAVBAR -->
-    <nav class="navbar">
-        <div class="navbar-brand">🚴 Fit Reader <span>Beta</span></div>
-        <div class="navbar-right">
-            <div class="user-info">
-                <img src="https://avatars.githubusercontent.com/u/142338253?v=4" alt="Faiq Jadoon" class="user-avatar" />
-                <span class="username">Faiq Jadoon</span>
-            </div>
-            <span class="fullscreen-badge">⛶ Fullscreen</span>
-            <button class="exit-fullscreen-btn" onclick="exitFullscreen()">⛶ Exit Fullscreen</button>
-            <a href="/auth/logout" class="logout-btn">Logout</a>
-        </div>
-    </nav>
+            save_user_ride(username, ride_data, ride.get('ride_type', 'cycling'))
+            results["updated"] += 1
+        except Exception as e:
+            results["skipped"] += 1
+            results["errors"].append(f"Ride #{ride.get('id')}: {str(e)}")
+    return jsonify(results)
 
-    <!-- MAIN CONTENT (scrollable) -->
-    <div class="main-container">
-        <!-- HOME TAB -->
-        <div id="tab-home" class="tab-content active">
-            <div class="activity-selector"><div class="activity-grid" id="activityGrid"></div></div>
+@app.route('/club')
+@login_required
+def club():
+    ride_type = request.args.get('type')
+    if ride_type and ride_type not in VALID_RIDE_TYPES:
+        return jsonify({"error": "Invalid ride type"}), 400
+    return jsonify(get_all_users_stats(ride_type))
 
-            <div class="stats-grid" id="statsGrid">
-                <div class="stat-card"><div class="stat-label">Total Activities</div><div class="stat-value" id="totalRides">-</div></div>
-                <div class="stat-card"><div class="stat-label">Total Distance</div><div class="stat-value" id="totalDistance">- <span class="stat-unit">km</span></div></div>
-                <div class="stat-card"><div class="stat-label">Total Elevation</div><div class="stat-value" id="totalElevation">- <span class="stat-unit">m</span></div></div>
-                <div class="stat-card"><div class="stat-label">Total Calories</div><div class="stat-value" id="totalCalories">-</div></div>
-            </div>
+# ─── UPDATED: /save-live-ride with temperature support ────
+@app.route('/save-live-ride', methods=['POST'])
+@login_required
+def save_live_ride():
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data"}), 400
+        points = data.get('points', [])
+        if len(points) < 2:
+            return jsonify({"error": "Not enough data points"}), 400
+        ride_type = data.get('ride_type', 'cycling')
+        if ride_type not in VALID_RIDE_TYPES:
+            ride_type = 'cycling'
 
-            <div class="upload-section">
-                <h2>Upload an Activity</h2>
-                <p>Upload FIT files from your GPS device</p>
-                <div class="upload-btn-wrapper">
-                    <button class="upload-btn" id="uploadBtn">📁 Choose FIT File</button>
-                    <input type="file" id="fileInput" accept=".fit" />
-                </div>
-                <div id="uploadStatus" style="margin-top:8px;font-size:0.8rem;color:var(--text-soft);"></div>
-            </div>
+        # ── Extract temperature stream ──────────────────────
+        temperature_stream = data.get('temperature', [])  # list of {timestamp, elapsed_s, temp_c}
 
-            <div class="rides-section">
-                <div class="rides-header">
-                    <div><h2>Activities</h2><span class="ride-count" id="rideCount">0 activities</span></div>
-                    <div><span class="filter-badge" id="filterBadge">All Types</span><button onclick="loadRides()" style="background:none;border:none;color:var(--orange);cursor:pointer;font-size:0.75rem;margin-left:6px;font-weight:600;">🔄</button></div>
-                </div>
-                <div class="ride-list" id="rideList"><div class="loading"><div class="spinner"></div><p style="margin-top:4px;font-size:0.8rem;">Loading...</p></div></div>
-            </div>
-        </div>
+        profile = get_user_profile(session['user']['username'])
 
-        <!-- MAPS TAB -->
-        <div id="tab-maps" class="tab-content">
-            <div class="maps-container" id="mapsContainer">
-                <div id="mapsTabMap"></div>
-            </div>
-        </div>
+        timestamps = [p['timestamp'] for p in points]
+        speeds_kmh = [float(p.get('speed_kmh', 0)) for p in points]
+        hr_list = [int(p.get('heart_rate', 0)) for p in points]
+        cadence_list = [int(p.get('cadence', 0)) for p in points]
+        route = [[float(p['lat']), float(p['lng'])] for p in points if p.get('lat') and p.get('lng')]
+        elevation_list = [float(p.get('altitude', 0)) for p in points]
 
-        <!-- RECORD TAB -->
-        <div id="tab-record" class="tab-content">
-            <div class="record-tab-content">
-                <div style="margin-bottom:1rem;font-size:1.3rem;font-weight:700;color:var(--text);">Start a New Ride</div>
-                <button class="big-record-btn" onclick="openRecordingModal()">⏺</button>
-                <div style="margin-top:0.8rem;color:var(--text-soft);font-size:0.95rem;font-weight:500;">Tap to open recording</div>
-            </div>
-        </div>
+        total_dist = 0.0
+        for i in range(1, len(points)):
+            p1, p2 = points[i-1], points[i]
+            if p1.get('lat') and p2.get('lat'):
+                lat1, lon1 = math.radians(p1['lat']), math.radians(p1['lng'])
+                lat2, lon2 = math.radians(p2['lat']), math.radians(p2['lng'])
+                dlat, dlon = lat2 - lat1, lon2 - lon1
+                a = math.sin(dlat/2)**2 + math.cos(lat1)*math.cos(lat2)*math.sin(dlon/2)**2
+                total_dist += 6371 * 2 * math.asin(math.sqrt(a))
 
-        <!-- ACTIVITIES TAB -->
-        <div id="tab-activities" class="tab-content">
-            <div class="rides-section">
-                <div class="rides-header">
-                    <div><h2>All Activities</h2><span class="ride-count" id="rideCountActivities">0 activities</span></div>
-                    <div><button onclick="loadRides()" style="background:none;border:none;color:var(--orange);cursor:pointer;font-size:0.75rem;font-weight:600;">🔄 Refresh</button></div>
-                </div>
-                <div class="ride-list" id="rideListActivities"><div class="loading"><div class="spinner"></div><p style="margin-top:4px;font-size:0.8rem;">Loading...</p></div></div>
-            </div>
-        </div>
+        elev_diffs = [max(0, elevation_list[i] - elevation_list[i-1]) for i in range(1, len(elevation_list))]
+        total_climbing = sum(elev_diffs)
 
-        <!-- PROFILE TAB -->
-        <div id="tab-profile" class="tab-content">
-            <div class="profile-card">
-                <div class="profile-header">
-                    <img src="https://avatars.githubusercontent.com/u/142338253?v=4" alt="Faiq Jadoon" class="profile-avatar" id="profileAvatar" />
-                    <div>
-                        <div class="profile-name" id="profileDisplayName">Faiq Jadoon</div>
-                        <div class="profile-email" id="profileDisplayEmail">None</div>
-                    </div>
-                </div>
+        df_temp = pd.DataFrame({'speed_kmh': speeds_kmh})
+        power_list, total_calories = calculate_calories_and_power(df_temp, profile)
 
-                <form id="profileForm" class="profile-form">
-                    <div class="field-group">
-                        <label for="pWeight">Weight (kg)</label>
-                        <input type="number" step="0.1" id="pWeight" placeholder="e.g. 75.0" />
-                    </div>
-                    <div class="field-group">
-                        <label for="pFtp">FTP (watts)</label>
-                        <input type="number" step="1" id="pFtp" placeholder="e.g. 250" />
-                    </div>
-                    <div class="field-group">
-                        <label for="pBikeName">Bike Name</label>
-                        <input type="text" id="pBikeName" placeholder="e.g. Road Bike" />
-                    </div>
-                    <div class="field-group">
-                        <label for="pBikeWeight">Bike Weight (kg)</label>
-                        <input type="number" step="0.1" id="pBikeWeight" placeholder="e.g. 8.5" />
-                    </div>
-                    <div class="field-group">
-                        <label for="pWheelCirc">Wheel Circumference (mm)</label>
-                        <input type="number" step="1" id="pWheelCirc" placeholder="e.g. 2105" />
-                    </div>
-                    <div class="field-group">
-                        <label for="pCrankLen">Crank Length (mm)</label>
-                        <input type="number" step="1" id="pCrankLen" placeholder="e.g. 172.5" />
-                    </div>
-                    <div class="field-group">
-                        <label for="pMaxHR">Max Heart Rate (bpm)</label>
-                        <input type="number" step="1" id="pMaxHR" placeholder="e.g. 190" />
-                    </div>
-                    <div class="field-group">
-                        <label for="pGender">Gender</label>
-                        <select id="pGender">
-                            <option value="">--</option>
-                            <option value="male">Male</option>
-                            <option value="female">Female</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    <div class="field-group">
-                        <label for="pDefaultType">Default Activity Type</label>
-                        <select id="pDefaultType"></select>
-                    </div>
-                    <div class="field-group full-width">
-                        <label for="pMapStyle">🗺️ Default Map Style</label>
-                        <select id="pMapStyle">
-                            <option value="standard">🗺️ Standard</option>
-                            <option value="satellite">🛰️ Satellite</option>
-                            <option value="terrain">⛰️ Terrain</option>
-                            <option value="dark">🌙 Dark</option>
-                            <option value="outdoor">🌲 Outdoor</option>
-                            <option value="transit">🚇 Transit</option>
-                        </select>
-                        <div style="font-size:0.7rem;color:var(--text-soft);margin-top:4px;">This will be the default map style when recording</div>
-                    </div>
-                    <div class="field-group full-width">
-                        <label for="pNotes">Notes / Bike Details</label>
-                        <input type="text" id="pNotes" placeholder="e.g. Shimano groupset, tubeless" />
-                    </div>
-                </form>
+        avg_speed = round(sum(speeds_kmh) / len(speeds_kmh), 1) if speeds_kmh else 0
+        max_speed = round(max(speeds_kmh), 1) if speeds_kmh else 0
 
-                <div class="profile-actions">
-                    <button class="save-btn" onclick="saveProfile()">💾 Save Profile</button>
-                    <button id="sensorBtnProfile" onclick="connectSensor()">🔍 Search Sensors</button>
-                    <button onclick="toggleDarkMode()">🌙 Toggle Theme</button>
-                    <button onclick="exitFullscreen()">⛶ Exit Fullscreen</button>
-                    <a href="/auth/logout" style="text-decoration:none;"><button>🚪 Logout</button></a>
-                </div>
-            </div>
-        </div>
-    </div>
+        valid_hr = [h for h in hr_list if 30 < h < 220]
+        valid_cad = [c for c in cadence_list if c > 0]
 
-    <!-- BOTTOM TAB BAR -->
-    <div class="bottom-tabs" id="bottomTabs">
-        <button class="tab-btn active" data-tab="home"><span class="tab-icon">🏠</span><span class="tab-label">Home</span></button>
-        <button class="tab-btn" data-tab="maps"><span class="tab-icon">🗺️</span><span class="tab-label">Maps</span></button>
-        <button class="tab-btn" data-tab="record"><span class="tab-icon">⏺️</span><span class="tab-label">Record</span></button>
-        <button class="tab-btn" data-tab="activities"><span class="tab-icon">📋</span><span class="tab-label">Activities</span></button>
-        <button class="tab-btn" data-tab="profile"><span class="tab-icon">👤</span><span class="tab-label">Profile</span></button>
-    </div>
+        ftp = float(profile.get('ftp', 200))
+        zone_distribution = classify_power_zones(power_list, ftp)
 
-    <!-- RECORD MODAL -->
-    <div class="record-modal" id="recordModal">
-        <div id="recordMap"></div>
-        <div class="record-modal-topbar">
-            <div class="topbar-row">
-                <button class="modal-icon-btn" id="recMinimizeBtn" onclick="minimizeRecordModal()">▼</button>
-                <div class="modal-center-controls">
-                    <span class="gps-status" id="gpsStatus">GPS idle</span>
-                    <select id="recRideTypeSelect" class="modal-select"></select>
-                    <button class="modal-icon-btn" id="modalSensorBtn" onclick="connectSensor()" style="font-size:1.2rem;">📡</button>
-                </div>
-                <button class="modal-icon-btn" id="recFullscreenBtn" onclick="toggleFullscreen()">⛶</button>
-            </div>
-            <div class="map-style-row" id="mapStyleRow">
-                <button class="map-style-btn active" data-style="standard" onclick="changeRecordMapStyle('standard')">🗺️</button>
-                <button class="map-style-btn" data-style="satellite" onclick="changeRecordMapStyle('satellite')">🛰️</button>
-                <button class="map-style-btn" data-style="terrain" onclick="changeRecordMapStyle('terrain')">⛰️</button>
-                <button class="map-style-btn" data-style="dark" onclick="changeRecordMapStyle('dark')">🌙</button>
-                <button class="map-style-btn" data-style="outdoor" onclick="changeRecordMapStyle('outdoor')">🌲</button>
-                <button class="map-style-btn" data-style="transit" onclick="changeRecordMapStyle('transit')">🚇</button>
-            </div>
-        </div>
-        
-        <!-- BOTTOM STATS PANEL -->
-        <div class="record-modal-stats-wrapper">
-            
-            <!-- ROW 1: TIMER & SPEED -->
-            <div class="record-modal-stats">
-                <div class="modal-stat modal-stat-primary">
-                    <div class="record-stat-label">⏱️ Timer</div>
-                    <div class="record-stat-value" id="recTimer">00:00:00</div>
-                </div>
-                <div class="modal-stat modal-stat-speed">
-                    <div class="record-stat-label">⚡ Speed</div>
-                    <div class="record-stat-value"><span id="recSpeed" class="">0.0</span> <span class="stat-unit">km/h</span></div>
-                </div>
-            </div>
-            
-            <!-- ROW 2: DISTANCE (FULL WIDTH) -->
-            <div class="record-modal-sensor-stats" style="grid-template-columns: 1fr !important; margin-top: 8px; border-top: 1.5px solid rgba(255,255,255,0.1); padding-top: 8px;">
-                <div class="modal-stat modal-stat-distance">
-                    <div class="record-stat-label">📏 Distance</div>
-                    <div class="record-stat-value" id="recDistance">0.00 <span class="stat-unit">km</span></div>
-                </div>
-            </div>
+        # ── Temperature stats ──────────────────────────────
+        if temperature_stream:
+            temps = [t['temp_c'] for t in temperature_stream if 'temp_c' in t]
+            if temps:
+                avg_temp = round(sum(temps) / len(temps), 1)
+                min_temp = round(min(temps), 1)
+                max_temp = round(max(temps), 1)
+                has_temperature = True
+            else:
+                avg_temp = min_temp = max_temp = None
+                has_temperature = False
+        else:
+            avg_temp = min_temp = max_temp = None
+            has_temperature = False
 
-            <!-- ROW 3: HR, CADENCE, POWER, TEMPERATURE (4 columns) -->
-            <div class="record-modal-sensor-stats" style="grid-template-columns: 1fr 1fr 1fr 1fr !important; margin-top: 8px;">
-                <div class="modal-stat modal-stat-sensor-left">
-                    <div class="record-stat-label">❤️ HR</div>
-                    <div class="record-stat-value"><span id="recHR">--</span> <span class="stat-unit">bpm</span></div>
-                </div>
-                <div class="modal-stat">
-                    <div class="record-stat-label">🔄 Cadence</div>
-                    <div class="record-stat-value"><span id="recCadence">--</span> <span class="stat-unit">rpm</span></div>
-                </div>
-                <div class="modal-stat">
-                    <div class="record-stat-label">⚡ Power</div>
-                    <div class="record-stat-value"><span id="recPower">--</span> <span class="stat-unit">W</span></div>
-                </div>
-                <div class="modal-stat modal-stat-sensor-right">
-                    <div class="record-stat-label">🌡️ Temp</div>
-                    <div class="record-stat-value"><span id="recTemp">--</span> <span class="stat-unit">°C</span></div>
-                </div>
-            </div>
-            
-        </div>
-
-        <div id="recordMessage" class="record-modal-message"></div>
-        <div class="record-modal-controls">
-            <button class="record-btn start" id="recStartRecordingBtn" onclick="beginRecording()" style="display:none;">▶️ Start</button>
-            <button class="record-btn pause" id="recPauseBtn" onclick="pauseRecording()" style="display:none;">⏸️ Pause</button>
-            <button class="record-btn resume" id="recResumeBtn" onclick="resumeRecording()" style="display:none;">▶️ Resume</button>
-            <button class="record-btn stop" id="recStopBtn" onclick="stopRecording()" style="display:none;">⏹️ Stop</button>
-            <button class="record-btn discard" id="recDiscardBtn" onclick="discardRecording()" style="display:none;">🗑️ Discard</button>
-        </div>
-    </div>
-
-    <!-- MINIMIZED RECORD BAR -->
-    <div class="record-minimized-bar" id="recordMinimizedBar" onclick="reopenRecordModal()">
-        <span class="pulse-dot"></span>
-        <span id="minimizedText">Recording... 00:00:00</span>
-        <span class="minimized-expand">▲</span>
-    </div>
-
-    <div class="toast" id="toast"></div>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script>
-        // ── AUTO FULLSCREEN ON PAGE LOAD ──────────────────
-        document.addEventListener('DOMContentLoaded', function() {
-            enterFullscreen();
-            setTimeout(enterFullscreen, 500);
-            setTimeout(enterFullscreen, 1000);
-        });
-
-        document.addEventListener('click', function firstClick() {
-            enterFullscreen();
-            document.removeEventListener('click', firstClick);
-        });
-
-        document.addEventListener('touchstart', function firstTouch() {
-            enterFullscreen();
-            document.removeEventListener('touchstart', firstTouch);
-        });
-
-        function enterFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log('Fullscreen requires user interaction');
-                });
-                document.body.classList.add('app-fullscreen');
-            } else {
-                document.body.classList.add('app-fullscreen');
-            }
+        summary = {
+            "max_speed": max_speed,
+            "avg_speed": avg_speed,
+            "avg_cadence": round(sum(valid_cad)/len(valid_cad), 1) if valid_cad else 0,
+            "elevation_gain": round(total_climbing, 1),
+            "total_calories": total_calories,
+            "avg_power": round(sum(power_list)/len(power_list), 1),
+            "max_power": round(max(power_list), 1),
+            "distance_km": round(total_dist, 2),
+            "avg_hr": round(sum(valid_hr)/len(valid_hr), 0) if valid_hr else None,
+            "max_hr": round(max(valid_hr), 0) if valid_hr else None,
+            "avg_temp": avg_temp,
+            "min_temp": min_temp,
+            "max_temp": max_temp,
+            "has_temperature": has_temperature,
+            "has_hr": len(valid_hr) > 0,
         }
 
-        function exitFullscreen() {
-            if (document.fullscreenElement) {
-                document.exitFullscreen().catch(err => {});
-            }
-            document.body.classList.remove('app-fullscreen');
-        }
+        file_hash = hashlib.md5(json.dumps(points).encode()).hexdigest()
+        filename = f"live_ride_{file_hash[:8]}.json"
 
-        document.addEventListener('fullscreenchange', function() {
-            const isFullscreen = !!document.fullscreenElement;
-            if (isFullscreen) {
-                document.body.classList.add('app-fullscreen');
-            } else {
-                document.body.classList.remove('app-fullscreen');
-            }
-            if (recMap) {
-                setTimeout(() => recMap.invalidateSize(), 300);
-            }
-            if (mapsTabMap) {
-                setTimeout(() => mapsTabMap.invalidateSize(), 300);
-            }
-        });
-
-        // ── Theme ──────────────────────────────────────────
-        function applyTheme(theme) {
-            if (theme === 'dark') {
-                document.body.classList.add('dark-theme');
-            } else {
-                document.body.classList.remove('dark-theme');
-            }
-            localStorage.setItem('fit-reader-theme', theme);
-        }
-        function toggleDarkMode() {
-            const isDark = document.body.classList.contains('dark-theme');
-            applyTheme(isDark ? 'light' : 'dark');
-        }
-        const savedTheme = localStorage.getItem('fit-reader-theme') || 'light';
-        applyTheme(savedTheme);
-
-        // ── Fullscreen toggle for recording modal ──────────
-        function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    showToast('Fullscreen denied', 'error');
-                });
-                document.body.classList.add('app-fullscreen');
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
-                document.body.classList.remove('app-fullscreen');
-            }
-        }
-
-        // ── Tab Navigation ─────────────────────────────────
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        const tabContents = {
-            home: document.getElementById('tab-home'),
-            maps: document.getElementById('tab-maps'),
-            record: document.getElementById('tab-record'),
-            activities: document.getElementById('tab-activities'),
-            profile: document.getElementById('tab-profile')
-        };
-
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const tab = this.dataset.tab;
-                tabBtns.forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                Object.keys(tabContents).forEach(key => {
-                    tabContents[key].classList.toggle('active', key === tab);
-                });
-                if (tab === 'maps') {
-                    setTimeout(initMapsTabMap, 200);
-                }
-                if (tab === 'activities') {
-                    loadActivitiesTab();
-                }
-                if (tab === 'profile') {
-                    loadProfile();
-                }
-            });
-        });
-
-        // ── Maps Tab Map ────────────────────────────────────
-        let mapsTabMap = null;
-        function initMapsTabMap() {
-            const container = document.getElementById('mapsTabMap');
-            if (!container) return;
-            if (mapsTabMap) {
-                mapsTabMap.invalidateSize();
-                return;
-            }
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    mapsTabMap = L.map('mapsTabMap').setView([pos.coords.latitude, pos.coords.longitude], 13);
-                    setupMapLayers(mapsTabMap);
-                },
-                () => {
-                    mapsTabMap = L.map('mapsTabMap').setView([40.7128, -74.0060], 13);
-                    setupMapLayers(mapsTabMap);
-                },
-                { enableHighAccuracy: true, timeout: 5000 }
-            );
-        }
-        function setupMapLayers(map) {
-            const isDark = document.body.classList.contains('dark-theme');
-            const tileUrl = isDark ?
-                'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png' :
-                'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-            L.tileLayer(tileUrl, {
-                attribution: isDark ? '&copy; CartoDB' : '&copy; OpenStreetMap',
-                maxZoom: 19
-            }).addTo(map);
-            L.marker(map.getCenter()).addTo(map)
-                .bindPopup('📍 Your location<br>Rides will appear here')
-                .openPopup();
-        }
-
-        // ── Activities Tab ──────────────────────────────────
-        function loadActivitiesTab() {
-            const list = document.getElementById('rideListActivities');
-            if (allRides && allRides.length > 0) {
-                renderRidesInContainer(allRides, 'rideListActivities');
-                document.getElementById('rideCountActivities').textContent = `${allRides.length} activities`;
-            } else {
-                loadRides();
-            }
-        }
-
-        function renderRidesInContainer(rides, containerId) {
-            const list = document.getElementById(containerId);
-            if (!list) return;
-            if (rides.length === 0) {
-                list.innerHTML = `<div class="no-rides"><span class="big-icon">🏃</span><p>No activities found</p></div>`;
-                return;
-            }
-            list.innerHTML = '';
-            rides.forEach(ride => {
-                const summary = ride.summary || {};
-                const rideType = rideTypes.find(t => t.id === ride.ride_type) || { icon: '🚴', name: 'Cycling', color: '#fc4c02' };
-                const color = rideType.color || '#fc4c02';
-                const div = document.createElement('div');
-                div.className = 'ride-item';
-                const dateStr = ride.ride_date ? new Date(ride.ride_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown';
-                div.innerHTML = `
-                    <div class="ride-card-header">
-                        <div class="ride-icon" style="background: ${color}1a; color: ${color};">${rideType.icon}</div>
-                        <div class="ride-title-block">
-                            <div class="ride-name">${ride.filename || 'Unnamed'}</div>
-                            <div class="ride-meta"><span>${dateStr}</span><span class="ride-type-badge" style="background: ${color}1a; color: ${color};">${rideType.name}</span></div>
-                        </div>
-                    </div>
-                    <div class="ride-stats">
-                        <div class="stat-block"><span class="stat-num-label">Distance</span><span class="stat-num-value">${summary.distance_km || 0} km</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Elevation</span><span class="stat-num-value">${summary.elevation_gain || 0} m</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
-                    </div>
-                    <div class="actions">
-                        <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
-                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
-                    </div>
-                `;
-                div.onclick = () => viewSummary(ride.id);
-                list.appendChild(div);
-            });
-        }
-
-        // ── Existing State ──────────────────────────────────
-        let selectedType = 'all';
-        let rideTypes = [];
-        let allRides = [];
-        let uploadInProgress = false;
-        let recWatchId = null, recPoints = [], recStartTime = null, recElapsedBeforePause = 0, recTimerInterval = null;
-        let recTotalDistanceKm = 0, recLastPoint = null, recIsPaused = false, recIsRecording = false;
-        let recMap = null, recPolyline = null, recMarker = null;
-        let mapInitialized = false;
-        let currentMapStyle = 'standard';
-
-        // ── Temperature polling state ──────────────────────
-        let tempPollInterval = null;
-        const tempStream = [];
-        let currentTemp = null;
-
-        // Map style configurations
-        const mapStyles = {
-            standard: {
-                url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                attribution: '&copy; OpenStreetMap'
+        ride_data = {
+            "filename": filename,
+            "file_hash": file_hash,
+            "summary": summary,
+            "streams": {
+                "timestamps": timestamps,
+                "speed": speeds_kmh,
+                "cadence": cadence_list,
+                "elevation": elevation_list,
+                "power": [round(float(p), 1) for p in power_list],
+                "heart_rate": hr_list,
+                "temperature": temperature_stream,   # store full stream for chart
             },
-            satellite: {
-                url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-                attribution: '&copy; Esri, Maxar, Earthstar Geographics'
-            },
-            terrain: {
-                url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',
-                attribution: '&copy; OpenTopoMap'
-            },
-            dark: {
-                url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-                attribution: '&copy; CartoDB'
-            },
-            outdoor: {
-                url: 'https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=6170aad10dfd42a38d4d8c709a536f38',
-                attribution: '&copy; Thunderforest'
-            },
-            transit: {
-                url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-                attribution: '&copy; CartoDB'
-            }
-        };
-
-        // ── Sensor State ────────────────────────────────────
-        let connectedDevices = [];
-        let sensorData = { heartRate: null, cadence: null, power: null, speed: null };
-        let deviceIdCounter = 0;
-        let isScanning = false;
-        let sensorConnectionState = {
-            heartRate: false,
-            cadence: false,
-            power: false,
-            speed: false
-        };
-        let sensorTimeouts = {
-            heartRate: null,
-            cadence: null,
-            power: null,
-            speed: null
-        };
-        const SENSOR_TIMEOUT_MS = 3000;
-
-        // ── Profile Data ────────────────────────────────────
-        let profileData = {};
-
-        // ── Activity Types ─────────────────────────────────
-        async function loadRideTypes() {
-            try {
-                const response = await fetch('/ride-types');
-                rideTypes = await response.json();
-                renderActivityButtons();
-                populateModalSelect();
-                populateProfileDefaultTypeSelect();
-            } catch (error) {
-                console.error(error);
-                showToast('❌ Failed to load activity types', 'error');
-            }
+            "zone_distribution": zone_distribution,
+            "route": route
         }
 
-        function renderActivityButtons() {
-            const grid = document.getElementById('activityGrid');
-            grid.innerHTML = '';
-            const allBtn = document.createElement('button');
-            allBtn.className = `activity-btn ${selectedType === 'all' ? 'active' : ''}`;
-            allBtn.innerHTML = `<span class="icon">📊</span> All`;
-            allBtn.onclick = () => selectType('all');
-            grid.appendChild(allBtn);
-            rideTypes.forEach(type => {
-                const btn = document.createElement('button');
-                btn.className = `activity-btn ${selectedType === type.id ? 'active' : ''}`;
-                btn.innerHTML = `<span class="icon">${type.icon}</span> ${type.name} <span class="badge" id="badge-${type.id}">0</span>`;
-                btn.onclick = () => selectType(type.id);
-                grid.appendChild(btn);
-            });
-        }
+        ride_id = save_user_ride(session['user']['username'], ride_data, ride_type)
+        return jsonify({"status": "saved", "id": ride_id, "ride_type": ride_type})
 
-        function populateModalSelect() {
-            const select = document.getElementById('recRideTypeSelect');
-            if (!select) return;
-            select.innerHTML = '';
-            rideTypes.forEach(type => {
-                const option = document.createElement('option');
-                option.value = type.id;
-                option.textContent = `${type.icon} ${type.name}`;
-                select.appendChild(option);
-            });
-            if (profileData.default_activity_type) {
-                select.value = profileData.default_activity_type;
-            } else if (selectedType !== 'all') {
-                select.value = selectedType;
-            }
-        }
+    except Exception as e:
+        err = traceback.format_exc()
+        print(err)
+        return jsonify({"error": str(e), "detail": err}), 500
 
-        function populateProfileDefaultTypeSelect() {
-            const select = document.getElementById('pDefaultType');
-            if (!select) return;
-            select.innerHTML = '';
-            rideTypes.forEach(type => {
-                const option = document.createElement('option');
-                option.value = type.id;
-                option.textContent = `${type.icon} ${type.name}`;
-                select.appendChild(option);
-            });
-            if (profileData.default_activity_type) {
-                select.value = profileData.default_activity_type;
-            }
-        }
+@app.route('/download/<int:ride_id>')
+@login_required
+def download_ride(ride_id):
+    rides = get_user_rides(session['user']['username'])
+    ride = next((r for r in rides if r.get('id') == ride_id), None)
+    if not ride:
+        return jsonify({"error": "Ride not found"}), 404
+    filename = ride.get('filename')
+    if not filename:
+        return jsonify({"error": "File not found"}), 404
+    file_path = os.path.join(UPLOAD_FOLDER, filename)
+    if not os.path.exists(file_path):
+        return jsonify({"error": "File not found on server"}), 404
+    return send_file(file_path, as_attachment=True, download_name=filename)
 
-        function selectType(typeId) {
-            selectedType = typeId;
-            document.querySelectorAll('.activity-btn').forEach(b => b.classList.remove('active'));
-            const buttons = document.querySelectorAll('.activity-btn');
-            const index = typeId === 'all' ? 0 : rideTypes.findIndex(t => t.id === typeId) + 1;
-            if (buttons[index]) buttons[index].classList.add('active');
-            const filterBadge = document.getElementById('filterBadge');
-            if (typeId === 'all') filterBadge.textContent = 'All Types';
-            else {
-                const type = rideTypes.find(t => t.id === typeId);
-                filterBadge.textContent = `${type.icon} ${type.name}`;
-            }
-            const modalSelect = document.getElementById('recRideTypeSelect');
-            if (modalSelect) modalSelect.value = typeId;
-            loadRides();
-        }
+# ─── Share route with lazy PIL import ────────────────────────
+@app.route('/share/<int:ride_id>')
+@login_required
+def share_ride(ride_id):
+    from PIL import Image, ImageDraw, ImageFont  # <-- lazy import
 
-        // ── Stats & Rides ──────────────────────────────────
-        function updateStats(rides) {
-            let totalRides = rides.length, totalDistance = 0, totalElevation = 0, totalCalories = 0;
-            rides.forEach(ride => {
-                const s = ride.summary || {};
-                totalDistance += s.distance_km || 0;
-                totalElevation += s.elevation_gain || 0;
-                totalCalories += s.total_calories || 0;
-            });
-            document.getElementById('totalRides').textContent = totalRides;
-            document.getElementById('totalDistance').innerHTML = `${totalDistance.toFixed(1)} <span class="stat-unit">km</span>`;
-            document.getElementById('totalElevation').innerHTML = `${totalElevation.toFixed(0)} <span class="stat-unit">m</span>`;
-            document.getElementById('totalCalories').textContent = Math.round(totalCalories);
-            document.getElementById('rideCount').textContent = `${totalRides} activities`;
-        }
+    rides = get_user_rides(session['user']['username'])
+    ride = next((r for r in rides if r.get('id') == ride_id), None)
+    if not ride:
+        return jsonify({"error": "Ride not found"}), 404
 
-        async function loadRides() {
-            const rideList = document.getElementById('rideList');
-            rideList.innerHTML = `<div class="loading"><div class="spinner"></div><p style="margin-top:4px;font-size:0.8rem;">Loading...</p></div>`;
-            try {
-                let url = '/my-rides';
-                if (selectedType !== 'all') url += `?type=${selectedType}`;
-                const response = await fetch(url);
-                allRides = await response.json();
-                updateBadgeCounts();
-                updateStats(allRides);
-                renderRides(allRides);
-                if (document.getElementById('tab-activities').classList.contains('active')) {
-                    renderRidesInContainer(allRides, 'rideListActivities');
-                    document.getElementById('rideCountActivities').textContent = `${allRides.length} activities`;
-                }
-            } catch (error) {
-                console.error(error);
-                rideList.innerHTML = `<div class="no-rides"><span class="big-icon">❌</span><p>Failed to load</p><button onclick="loadRides()" style="margin-top:8px;padding:6px 16px;background:var(--orange);color:#fff;border:none;border-radius:20px;cursor:pointer;font-weight:600;">Retry</button></div>`;
-            }
-        }
+    summary = ride.get('summary', {})
+    ride_type = ride.get('ride_type', 'cycling')
+    ride_type_info = next((t for t in RIDE_TYPES_INFO if t['id'] == ride_type), RIDE_TYPES_INFO[0])
+    route = ride.get('route', [])
 
-        function renderRides(rides) {
-            const rideList = document.getElementById('rideList');
-            if (rides.length === 0) {
-                rideList.innerHTML = `<div class="no-rides"><span class="big-icon">🏃</span><p>No activities found</p><p style="font-size:0.8rem;margin-top:4px;">Upload your first FIT file!</p></div>`;
-                return;
-            }
-            rideList.innerHTML = '';
-            rides.forEach(ride => {
-                const summary = ride.summary || {};
-                const rideType = rideTypes.find(t => t.id === ride.ride_type) || { icon: '🚴', name: 'Cycling', color: '#fc4c02' };
-                const color = rideType.color || '#fc4c02';
-                const div = document.createElement('div');
-                div.className = 'ride-item';
-                const dateStr = ride.ride_date ? new Date(ride.ride_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown';
-                div.innerHTML = `
-                    <div class="ride-card-header">
-                        <div class="ride-icon" style="background: ${color}1a; color: ${color};">${rideType.icon}</div>
-                        <div class="ride-title-block">
-                            <div class="ride-name">${ride.filename || 'Unnamed'}</div>
-                            <div class="ride-meta"><span>${dateStr}</span><span class="ride-type-badge" style="background: ${color}1a; color: ${color};">${rideType.name}</span></div>
-                        </div>
-                    </div>
-                    <div class="ride-stats">
-                        <div class="stat-block"><span class="stat-num-label">Distance</span><span class="stat-num-value">${summary.distance_km || 0} km</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Elevation</span><span class="stat-num-value">${summary.elevation_gain || 0} m</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
-                        <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
-                    </div>
-                    <div class="actions">
-                        <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
-                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
-                    </div>
-                `;
-                div.onclick = () => viewSummary(ride.id);
-                rideList.appendChild(div);
-            });
-        }
+    width, height = 1080, 1920
+    img = Image.new('RGBA', (width, height), (0, 0, 0, 0))  # fully transparent — for IG story overlay
+    draw = ImageDraw.Draw(img)
 
-        function updateBadgeCounts() {
-            const counts = {};
-            allRides.forEach(ride => { const type = ride.ride_type || 'cycling'; counts[type] = (counts[type] || 0) + 1; });
-            rideTypes.forEach(type => {
-                const badge = document.getElementById(`badge-${type.id}`);
-                if (badge) badge.textContent = counts[type.id] || 0;
-            });
-        }
+    # ── Fonts ──────────────────────────────────────────
+    font_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "C:/Windows/Fonts/Arial.ttf",
+    ]
+    def load_font(size):
+        for path in font_paths:
+            try:
+                return ImageFont.truetype(path, size)
+            except Exception:
+                continue
+        return ImageFont.load_default()
 
-        // ── Upload ──────────────────────────────────────────
-        document.getElementById('fileInput').addEventListener('change', async function(e) {
-            const file = this.files[0];
-            if (!file) return;
-            if (uploadInProgress) { showToast('Upload in progress', 'error'); return; }
-            if (!file.name.toLowerCase().endsWith('.fit')) { showToast('Please select a .FIT file', 'error'); this.value = ''; return; }
-            uploadInProgress = true;
-            const uploadBtn = document.getElementById('uploadBtn');
-            const statusDiv = document.getElementById('uploadStatus');
-            uploadBtn.disabled = true;
-            uploadBtn.textContent = '⏳ Uploading...';
-            statusDiv.textContent = 'Checking...';
+    font_header = load_font(64)
+    font_value = load_font(68)
+    font_label = load_font(28)
+    font_footer = load_font(34)
 
-            try {
-                const formData = new FormData();
-                formData.append('fitfile', file);
-                const checkResponse = await fetch('/check-duplicate', { method: 'POST', body: formData });
-                const checkResult = await checkResponse.json();
-                let overwrite = false;
-                if (checkResult.is_duplicate) {
-                    statusDiv.textContent = '⚠️ Duplicate detected!';
-                    const userConfirmed = confirm(`Overwrite existing ride (ID: ${checkResult.duplicate_id})?`);
-                    if (userConfirmed) { overwrite = true; statusDiv.textContent = 'Overwriting...'; } else {
-                        statusDiv.textContent = 'Cancelled';
-                        uploadInProgress = false;
-                        uploadBtn.disabled = false;
-                        uploadBtn.textContent = '📁 Choose FIT File';
-                        this.value = '';
-                        return;
-                    }
-                }
-                const uploadFormData = new FormData();
-                uploadFormData.append('fitfile', file);
-                uploadFormData.append('ride_type', selectedType === 'all' ? 'cycling' : selectedType);
-                if (overwrite && checkResult.duplicate_id) uploadFormData.append('overwrite_id', checkResult.duplicate_id);
-                statusDiv.textContent = 'Uploading & parsing...';
-                const uploadResponse = await fetch('/upload', { method: 'POST', body: uploadFormData });
-                const result = await uploadResponse.json();
-                if (uploadResponse.ok) {
-                    showToast('✅ Upload successful!', 'success');
-                    statusDiv.textContent = '✅ Complete!';
-                    await loadRides();
-                    this.value = '';
-                } else {
-                    showToast(`❌ Upload failed: ${result.error || 'Unknown error'}`, 'error');
-                    statusDiv.textContent = `❌ Error: ${result.error || 'Unknown error'}`;
-                }
-            } catch (error) {
-                console.error(error);
-                showToast('❌ Upload failed', 'error');
-                statusDiv.textContent = '❌ Upload failed';
-            } finally {
-                uploadInProgress = false;
-                uploadBtn.disabled = false;
-                uploadBtn.textContent = '📁 Choose FIT File';
-            }
-        });
+    def centered_text(y, text, font, fill, cx=width // 2):
+        bbox = draw.textbbox((0, 0), text, font=font)
+        w = bbox[2] - bbox[0]
+        draw.text((cx - w / 2, y), text, font=font, fill=fill)
 
-        // ── Actions ────────────────────────────────────────
-        function downloadRide(rideId) { window.location.href = `/download/${rideId}`; }
-        function shareRide(rideId) { window.open(`/share/${rideId}`, '_blank'); }
-        function viewSummary(rideId) { window.open(`/ride-summary/${rideId}`, '_blank'); }
+    # ── Header ─────────────────────────────────────────
+    centered_text(90, f"{ride_type_info['icon']}  {ride_type_info['name']}", font_header, (255, 255, 255, 255))
 
-        async function deleteRide(rideId) {
-            if (!confirm('Delete this activity?')) return;
-            try {
-                const response = await fetch(`/ride/${rideId}`, { method: 'DELETE' });
-                const result = await response.json();
-                if (response.ok) { showToast('🗑️ Deleted', 'success'); await loadRides(); } else showToast(`❌ Failed: ${result.error || 'Unknown error'}`, 'error');
-            } catch (error) { console.error(error); showToast('❌ Delete failed', 'error'); }
-        }
+    # ── Stats: 2 cols x 3 rows, centered as one block ──
+    stats = [
+        ("Distance", f"{summary.get('distance_km', 0):.2f} km", (255, 255, 255, 255)),
+        ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h", (66, 153, 225, 255)),
+        ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m", (241, 196, 15, 255)),
+        ("Calories", f"{summary.get('total_calories', 0)}", (255, 138, 101, 255)),
+        ("Avg Power", f"{summary.get('avg_power', 0):.0f} W", (155, 89, 182, 255)),
+        ("Avg HR", f"{summary.get('avg_hr', 0):.0f} bpm" if summary.get('avg_hr') else "— bpm", (231, 76, 60, 255)),
+    ]
+    col_centers = [width * 0.28, width * 0.72]
+    row_start_y, row_height = 300, 190
+    for i, (label, value, color) in enumerate(stats):
+        col, row = i % 2, i // 2
+        cx = col_centers[col]
+        y = row_start_y + row * row_height
+        centered_text(y, label.upper(), font_label, (150, 150, 155, 255), cx=cx)
+        centered_text(y + 40, value, font_value, color, cx=cx)
 
-        // ── Toast ──────────────────────────────────────────
-        function showToast(message, type = 'info') {
-            const toast = document.getElementById('toast');
-            toast.textContent = message;
-            toast.className = `toast ${type}`;
-            toast.classList.add('show');
-            clearTimeout(toast._timeout);
-            toast._timeout = setTimeout(() => toast.classList.remove('show'), 3500);
-        }
+    # ── Route: large, centered, dedicated lower-middle section ──
+    box_x0, box_y0 = 120, 950
+    box_x1, box_y1 = width - 120, 1550
+    box_w, box_h = box_x1 - box_x0, box_y1 - box_y0
 
-        // ── Sensor UI ──────────────────────────────────────
-        function updateSensorBtnUI() {
-            const mainBtn = document.getElementById('sensorBtnProfile');
-            const modalBtn = document.getElementById('modalSensorBtn');
-            const hasDevices = connectedDevices.length > 0;
-            const mainText = hasDevices ? `📡 ${connectedDevices.length} Connected` : '🔍 Search Sensors';
-            if (mainBtn) {
-                mainBtn.textContent = mainText;
-                if (hasDevices) mainBtn.style.borderColor = '#48bb78';
-                else mainBtn.style.borderColor = '';
-            }
-            if (modalBtn) {
-                if (hasDevices) { modalBtn.style.background = 'rgba(72,187,120,0.85)'; modalBtn.style.color = 'white'; }
-                else { modalBtn.style.background = 'rgba(0,0,0,0.6)'; modalBtn.style.color = 'white'; }
-            }
-        }
+    if len(route) > 1:
+        lats = [p[0] for p in route]
+        lngs = [p[1] for p in route]
+        min_lat, max_lat = min(lats), max(lats)
+        min_lng, max_lng = min(lngs), max(lngs)
+        lat_range = (max_lat - min_lat) or 1e-6
+        lng_range = (max_lng - min_lng) or 1e-6
 
-        function updateSensorUI() {
-            if (sensorConnectionState.heartRate && sensorData.heartRate === null) {
-                document.getElementById('recHR').textContent = '0';
-            } else {
-                document.getElementById('recHR').textContent = sensorData.heartRate !== null ? sensorData.heartRate : '--';
-            }
-            if (sensorConnectionState.cadence && sensorData.cadence === null) {
-                document.getElementById('recCadence').textContent = '0';
-            } else {
-                document.getElementById('recCadence').textContent = sensorData.cadence !== null ? sensorData.cadence : '--';
-            }
-            if (sensorConnectionState.power && sensorData.power === null) {
-                document.getElementById('recPower').textContent = '0';
-            } else {
-                document.getElementById('recPower').textContent = sensorData.power !== null ? sensorData.power : '--';
-            }
-            updateTemperatureUI();
-        }
+        padding = 40
+        avail_w, avail_h = box_w - 2 * padding, box_h - 2 * padding
+        scale = min(avail_w / lng_range, avail_h / lat_range)
 
-        function updateTemperatureUI() {
-            document.getElementById('recTemp').textContent = currentTemp !== null ? currentTemp.toFixed(1) : '--';
-        }
+        drawn_w, drawn_h = lng_range * scale, lat_range * scale
+        offset_x = box_x0 + padding + (avail_w - drawn_w) / 2
+        offset_y = box_y0 + padding + (avail_h - drawn_h) / 2
 
-        function clearSensorValue(sensorKey) {
-            if (sensorData[sensorKey] !== null) {
-                sensorData[sensorKey] = null;
-                updateSensorUI();
-            }
-        }
+        points = [
+            (offset_x + (lng - min_lng) * scale, offset_y + (max_lat - lat) * scale)
+            for lat, lng in route
+        ]
 
-        function resetSensorTimeout(sensorKey) {
-            if (sensorTimeouts[sensorKey]) {
-                clearTimeout(sensorTimeouts[sensorKey]);
-                sensorTimeouts[sensorKey] = null;
-            }
-            sensorTimeouts[sensorKey] = setTimeout(() => {
-                clearSensorValue(sensorKey);
-                sensorTimeouts[sensorKey] = null;
-            }, SENSOR_TIMEOUT_MS);
-        }
+        draw.line(points, fill=(252, 76, 2, 255), width=8, joint="curve")
 
-        // ── Profile Management ─────────────────────────────
-        async function loadProfile() {
-            try {
-                const response = await fetch('/profile');
-                if (!response.ok) throw new Error('Failed to fetch profile');
-                profileData = await response.json();
-                document.getElementById('pWeight').value = profileData.weight || '';
-                document.getElementById('pFtp').value = profileData.ftp || '';
-                document.getElementById('pBikeName').value = profileData.bike_name || '';
-                document.getElementById('pBikeWeight').value = profileData.bike_weight || '';
-                document.getElementById('pWheelCirc').value = profileData.wheel_circumference || '';
-                document.getElementById('pCrankLen').value = profileData.crank_length || '';
-                document.getElementById('pMaxHR').value = profileData.max_heart_rate || '';
-                document.getElementById('pGender').value = profileData.gender || '';
-                document.getElementById('pNotes').value = profileData.notes || '';
-                
-                const mapStyleSelect = document.getElementById('pMapStyle');
-                if (profileData.map_style) {
-                    mapStyleSelect.value = profileData.map_style;
-                    currentMapStyle = profileData.map_style;
-                }
-                
-                const defaultTypeSelect = document.getElementById('pDefaultType');
-                if (profileData.default_activity_type) {
-                    defaultTypeSelect.value = profileData.default_activity_type;
-                } else if (rideTypes.length > 0) {
-                    defaultTypeSelect.value = rideTypes[0].id;
-                }
-                populateModalSelect();
-            } catch (error) {
-                console.warn('Could not load profile, using defaults:', error);
-            }
-        }
+        r = 14
+        draw.ellipse([points[0][0]-r, points[0][1]-r, points[0][0]+r, points[0][1]+r], fill=(72, 187, 120, 255))
+        draw.ellipse([points[-1][0]-r, points[-1][1]-r, points[-1][0]+r, points[-1][1]+r], fill=(252, 76, 2, 255))
+    else:
+        centered_text((box_y0 + box_y1) // 2, "No GPS data available", font_footer, (120, 120, 125, 255))
 
-        async function saveProfile() {
-            const data = {
-                weight: parseFloat(document.getElementById('pWeight').value) || 0,
-                ftp: parseInt(document.getElementById('pFtp').value) || 0,
-                bike_name: document.getElementById('pBikeName').value.trim(),
-                bike_weight: parseFloat(document.getElementById('pBikeWeight').value) || 0,
-                wheel_circumference: parseInt(document.getElementById('pWheelCirc').value) || 2105,
-                crank_length: parseFloat(document.getElementById('pCrankLen').value) || 172.5,
-                max_heart_rate: parseInt(document.getElementById('pMaxHR').value) || 0,
-                gender: document.getElementById('pGender').value,
-                default_activity_type: document.getElementById('pDefaultType').value,
-                map_style: document.getElementById('pMapStyle').value,
-                notes: document.getElementById('pNotes').value.trim()
-            };
-            try {
-                const response = await fetch('/profile', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                if (!response.ok) throw new Error('Save failed');
-                const result = await response.json();
-                profileData = result;
-                currentMapStyle = data.map_style;
-                showToast('✅ Profile saved!', 'success');
-                populateModalSelect();
-                if (recMap) {
-                    changeRecordMapStyle(currentMapStyle);
-                }
-            } catch (error) {
-                console.error(error);
-                showToast('❌ Failed to save profile', 'error');
-            }
-        }
+    # ── Footer logo ─────────────────────────────────────
+    centered_text(height - 130, f"{ride_type_info['icon']}  FIT READER", font_footer, (252, 76, 2, 255))
 
-        // ── Sensor Connection ──────────────────────────────
-        async function connectSensor() {
-            if (isScanning) { showToast('⏳ Scan already in progress...', 'info'); return; }
-            if (!('bluetooth' in navigator)) { showToast('❌ Web Bluetooth not supported.', 'error'); return; }
-            isScanning = true;
-            try {
-                const device = await navigator.bluetooth.requestDevice({
-                    filters: [
-                        { services: ['heart_rate'] },
-                        { services: ['cycling_speed_and_cadence'] },
-                        { services: ['cycling_power'] }
-                    ],
-                    optionalServices: ['heart_rate', 'cycling_speed_and_cadence', 'cycling_power']
-                });
-                showToast(`Connecting to ${device.name || 'Device'}...`, 'info');
-                const server = await device.gatt.connect();
-                const uniqueId = `${device.id}-${deviceIdCounter++}`;
-                const devInfo = { id: uniqueId, rawDeviceId: device.id, device, server, name: device.name || 'Device' };
-                connectedDevices.push(devInfo);
-                updateSensorBtnUI();
-                showToast(`✅ Connected to ${devInfo.name}`, 'success');
-                await setupSensorListeners(server, uniqueId);
-                server.addEventListener('gattserverdisconnected', () => {
-                    const idx = connectedDevices.findIndex(d => d.id === uniqueId);
-                    if (idx > -1) { 
-                        connectedDevices.splice(idx, 1); 
-                        updateSensorBtnUI();
-                        Object.keys(sensorData).forEach(key => {
-                            sensorData[key] = null;
-                            sensorConnectionState[key] = false;
-                            if (sensorTimeouts[key]) {
-                                clearTimeout(sensorTimeouts[key]);
-                                sensorTimeouts[key] = null;
-                            }
-                        });
-                        updateSensorUI();
-                        showToast(`⚠️ ${devInfo.name} disconnected`, 'error'); 
-                    }
-                });
-            } catch (error) {
-                console.error("Connection error:", error);
-                let errorMsg = 'Connection failed';
-                if (error.name === 'NotFoundError' || error.name === 'AbortError' || error.message?.includes('cancel'))
-                    errorMsg = 'Scan cancelled';
-                else if (error.name === 'NotAllowedError') errorMsg = 'Permission denied.';
-                else if (error.name === 'SecurityError') errorMsg = 'HTTPS required.';
-                else if (error.name === 'NetworkError') errorMsg = 'Bluetooth hardware not found.';
-                else if (error.message?.includes('GATT')) errorMsg = 'GATT connection failed.';
-                showToast(`❌ ${errorMsg}`, 'error');
-            } finally { isScanning = false; }
-        }
+    buffer = BytesIO()
+    img.save(buffer, format='PNG')
+    buffer.seek(0)
+    return send_file(buffer, mimetype='image/png', as_attachment=True, download_name=f"ride_story_{ride_id}.png")
 
-        async function setupSensorListeners(server, devId) {
-            let cscState = { lastCrankRevs: 0, lastCrankTime: 0, lastWheelRevs: 0, lastWheelTime: 0 };
-            try {
-                const hrService = await server.getPrimaryService('heart_rate');
-                const hrChar = await hrService.getCharacteristic('heart_rate_measurement');
-                await hrChar.startNotifications();
-                sensorConnectionState.heartRate = true;
-                updateSensorUI();
-                hrChar.addEventListener('characteristicvaluechanged', event => {
-                    const value = event.target.value;
-                    const flags = value.getUint8(0);
-                    let hr = 0;
-                    if (flags & 0x01) hr = value.getUint16(1, true);
-                    else hr = value.getUint8(1);
-                    sensorData.heartRate = hr;
-                    resetSensorTimeout('heartRate');
-                    updateSensorUI();
-                });
-            } catch (e) { 
-                console.warn(`[${devId}] HR not found`);
-                sensorConnectionState.heartRate = false;
-                updateSensorUI();
-            }
+@app.route('/ride-summary/<int:ride_id>')
+@login_required
+def ride_summary(ride_id):
+    rides = get_user_rides(session['user']['username'])
+    ride = next((r for r in rides if r.get('id') == ride_id), None)
+    if not ride:
+        return "Ride not found", 404
+    ride_type_info = next((t for t in RIDE_TYPES_INFO if t['id'] == ride.get('ride_type', 'cycling')), RIDE_TYPES_INFO[0])
+    return render_template('ride_summary.html',
+                           ride=ride,
+                           ride_type=ride_type_info,
+                           route=ride.get('route', []),
+                           summary=ride.get('summary', {}),
+                           streams=ride.get('streams', {}),
+                           zone_distribution=ride.get('zone_distribution', []),
+                           user=session['user'])
 
-            try {
-                const cscService = await server.getPrimaryService('cycling_speed_and_cadence');
-                const cscChar = await cscService.getCharacteristic('csc_measurement');
-                await cscChar.startNotifications();
-                sensorConnectionState.cadence = true;
-                sensorConnectionState.speed = true;
-                updateSensorUI();
-                cscChar.addEventListener('characteristicvaluechanged', event => {
-                    const value = event.target.value;
-                    const flags = value.getUint8(0);
-                    let offset = 1;
-                    if (flags & 0x01) {
-                        const wheelRevs = value.getUint32(offset, true);
-                        const wheelTime = value.getUint16(offset + 4, true);
-                        if (cscState.lastWheelRevs > 0) {
-                            const revDiff = wheelRevs - cscState.lastWheelRevs;
-                            const timeDiff = (wheelTime - cscState.lastWheelTime) / 1024;
-                            if (timeDiff > 0) {
-                                const wheelCirc = 2.1;
-                                const speedKmh = (revDiff * wheelCirc / timeDiff) * 3.6;
-                                sensorData.speed = speedKmh;
-                                resetSensorTimeout('speed');
-                                updateSensorUI();
-                            }
-                        }
-                        cscState.lastWheelRevs = wheelRevs;
-                        cscState.lastWheelTime = wheelTime;
-                        offset += 6;
-                    }
-                    if (flags & 0x02) {
-                        const crankRevs = value.getUint16(offset, true);
-                        const crankTime = value.getUint16(offset + 2, true);
-                        if (cscState.lastCrankRevs > 0) {
-                            const revDiff = crankRevs - cscState.lastCrankRevs;
-                            const timeDiff = (crankTime - cscState.lastCrankTime) / 1024;
-                            if (timeDiff > 0) {
-                                const cadenceRpm = (revDiff / timeDiff) * 60;
-                                sensorData.cadence = Math.round(cadenceRpm);
-                                resetSensorTimeout('cadence');
-                                updateSensorUI();
-                            }
-                        }
-                        cscState.lastCrankRevs = crankRevs;
-                        cscState.lastCrankTime = crankTime;
-                    }
-                });
-            } catch (e) { 
-                console.warn(`[${devId}] CSC not found`);
-                sensorConnectionState.cadence = false;
-                sensorConnectionState.speed = false;
-                updateSensorUI();
-            }
+@app.route('/test-db')
+def test_db():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT version()")
+        version = cur.fetchone()
+        cur.close()
+        conn.close()
+        return jsonify({"status": "✅ Connected!", "version": version[0]})
+    except Exception as e:
+        return jsonify({"status": "❌ Failed", "error": str(e)}), 500
 
-            try {
-                const powerService = await server.getPrimaryService('cycling_power');
-                const powerChar = await powerService.getCharacteristic('cycling_power_measurement');
-                await powerChar.startNotifications();
-                sensorConnectionState.power = true;
-                updateSensorUI();
-                powerChar.addEventListener('characteristicvaluechanged', event => {
-                    const value = event.target.value;
-                    const powerVal = value.getUint16(2, true);
-                    sensorData.power = powerVal;
-                    resetSensorTimeout('power');
-                    updateSensorUI();
-                });
-            } catch (e) { 
-                console.warn(`[${devId}] Power not found`);
-                sensorConnectionState.power = false;
-                updateSensorUI();
-            }
-        }
+@app.route('/db-status')
+def db_status():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public' ORDER BY table_name")
+        tables = cur.fetchall()
+        cur.close()
+        conn.close()
+        return jsonify({"status": "✅ OK", "tables": [t[0] for t in tables]})
+    except Exception as e:
+        return jsonify({"status": "❌ Error", "error": str(e)}), 500
 
-        // ── Recording Map with Styles ──────────────────────
-        function changeRecordMapStyle(styleName) {
-            if (!recMap) {
-                currentMapStyle = styleName;
-                document.querySelectorAll('.map-style-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.style === styleName);
-                });
-                return;
-            }
-            
-            currentMapStyle = styleName;
-            const style = mapStyles[styleName];
-            if (!style) return;
-            
-            document.querySelectorAll('.map-style-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.style === styleName);
-            });
-            
-            recMap.eachLayer(layer => {
-                if (layer instanceof L.TileLayer) {
-                    recMap.removeLayer(layer);
-                }
-            });
-            
-            L.tileLayer(style.url, {
-                attribution: style.attribution,
-                maxZoom: 19
-            }).addTo(recMap);
-            
-            if (recPolyline) {
-                recMap.addLayer(recPolyline);
-            }
-            if (recMarker) {
-                recMap.addLayer(recMarker);
-            }
-            
-            showToast(`🗺️ ${styleName.charAt(0).toUpperCase() + styleName.slice(1)} map`, 'success');
-        }
+@app.route('/health')
+def health():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("SELECT 1")
+        cur.close()
+        conn.close()
+        return jsonify({"status": "healthy"})
+    except:
+        return jsonify({"status": "unhealthy"}), 500
 
-        function initRecordMap(lat, lng) {
-            if (recMap) { recMap.remove(); recMap = null; recPolyline = null; recMarker = null; }
-            const container = document.getElementById('recordMap');
-            if (!container) return;
-            container.style.width = '100%';
-            container.style.height = '100%';
-            container.style.minHeight = '300px';
-            container.style.display = 'block';
-
-            const styleName = currentMapStyle || profileData.map_style || 'standard';
-            const style = mapStyles[styleName];
-            
-            document.querySelectorAll('.map-style-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.style === styleName);
-            });
-
-            requestAnimationFrame(() => {
-                const rect = container.getBoundingClientRect();
-                if (rect.width === 0 || rect.height === 0) { setTimeout(() => initRecordMap(lat, lng), 100); return; }
-                try {
-                    recMap = L.map('recordMap', { center: [lat, lng], zoom: 16, zoomControl: true, fadeAnimation: true, attributionControl: true });
-                    
-                    L.tileLayer(style.url, {
-                        attribution: style.attribution,
-                        maxZoom: 19
-                    }).addTo(recMap);
-                    
-                    recPolyline = L.polyline([], { color: '#fc4c02', weight: 4, opacity: 0.9, smoothFactor: 1 }).addTo(recMap);
-                    recMarker = L.circleMarker([lat, lng], { radius: 7, color: '#fff', weight: 2, fillColor: '#48bb78', fillOpacity: 1 }).addTo(recMap);
-                    setTimeout(() => { if (recMap) { recMap.invalidateSize(true); recMap.setView([lat, lng], 16); } }, 100);
-                    const resizeHandler = () => { if (recMap) recMap.invalidateSize(); };
-                    window.addEventListener('resize', resizeHandler);
-                    recMap._resizeHandler = resizeHandler;
-                    mapInitialized = true;
-                    setGpsStatus('Ready', '');
-                } catch (err) {
-                    console.error('Leaflet map init error:', err);
-                    setGpsStatus('Map error', 'error');
-                    showToast('❌ Map failed to load', 'error');
-                }
-            });
-        }
-
-        function updateRecordMap(lat, lng) {
-            if (!recMap) { initRecordMap(lat, lng); return; }
-            try {
-                if (recPolyline) recPolyline.addLatLng([lat, lng]);
-                if (recMarker) recMarker.setLatLng([lat, lng]);
-                recMap.panTo([lat, lng], { animate: true, duration: 0.5 });
-            } catch (err) { console.warn('Map update error:', err); }
-        }
-
-        function teardownRecordMap() {
-            if (recMap) {
-                if (recMap._resizeHandler) { window.removeEventListener('resize', recMap._resizeHandler); recMap._resizeHandler = null; }
-                recMap.remove(); recMap = null; recPolyline = null; recMarker = null; mapInitialized = false;
-            }
-        }
-
-        function setGpsStatus(text, cls) {
-            const el = document.getElementById('gpsStatus');
-            if (el) { el.textContent = text; el.className = `gps-status ${cls || ''}`; }
-        }
-
-        function formatDuration(ms) {
-            const totalSec = Math.floor(ms / 1000);
-            const h = String(Math.floor(totalSec / 3600)).padStart(2, '0');
-            const m = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0');
-            const s = String(totalSec % 60).padStart(2, '0');
-            return `${h}:${m}:${s}`;
-        }
-
-        function currentElapsedMs() {
-            if (!recStartTime) return 0;
-            if (recIsPaused) return recElapsedBeforePause;
-            return recElapsedBeforePause + (Date.now() - recStartTime);
-        }
-
-        function updateRecordUI() {
-            const durationStr = formatDuration(currentElapsedMs());
-            document.getElementById('recTimer').textContent = durationStr;
-            document.getElementById('recDistance').innerHTML = recTotalDistanceKm.toFixed(2) + ' <span class="stat-unit">km</span>';
-            const minimizedText = document.getElementById('minimizedText');
-            if (minimizedText) minimizedText.textContent = `Recording... ${durationStr} · ${recTotalDistanceKm.toFixed(2)} km`;
-            
-            const elapsedHours = currentElapsedMs() / 3600000;
-            const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
-            
-            if (recIsPaused) {
-                document.getElementById('recSpeed').textContent = avgSpeed.toFixed(1);
-                document.getElementById('recSpeed').classList.add('paused');
-            } else if (recLastPoint && recLastPoint.speed !== undefined) {
-                document.getElementById('recSpeed').textContent = recLastPoint.speed.toFixed(1);
-                document.getElementById('recSpeed').classList.remove('paused');
-            }
-            
-            const timerEl = document.getElementById('recTimer');
-            if (recIsPaused) {
-                timerEl.classList.add('paused');
-            } else {
-                timerEl.classList.remove('paused');
-            }
-        }
-
-        // ── Temperature polling (Open‑Meteo) ──────────────
-        function startTemperaturePolling(recordingStartTime) {
-            if (tempPollInterval) clearInterval(tempPollInterval);
-            tempPollInterval = setInterval(async () => {
-                navigator.geolocation.getCurrentPosition(async (pos) => {
-                    const { latitude, longitude } = pos.coords;
-                    try {
-                        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m`;
-                        const res = await fetch(url);
-                        const data = await res.json();
-                        const temp = data.current?.temperature_2m;
-                        if (temp !== undefined) {
-                            currentTemp = temp;
-                            tempStream.push({
-                                timestamp: Date.now(),
-                                elapsed_s: Math.round((Date.now() - recordingStartTime) / 1000),
-                                temp_c: temp
-                            });
-                            updateTemperatureUI();
-                        }
-                    } catch (err) {
-                        console.warn('Temperature fetch failed:', err);
-                    }
-                }, () => {
-                    console.warn('Geolocation unavailable for temperature poll');
-                });
-            }, 60000);
-        }
-
-        function stopTemperaturePolling() {
-            if (tempPollInterval) {
-                clearInterval(tempPollInterval);
-                tempPollInterval = null;
-            }
-        }
-
-        function resetTemperatureState() {
-            stopTemperaturePolling();
-            currentTemp = null;
-            tempStream.length = 0;
-            updateTemperatureUI();
-        }
-
-        // ── GPS and Recording ──────────────────────────────
-        function onGpsPosition(position) {
-            const coords = position.coords;
-            const lat = coords.latitude;
-            const lng = coords.longitude;
-            let speedKmh = 0;
-            if (coords.speed !== null && coords.speed !== undefined && coords.speed >= 0) {
-                speedKmh = coords.speed * 3.6;
-            } else if (recLastPoint) {
-                const dtSec = (position.timestamp - recLastPoint.rawTimestamp) / 1000;
-                if (dtSec > 0) {
-                    const distKm = haversineKm(recLastPoint.lat, recLastPoint.lng, lat, lng);
-                    speedKmh = (distKm / dtSec) * 3600;
-                }
-            }
-            if (recLastPoint) recTotalDistanceKm += haversineKm(recLastPoint.lat, recLastPoint.lng, lat, lng);
-            recPoints.push({
-                timestamp: new Date(position.timestamp).toISOString(),
-                lat, lng,
-                speed_kmh: speedKmh,
-                heart_rate: sensorData.heartRate || 0,
-                cadence: sensorData.cadence || 0,
-                power: sensorData.power || 0
-            });
-            recLastPoint = { lat, lng, rawTimestamp: position.timestamp, speed: speedKmh };
-            if (!recMap || !mapInitialized) initRecordMap(lat, lng);
-            else updateRecordMap(lat, lng);
-            
-            if (!recIsPaused) {
-                document.getElementById('recSpeed').textContent = speedKmh.toFixed(1);
-                document.getElementById('recSpeed').classList.remove('paused');
-            }
-            setGpsStatus('GPS locked', 'active');
-            updateRecordUI();
-            updateSensorUI();
-        }
-
-        function onGpsError(error) {
-            console.error(error);
-            let msg = 'GPS error';
-            if (error.code === error.PERMISSION_DENIED) msg = 'Permission denied';
-            else if (error.code === error.POSITION_UNAVAILABLE) msg = 'Location unavailable';
-            else if (error.code === error.TIMEOUT) msg = 'Timeout';
-            setGpsStatus(msg, 'error');
-            showToast(`❌ ${msg}`, 'error');
-        }
-
-        function haversineKm(lat1, lon1, lat2, lon2) {
-            const R = 6371;
-            const dLat = (lat2 - lat1) * Math.PI / 180;
-            const dLon = (lon2 - lon1) * Math.PI / 180;
-            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
-            return R * 2 * Math.asin(Math.sqrt(a));
-        }
-
-        function openRecordingModal() {
-            recPoints = [];
-            recTotalDistanceKm = 0;
-            recLastPoint = null;
-            recElapsedBeforePause = 0;
-            recIsPaused = false;
-            recIsRecording = false;
-            recStartTime = null;
-            resetTemperatureState();
-            teardownRecordMap();
-            document.getElementById('recordModal').style.display = 'flex';
-            document.getElementById('recordMinimizedBar').style.display = 'none';
-            setGpsStatus('Loading map...', '');
-            document.getElementById('recordMessage').textContent = 'Press "Start" when ready.';
-            document.getElementById('recStartRecordingBtn').style.display = 'inline-block';
-            document.getElementById('recPauseBtn').style.display = 'none';
-            document.getElementById('recResumeBtn').style.display = 'none';
-            document.getElementById('recStopBtn').style.display = 'none';
-            document.getElementById('recDiscardBtn').style.display = 'none';
-            document.getElementById('recTimer').textContent = '00:00:00';
-            document.getElementById('recTimer').classList.remove('paused');
-            document.getElementById('recSpeed').textContent = '0.0';
-            document.getElementById('recSpeed').classList.remove('paused');
-            document.getElementById('recDistance').innerHTML = '0.00 <span class="stat-unit">km</span>';
-            document.getElementById('recHR').textContent = '--';
-            document.getElementById('recCadence').textContent = '--';
-            document.getElementById('recPower').textContent = '--';
-            document.getElementById('recTemp').textContent = '--';
-            if (profileData.default_activity_type) {
-                document.getElementById('recRideTypeSelect').value = profileData.default_activity_type;
-            }
-            const container = document.getElementById('recordMap');
-            if (container) {
-                container.style.width = '100%';
-                container.style.height = '100%';
-                container.style.minHeight = '300px';
-                container.style.display = 'block';
-            }
-            setTimeout(() => {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude); setGpsStatus('Ready', ''); },
-                    (err) => { console.warn('Map fallback:', err); initRecordMap(40.7128, -74.0060); setGpsStatus('Location unavailable', 'error'); },
-                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
-                );
-            }, 150);
-            updateSensorUI();
-        }
-
-        function beginRecording() {
-            if (!('geolocation' in navigator)) { showToast('❌ Geolocation not supported', 'error'); return; }
-            recIsRecording = true;
-            recStartTime = Date.now();
-            startTemperaturePolling(recStartTime);
-            document.getElementById('recStartRecordingBtn').style.display = 'none';
-            document.getElementById('recPauseBtn').style.display = 'inline-block';
-            document.getElementById('recStopBtn').style.display = 'inline-block';
-            document.getElementById('recDiscardBtn').style.display = 'inline-block';
-            document.getElementById('recordMessage').textContent = '';
-            setGpsStatus('Acquiring GPS...', 'active');
-            if (!recMap || !mapInitialized) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude); startGpsWatch(); },
-                    (err) => { console.warn('GPS fallback:', err); initRecordMap(40.7128, -74.0060); startGpsWatch(); },
-                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
-                );
-            } else startGpsWatch();
-            recTimerInterval = setInterval(updateRecordUI, 1000);
-        }
-
-        function startGpsWatch() {
-            if (recWatchId !== null) { navigator.geolocation.clearWatch(recWatchId); recWatchId = null; }
-            recWatchId = navigator.geolocation.watchPosition(onGpsPosition, onGpsError, { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 });
-        }
-
-        function minimizeRecordModal() {
-            document.getElementById('recordModal').style.display = 'none';
-            document.getElementById('recordMinimizedBar').style.display = 'flex';
-        }
-
-        function reopenRecordModal() {
-            document.getElementById('recordMinimizedBar').style.display = 'none';
-            document.getElementById('recordModal').style.display = 'flex';
-            setTimeout(() => { if (recMap) recMap.invalidateSize(true); }, 200);
-        }
-
-        function pauseRecording() {
-            if (!recIsRecording || recIsPaused) return;
-            recIsPaused = true;
-            recElapsedBeforePause += Date.now() - recStartTime;
-            if (recWatchId !== null) { navigator.geolocation.clearWatch(recWatchId); recWatchId = null; }
-            setGpsStatus('Paused', 'paused');
-            document.getElementById('recPauseBtn').style.display = 'none';
-            document.getElementById('recResumeBtn').style.display = 'inline-block';
-            
-            const elapsedHours = currentElapsedMs() / 3600000;
-            const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
-            document.getElementById('recSpeed').textContent = avgSpeed.toFixed(1);
-            document.getElementById('recSpeed').classList.add('paused');
-            document.getElementById('recTimer').classList.add('paused');
-        }
-
-        function resumeRecording() {
-            if (!recIsRecording || !recIsPaused) return;
-            recIsPaused = false;
-            recStartTime = Date.now();
-            recLastPoint = null;
-            if (!recMap || !mapInitialized) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude); startGpsWatch(); },
-                    (err) => { console.warn('GPS fallback:', err); initRecordMap(40.7128, -74.0060); startGpsWatch(); },
-                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
-                );
-            } else startGpsWatch();
-            setGpsStatus('GPS locked', 'active');
-            document.getElementById('recPauseBtn').style.display = 'inline-block';
-            document.getElementById('recResumeBtn').style.display = 'none';
-            
-            if (recLastPoint && recLastPoint.speed !== undefined) {
-                document.getElementById('recSpeed').textContent = recLastPoint.speed.toFixed(1);
-            } else {
-                document.getElementById('recSpeed').textContent = '0.0';
-            }
-            document.getElementById('recSpeed').classList.remove('paused');
-            document.getElementById('recTimer').classList.remove('paused');
-        }
-
-        function stopGpsWatch() {
-            if (recWatchId !== null) { navigator.geolocation.clearWatch(recWatchId); recWatchId = null; }
-            if (recTimerInterval) { clearInterval(recTimerInterval); recTimerInterval = null; }
-        }
-
-        function resetRecordUI() {
-            stopGpsWatch();
-            stopTemperaturePolling();
-            document.getElementById('recStartRecordingBtn').style.display = 'none';
-            document.getElementById('recPauseBtn').style.display = 'none';
-            document.getElementById('recResumeBtn').style.display = 'none';
-            document.getElementById('recStopBtn').style.display = 'none';
-            document.getElementById('recDiscardBtn').style.display = 'none';
-            document.getElementById('recTimer').textContent = '00:00:00';
-            document.getElementById('recTimer').classList.remove('paused');
-            document.getElementById('recDistance').innerHTML = '0.00 <span class="stat-unit">km</span>';
-            document.getElementById('recSpeed').textContent = '0.0';
-            document.getElementById('recSpeed').classList.remove('paused');
-            document.getElementById('recHR').textContent = '--';
-            document.getElementById('recCadence').textContent = '--';
-            document.getElementById('recPower').textContent = '--';
-            document.getElementById('recTemp').textContent = '--';
-            setGpsStatus('GPS idle', '');
-            document.getElementById('recordModal').style.display = 'none';
-            document.getElementById('recordMinimizedBar').style.display = 'none';
-            teardownRecordMap();
-            resetTemperatureState();
-        }
-
-        async function stopRecording() {
-            if (!recIsRecording) return;
-            stopGpsWatch();
-            stopTemperaturePolling();
-            if (recPoints.length < 2) { showToast('❌ Not enough GPS data', 'error'); recIsRecording = false; resetRecordUI(); return; }
-            const statusDiv = document.getElementById('recordMessage');
-            statusDiv.textContent = 'Saving ride...';
-            document.getElementById('recStopBtn').disabled = true;
-            const selectedRideType = document.getElementById('recRideTypeSelect').value;
-            try {
-                const payload = { 
-                    points: recPoints, 
-                    ride_type: selectedRideType,
-                    temperature: tempStream
-                };
-                const response = await fetch('/save-live-ride', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
-                if (response.ok) { showToast('✅ Ride saved!', 'success'); statusDiv.textContent = ''; await loadRides(); }
-                else { showToast(`❌ Failed: ${result.error || 'Unknown error'}`, 'error'); statusDiv.textContent = `❌ Error: ${result.error || 'Unknown error'}`; }
-            } catch (error) { console.error(error); showToast('❌ Save failed', 'error'); statusDiv.textContent = '❌ Save failed'; }
-            finally { document.getElementById('recStopBtn').disabled = false; recIsRecording = false; resetRecordUI(); }
-        }
-
-        function discardRecording() {
-            if (!confirm('Discard recording?')) return;
-            stopGpsWatch();
-            stopTemperaturePolling();
-            recIsRecording = false;
-            recPoints = [];
-            document.getElementById('recordMessage').textContent = 'Discarded';
-            resetRecordUI();
-        }
-
-        // ── Init ────────────────────────────────────────────
-        async function init() {
-            await loadRideTypes();
-            await loadRides();
-            setInterval(loadRides, 30000);
-            await loadProfile();
-        }
-        init();
-    </script>
-</body>
-</html>
+if __name__ == '__main__':
+    app.run(debug=True)
