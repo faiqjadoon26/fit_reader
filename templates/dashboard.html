@@ -29,14 +29,27 @@
             --shadow: 0 2px 10px rgba(0,0,0,0.6);
         }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body {
+        html, body {
+            width: 100%;
+            height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Roboto, Arial, sans-serif;
             background: var(--bg);
             color: var(--text);
-            min-height: 100vh;
             transition: background var(--transition), color var(--transition);
-            padding-bottom: calc(var(--tab-height) + 8px);
+            overflow-x: hidden;
         }
+        /* Fullscreen mode for the whole app */
+        body.app-fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
         .navbar {
             background: var(--card);
             border-bottom: 1px solid var(--line);
@@ -59,8 +72,28 @@
         @media (min-width: 500px) { .username { display: inline; } }
         .logout-btn { color: var(--text-soft); text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; transition: background 0.2s; }
         .logout-btn:hover { background: #fff1ec; color: var(--orange-dark); }
+        .fullscreen-badge {
+            background: rgba(252,76,2,0.15);
+            color: var(--orange);
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            display: none;
+        }
+        body.app-fullscreen .fullscreen-badge {
+            display: inline-block;
+        }
 
-        .main-container { max-width: 1400px; margin: 0 auto; padding: 1rem 1rem 0; }
+        .main-container { 
+            max-width: 1400px; 
+            margin: 0 auto; 
+            padding: 1rem 1rem 0;
+            height: calc(100vh - 56px - var(--tab-height));
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
@@ -239,6 +272,8 @@
         .record-modal {
             position: fixed; inset: 0; z-index: 1000; background: #0b0e1a;
             display: none; flex-direction: column;
+            width: 100vw;
+            height: 100vh;
         }
         #recordMap { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; background: #12162a; }
         .record-modal-topbar {
@@ -282,7 +317,6 @@
         .gps-status.paused { background: rgba(237,137,54,0.9); color: #fff; border-color: #ed8936; box-shadow: 0 0 20px rgba(237,137,54,0.3); }
         .gps-status.error { background: rgba(229,62,62,0.9); color: #fff; border-color: #e53e3e; box-shadow: 0 0 20px rgba(229,62,62,0.3); }
 
-        /* Map Style Buttons Row */
         .map-style-row {
             display: flex; gap: 4px; flex-wrap: wrap; justify-content: center; padding: 0 4px;
         }
@@ -298,36 +332,97 @@
         .record-modal-stats-wrapper {
             position: absolute; bottom: 70px; left: 0; right: 0; z-index: 1000;
             background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 70%, transparent 100%);
-            padding: 16px 14px 10px; pointer-events: none;
+            padding: 14px 14px 10px; pointer-events: none;
         }
         .record-modal-stats-wrapper>* { pointer-events: auto; }
+        
         .record-modal-stats {
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
-            background: rgba(18,22,42,0.85); border-radius: 14px; padding: 12px 8px;
-            backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08);
+            display: grid; 
+            grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr; 
+            gap: 6px;
+            background: rgba(18,22,42,0.85); 
+            border-radius: 14px; 
+            padding: 10px 8px;
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(255,255,255,0.08);
             box-shadow: 0 4px 30px rgba(0,0,0,0.5);
         }
         .record-modal-sensor-stats {
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
-            margin-top: 10px; padding-top: 10px; border-top: 1.5px solid rgba(255,255,255,0.1);
-            background: rgba(18,22,42,0.7); border-radius: 12px; padding: 10px 8px;
-            backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.06);
+            display: grid; 
+            grid-template-columns: 1fr 1fr 1fr; 
+            gap: 6px;
+            margin-top: 8px; 
+            padding-top: 8px; 
+            border-top: 1.5px solid rgba(255,255,255,0.1);
+            background: rgba(18,22,42,0.7); 
+            border-radius: 12px; 
+            padding: 8px 8px;
+            backdrop-filter: blur(8px); 
+            border: 1px solid rgba(255,255,255,0.06);
         }
-        .modal-stat { text-align: center; color: #fff; padding: 2px 0; }
+        .modal-stat { 
+            text-align: center; 
+            color: #fff; 
+            padding: 2px 0; 
+        }
         .modal-stat-primary {
-            grid-column: span 1; background: linear-gradient(135deg, rgba(252,76,2,0.25), rgba(252,76,2,0.05));
-            border-radius: 10px; padding: 4px 2px; border: 1px solid rgba(252,76,2,0.2);
+            grid-column: span 1; 
+            background: linear-gradient(135deg, rgba(252,76,2,0.25), rgba(252,76,2,0.05));
+            border-radius: 10px; 
+            padding: 4px 2px; 
+            border: 1px solid rgba(252,76,2,0.2);
         }
-        .modal-stat-primary .record-stat-value { font-size: 2rem; font-weight: 800; color: #ff8a5c; text-shadow: 0 0 30px rgba(252,76,2,0.3); }
-        .record-stat-label { font-size: 0.6rem; text-transform: uppercase; color: #94a3b8; font-weight: 700; letter-spacing: 0.8px; margin-bottom: 1px; }
-        .record-stat-value { font-size: 1.4rem; font-weight: 700; color: #f1f5f9; margin-top: 1px; font-variant-numeric: tabular-nums; }
-        .record-stat-value .stat-unit { color: #94a3b8; font-size: 0.65rem; font-weight: 500; margin-left: 2px; }
-        .record-modal-sensor-stats .modal-stat { background: rgba(255,255,255,0.05); border-radius: 10px; padding: 6px 2px; border: 1px solid rgba(255,255,255,0.06); }
-        .record-modal-sensor-stats .record-stat-value { font-size: 1.4rem; color: #f1f5f9; }
-        .record-modal-sensor-stats .record-stat-value .stat-unit { font-size: 0.6rem; }
+        .modal-stat-primary .record-stat-value { 
+            font-size: 1.8rem; 
+            font-weight: 800; 
+            color: #ff8a5c; 
+            text-shadow: 0 0 30px rgba(252,76,2,0.3);
+            font-variant-numeric: tabular-nums;
+        }
+        .record-stat-label { 
+            font-size: 0.5rem; 
+            text-transform: uppercase; 
+            color: #94a3b8; 
+            font-weight: 700; 
+            letter-spacing: 0.5px; 
+            margin-bottom: 1px; 
+        }
+        .record-stat-value { 
+            font-size: 1.2rem; 
+            font-weight: 700; 
+            color: #f1f5f9; 
+            margin-top: 1px; 
+            font-variant-numeric: tabular-nums;
+        }
+        .record-stat-value .stat-unit { 
+            color: #94a3b8; 
+            font-size: 0.55rem; 
+            font-weight: 500; 
+            margin-left: 2px; 
+        }
+        .record-modal-sensor-stats .modal-stat { 
+            background: rgba(255,255,255,0.05); 
+            border-radius: 10px; 
+            padding: 4px 2px; 
+            border: 1px solid rgba(255,255,255,0.06); 
+        }
+        .record-modal-sensor-stats .record-stat-value { 
+            font-size: 1.2rem; 
+            color: #f1f5f9; 
+        }
+        .record-modal-sensor-stats .record-stat-value .stat-unit { 
+            font-size: 0.5rem; 
+        }
+        .record-modal-sensor-stats .record-stat-label {
+            font-size: 0.45rem;
+        }
         #recHR { color: #f87171; }
         #recCadence { color: #60a5fa; }
         #recPower { color: #fbbf24; }
+        #recTimer { color: #ff8a5c; }
+        #recTimer.paused { color: #facc15; }
+        #recAvgSpeedDisplay { color: #94a3b8; }
+        
         .record-modal-message {
             position: absolute; bottom: 58px; left: 0; right: 0; z-index: 1000;
             text-align: center; color: #facc15; font-size: 0.85rem; font-weight: 600;
@@ -394,62 +489,43 @@
         .record-tab-content .big-record-btn:active { transform: scale(0.88); box-shadow: 0 2px 10px rgba(252,76,2,0.3); }
         .record-tab-content .big-record-btn:hover { transform: scale(1.04); box-shadow: 0 8px 40px rgba(252,76,2,0.6); }
 
-        /* Map style preview in profile */
-        .map-style-preview {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
-            margin-top: 6px;
-        }
-        .map-style-option {
-            padding: 10px 12px;
-            border: 2px solid var(--line);
-            border-radius: 10px;
-            background: var(--bg);
+        /* Fullscreen exit button */
+        .exit-fullscreen-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 4px 12px;
             cursor: pointer;
-            text-align: center;
-            transition: all 0.2s;
             font-weight: 600;
-            font-size: 0.8rem;
-            color: var(--text);
-        }
-        .map-style-option:hover {
-            border-color: var(--orange);
-            background: rgba(252,76,2,0.05);
-            transform: scale(1.02);
-        }
-        .map-style-option.active {
-            border-color: var(--orange);
-            background: rgba(252,76,2,0.1);
-            box-shadow: 0 0 20px rgba(252,76,2,0.1);
-        }
-        .map-style-option .style-icon {
-            font-size: 1.8rem;
-            display: block;
-            margin-bottom: 4px;
-        }
-        .map-style-option .style-name {
             font-size: 0.7rem;
+            color: var(--text-soft);
+            transition: all 0.2s;
+            white-space: nowrap;
+            display: none;
         }
-        .map-style-option .style-badge {
+        body.app-fullscreen .exit-fullscreen-btn {
             display: inline-block;
+        }
+        .exit-fullscreen-btn:hover {
+            border-color: var(--orange);
             background: var(--orange);
             color: white;
-            font-size: 0.5rem;
-            padding: 1px 8px;
-            border-radius: 10px;
-            margin-top: 4px;
         }
 
-        @media (max-width: 600px) {
-            .profile-form { grid-template-columns: 1fr; }
-            .profile-form .full-width { grid-column: 1; }
-            .record-modal-stats { grid-template-columns: repeat(2, 1fr); gap: 4px; padding: 10px 6px; }
-            .modal-stat-primary { grid-column: span 2; }
-            .modal-stat-primary .record-stat-value { font-size: 2.4rem; }
-            .record-stat-value { font-size: 1.6rem; }
-            .record-modal-sensor-stats { grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 8px 4px; }
-            .record-modal-sensor-stats .record-stat-value { font-size: 1.3rem; }
+        @media (max-width: 768px) {
+            .record-modal-stats {
+                grid-template-columns: 1.2fr 1fr 1fr 1fr;
+                gap: 4px;
+                padding: 8px 4px;
+            }
+            .modal-stat-primary .record-stat-value { font-size: 1.4rem; }
+            .record-stat-value { font-size: 1rem; }
+            .record-modal-sensor-stats .record-stat-value { font-size: 1rem; }
+            .record-modal-sensor-stats {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 4px;
+                padding: 6px 4px;
+            }
             .record-btn { padding: 10px 16px; font-size: 0.85rem; min-width: 60px; min-height: 42px; }
             .modal-select { font-size: 0.65rem; min-width: 60px; padding: 4px 8px; min-height: 30px; }
             .gps-status { font-size: 0.6rem; padding: 4px 10px; min-height: 28px; }
@@ -461,8 +537,23 @@
             .map-style-btn { font-size: 0.5rem; padding: 3px 8px; }
             .record-minimized-bar { padding: 10px 14px; font-size: 0.75rem; min-height: 40px; gap: 8px; }
             .topbar-row .modal-center-controls { gap: 4px; }
-            .map-style-row { gap: 3px; }
-            .map-style-preview { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .record-modal-stats {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 3px;
+                padding: 6px 3px;
+            }
+            .modal-stat-primary .record-stat-value { font-size: 1.2rem; }
+            .record-stat-value { font-size: 0.9rem; }
+            .record-modal-sensor-stats .record-stat-value { font-size: 0.9rem; }
+            .record-modal-sensor-stats {
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 3px;
+                padding: 4px 3px;
+            }
+            .record-stat-label { font-size: 0.4rem; }
+            .record-modal-sensor-stats .record-stat-label { font-size: 0.4rem; }
         }
     </style>
 </head>
@@ -475,6 +566,8 @@
                 <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar" />
                 <span class="username">{{ user.name }}</span>
             </div>
+            <span class="fullscreen-badge">⛶ Fullscreen</span>
+            <button class="exit-fullscreen-btn" onclick="exitFullscreen()">⛶ Exit Fullscreen</button>
             <a href="/auth/logout" class="logout-btn">Logout</a>
         </div>
     </nav>
@@ -539,7 +632,7 @@
             </div>
         </div>
 
-        <!-- PROFILE TAB with Map Style Selector -->
+        <!-- PROFILE TAB -->
         <div id="tab-profile" class="tab-content">
             <div class="profile-card">
                 <div class="profile-header">
@@ -614,6 +707,7 @@
                     <button class="save-btn" onclick="saveProfile()">💾 Save Profile</button>
                     <button id="sensorBtnProfile" onclick="connectSensor()">🔍 Search Sensors</button>
                     <button onclick="toggleDarkMode()">🌙 Toggle Theme</button>
+                    <button onclick="exitFullscreen()">⛶ Exit Fullscreen</button>
                     <a href="/auth/logout" style="text-decoration:none;"><button>🚪 Logout</button></a>
                 </div>
             </div>
@@ -652,12 +746,30 @@
             </div>
         </div>
         <div class="record-modal-stats-wrapper">
+            <!-- MAIN STATS - ONE ROW -->
             <div class="record-modal-stats">
-                <div class="modal-stat modal-stat-primary"><div class="record-stat-label">⚡ Speed</div><div class="record-stat-value"><span id="recSpeed">0.0</span> <span class="stat-unit">km/h</span></div></div>
-                <div class="modal-stat"><div class="record-stat-label">📏 Distance</div><div class="record-stat-value"><span id="recDistance">0.00</span> <span class="stat-unit">km</span></div></div>
-                <div class="modal-stat"><div class="record-stat-label">📊 Avg</div><div class="record-stat-value"><span id="recAvgSpeed">0.0</span> <span class="stat-unit">km/h</span></div></div>
-                <div class="modal-stat"><div class="record-stat-label">📍 Points</div><div class="record-stat-value" id="recPoints">0</div></div>
+                <div class="modal-stat modal-stat-primary">
+                    <div class="record-stat-label">⏱️ Timer</div>
+                    <div class="record-stat-value" id="recTimer">00:00:00</div>
+                </div>
+                <div class="modal-stat">
+                    <div class="record-stat-label">⚡ Speed</div>
+                    <div class="record-stat-value"><span id="recSpeed">0.0</span> <span class="stat-unit">km/h</span></div>
+                </div>
+                <div class="modal-stat">
+                    <div class="record-stat-label">📏 Distance</div>
+                    <div class="record-stat-value"><span id="recDistance">0.00</span> <span class="stat-unit">km</span></div>
+                </div>
+                <div class="modal-stat">
+                    <div class="record-stat-label">📊 Avg Speed</div>
+                    <div class="record-stat-value"><span id="recAvgSpeedDisplay">0.0</span> <span class="stat-unit">km/h</span></div>
+                </div>
+                <div class="modal-stat">
+                    <div class="record-stat-label">📍 Points</div>
+                    <div class="record-stat-value" id="recPoints">0</div>
+                </div>
             </div>
+            <!-- SENSOR STATS - SEPARATE ROW -->
             <div class="record-modal-sensor-stats">
                 <div class="modal-stat"><div class="record-stat-label">❤️ HR</div><div class="record-stat-value"><span id="recHR">--</span> <span class="stat-unit">bpm</span></div></div>
                 <div class="modal-stat"><div class="record-stat-label">🔄 Cadence</div><div class="record-stat-value"><span id="recCadence">--</span> <span class="stat-unit">rpm</span></div></div>
@@ -685,6 +797,64 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
+        // ── AUTO FULLSCREEN ON PAGE LOAD ──────────────────
+        // Force fullscreen as soon as the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Try to enter fullscreen immediately
+            enterFullscreen();
+            
+            // Also try after a short delay (for iOS)
+            setTimeout(enterFullscreen, 500);
+            setTimeout(enterFullscreen, 1000);
+        });
+
+        // Also try when user interacts (for browsers that require user gesture)
+        document.addEventListener('click', function firstClick() {
+            enterFullscreen();
+            document.removeEventListener('click', firstClick);
+        });
+
+        document.addEventListener('touchstart', function firstTouch() {
+            enterFullscreen();
+            document.removeEventListener('touchstart', firstTouch);
+        });
+
+        function enterFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    // Silently fail - some browsers require user gesture
+                    console.log('Fullscreen requires user interaction');
+                });
+                document.body.classList.add('app-fullscreen');
+            } else {
+                document.body.classList.add('app-fullscreen');
+            }
+        }
+
+        function exitFullscreen() {
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(err => {});
+            }
+            document.body.classList.remove('app-fullscreen');
+        }
+
+        // Listen for fullscreen change to update UI
+        document.addEventListener('fullscreenchange', function() {
+            const isFullscreen = !!document.fullscreenElement;
+            if (isFullscreen) {
+                document.body.classList.add('app-fullscreen');
+            } else {
+                document.body.classList.remove('app-fullscreen');
+            }
+            // Force map resize if needed
+            if (recMap) {
+                setTimeout(() => recMap.invalidateSize(), 300);
+            }
+            if (mapsTabMap) {
+                setTimeout(() => mapsTabMap.invalidateSize(), 300);
+            }
+        });
+
         // ── Theme ──────────────────────────────────────────
         function applyTheme(theme) {
             if (theme === 'dark') {
@@ -701,17 +871,20 @@
         const savedTheme = localStorage.getItem('fit-reader-theme') || 'light';
         applyTheme(savedTheme);
 
-        // ── Fullscreen ──────────────────────────────────────
+        // ── Fullscreen toggle for recording modal ──────────
         function toggleFullscreen() {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => showToast('Fullscreen denied', 'error'));
+                document.documentElement.requestFullscreen().catch(err => {
+                    showToast('Fullscreen denied', 'error');
+                });
+                document.body.classList.add('app-fullscreen');
             } else {
-                if (document.exitFullscreen) document.exitFullscreen();
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+                document.body.classList.remove('app-fullscreen');
             }
         }
-        document.addEventListener('fullscreenchange', () => {
-            document.getElementById('recFullscreenBtn').textContent = '⛶';
-        });
 
         // ── Tab Navigation ─────────────────────────────────
         const tabBtns = document.querySelectorAll('.tab-btn');
@@ -840,6 +1013,7 @@
         let recMap = null, recPolyline = null, recMarker = null;
         let mapInitialized = false;
         let currentMapStyle = 'standard';
+        let recPausedSpeed = '0.0';
 
         // Map style configurations
         const mapStyles = {
@@ -1213,7 +1387,6 @@
                 document.getElementById('pGender').value = profileData.gender || '';
                 document.getElementById('pNotes').value = profileData.notes || '';
                 
-                // Set map style preference
                 const mapStyleSelect = document.getElementById('pMapStyle');
                 if (profileData.map_style) {
                     mapStyleSelect.value = profileData.map_style;
@@ -1258,7 +1431,6 @@
                 currentMapStyle = data.map_style;
                 showToast('✅ Profile saved!', 'success');
                 populateModalSelect();
-                // Update map style in recording if it's open
                 if (recMap) {
                     changeRecordMapStyle(currentMapStyle);
                 }
@@ -1421,7 +1593,6 @@
         function changeRecordMapStyle(styleName) {
             if (!recMap) {
                 currentMapStyle = styleName;
-                // Update active button
                 document.querySelectorAll('.map-style-btn').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.style === styleName);
                 });
@@ -1432,12 +1603,10 @@
             const style = mapStyles[styleName];
             if (!style) return;
             
-            // Update active button
             document.querySelectorAll('.map-style-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.style === styleName);
             });
             
-            // Remove old tile layer and add new one
             recMap.eachLayer(layer => {
                 if (layer instanceof L.TileLayer) {
                     recMap.removeLayer(layer);
@@ -1449,7 +1618,6 @@
                 maxZoom: 19
             }).addTo(recMap);
             
-            // Re-add route and markers if needed
             if (recPolyline) {
                 recMap.addLayer(recPolyline);
             }
@@ -1469,11 +1637,9 @@
             container.style.minHeight = '300px';
             container.style.display = 'block';
 
-            // Use user's preferred map style
             const styleName = currentMapStyle || profileData.map_style || 'standard';
             const style = mapStyles[styleName];
             
-            // Update active button
             document.querySelectorAll('.map-style-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.style === styleName);
             });
@@ -1542,15 +1708,26 @@
 
         function updateRecordUI() {
             const durationStr = formatDuration(currentElapsedMs());
+            document.getElementById('recTimer').textContent = durationStr;
             document.getElementById('recDistance').textContent = recTotalDistanceKm.toFixed(2);
             document.getElementById('recPoints').textContent = recPoints.length;
             const elapsedHours = currentElapsedMs() / 3600000;
             const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
-            document.getElementById('recAvgSpeed').textContent = avgSpeed.toFixed(1);
+            document.getElementById('recAvgSpeedDisplay').textContent = avgSpeed.toFixed(1);
             const minimizedText = document.getElementById('minimizedText');
             if (minimizedText) minimizedText.textContent = `Recording... ${durationStr} · ${recTotalDistanceKm.toFixed(2)} km`;
-            if (recLastPoint && recLastPoint.speed !== undefined) {
+            
+            if (recIsPaused) {
+                // Keep showing the stored speed
+            } else if (recLastPoint && recLastPoint.speed !== undefined) {
                 document.getElementById('recSpeed').textContent = recLastPoint.speed.toFixed(1);
+            }
+            
+            const timerEl = document.getElementById('recTimer');
+            if (recIsPaused) {
+                timerEl.classList.add('paused');
+            } else {
+                timerEl.classList.remove('paused');
             }
         }
 
@@ -1580,7 +1757,10 @@
             recLastPoint = { lat, lng, rawTimestamp: position.timestamp, speed: speedKmh };
             if (!recMap || !mapInitialized) initRecordMap(lat, lng);
             else updateRecordMap(lat, lng);
-            document.getElementById('recSpeed').textContent = speedKmh.toFixed(1);
+            
+            if (!recIsPaused) {
+                document.getElementById('recSpeed').textContent = speedKmh.toFixed(1);
+            }
             setGpsStatus('GPS locked', 'active');
             updateRecordUI();
             updateSensorUI();
@@ -1622,6 +1802,13 @@
             document.getElementById('recResumeBtn').style.display = 'none';
             document.getElementById('recStopBtn').style.display = 'none';
             document.getElementById('recDiscardBtn').style.display = 'none';
+            document.getElementById('recTimer').textContent = '00:00:00';
+            document.getElementById('recTimer').classList.remove('paused');
+            document.getElementById('recSpeed').textContent = '0.0';
+            document.getElementById('recSpeed').style.color = '';
+            document.getElementById('recAvgSpeedDisplay').textContent = '0.0';
+            document.getElementById('recDistance').textContent = '0.00';
+            document.getElementById('recPoints').textContent = '0';
             if (profileData.default_activity_type) {
                 document.getElementById('recRideTypeSelect').value = profileData.default_activity_type;
             }
@@ -1686,6 +1873,13 @@
             setGpsStatus('Paused', 'paused');
             document.getElementById('recPauseBtn').style.display = 'none';
             document.getElementById('recResumeBtn').style.display = 'inline-block';
+            
+            const currentSpeed = document.getElementById('recSpeed').textContent;
+            recPausedSpeed = currentSpeed;
+            const avgSpeed = document.getElementById('recAvgSpeedDisplay').textContent;
+            document.getElementById('recSpeed').textContent = avgSpeed;
+            document.getElementById('recSpeed').style.color = '#94a3b8';
+            document.getElementById('recTimer').classList.add('paused');
         }
 
         function resumeRecording() {
@@ -1703,6 +1897,10 @@
             setGpsStatus('GPS locked', 'active');
             document.getElementById('recPauseBtn').style.display = 'inline-block';
             document.getElementById('recResumeBtn').style.display = 'none';
+            
+            document.getElementById('recSpeed').textContent = recPausedSpeed || '0.0';
+            document.getElementById('recSpeed').style.color = '';
+            document.getElementById('recTimer').classList.remove('paused');
         }
 
         function stopGpsWatch() {
@@ -1716,9 +1914,12 @@
             document.getElementById('recResumeBtn').style.display = 'none';
             document.getElementById('recStopBtn').style.display = 'none';
             document.getElementById('recDiscardBtn').style.display = 'none';
+            document.getElementById('recTimer').textContent = '00:00:00';
+            document.getElementById('recTimer').classList.remove('paused');
             document.getElementById('recDistance').textContent = '0.00';
             document.getElementById('recSpeed').textContent = '0.0';
-            document.getElementById('recAvgSpeed').textContent = '0.0';
+            document.getElementById('recSpeed').style.color = '';
+            document.getElementById('recAvgSpeedDisplay').textContent = '0.0';
             document.getElementById('recPoints').textContent = '0';
             document.getElementById('recHR').textContent = '--';
             document.getElementById('recCadence').textContent = '--';
