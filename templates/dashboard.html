@@ -333,14 +333,14 @@
         }
         .record-modal-stats-wrapper>* { pointer-events: auto; }
         
-        /* MAIN STATS - ONE ROW */
+        /* MAIN STATS - TWO PRIMARY: TIMER AND SPEED */
         .record-modal-stats {
             display: grid; 
-            grid-template-columns: 1.5fr 1fr 1fr 1fr; 
-            gap: 6px;
+            grid-template-columns: 1.5fr 1.5fr 1fr; 
+            gap: 8px;
             background: rgba(18,22,42,0.85); 
             border-radius: 14px; 
-            padding: 10px 8px;
+            padding: 12px 10px;
             backdrop-filter: blur(12px); 
             border: 1px solid rgba(255,255,255,0.08);
             box-shadow: 0 4px 30px rgba(0,0,0,0.5);
@@ -366,19 +366,38 @@
         .modal-stat-primary {
             grid-column: span 1; 
             background: linear-gradient(135deg, rgba(252,76,2,0.25), rgba(252,76,2,0.05));
-            border-radius: 10px; 
-            padding: 4px 2px; 
+            border-radius: 12px; 
+            padding: 6px 4px; 
             border: 1px solid rgba(252,76,2,0.2);
         }
         .modal-stat-primary .record-stat-value { 
-            font-size: 1.8rem; 
+            font-size: 2.2rem; 
             font-weight: 800; 
             color: #ff8a5c; 
             text-shadow: 0 0 30px rgba(252,76,2,0.3);
             font-variant-numeric: tabular-nums;
         }
+        /* Speed stat - also primary */
+        .modal-stat-speed {
+            grid-column: span 1; 
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(56, 189, 248, 0.05));
+            border-radius: 12px; 
+            padding: 6px 4px; 
+            border: 1px solid rgba(56, 189, 248, 0.2);
+        }
+        .modal-stat-speed .record-stat-value { 
+            font-size: 2.2rem; 
+            font-weight: 800; 
+            color: #60a5fa; 
+            text-shadow: 0 0 30px rgba(56, 189, 248, 0.2);
+            font-variant-numeric: tabular-nums;
+        }
+        .modal-stat-speed .record-stat-value.paused { 
+            color: #94a3b8; 
+            text-shadow: none;
+        }
         .record-stat-label { 
-            font-size: 0.5rem; 
+            font-size: 0.55rem; 
             text-transform: uppercase; 
             color: #94a3b8; 
             font-weight: 700; 
@@ -386,7 +405,7 @@
             margin-bottom: 1px; 
         }
         .record-stat-value { 
-            font-size: 1.2rem; 
+            font-size: 1.4rem; 
             font-weight: 700; 
             color: #f1f5f9; 
             margin-top: 1px; 
@@ -394,7 +413,7 @@
         }
         .record-stat-value .stat-unit { 
             color: #94a3b8; 
-            font-size: 0.55rem; 
+            font-size: 0.65rem; 
             font-weight: 500; 
             margin-left: 2px; 
         }
@@ -419,9 +438,8 @@
         #recPower { color: #fbbf24; }
         #recTimer { color: #ff8a5c; }
         #recTimer.paused { color: #facc15; }
-        #recAvgSpeedDisplay { color: #94a3b8; }
-        /* Speed display dims when paused */
-        #recSpeed.paused { color: #94a3b8; }
+        /* Distance stat */
+        #recDistance { color: #34d399; }
         
         .record-modal-message {
             position: absolute; bottom: 58px; left: 0; right: 0; z-index: 1000;
@@ -511,12 +529,13 @@
 
         @media (max-width: 768px) {
             .record-modal-stats {
-                grid-template-columns: 1.2fr 1fr 1fr 1fr;
+                grid-template-columns: 1fr 1fr 1fr;
                 gap: 4px;
                 padding: 8px 4px;
             }
-            .modal-stat-primary .record-stat-value { font-size: 1.4rem; }
-            .record-stat-value { font-size: 1rem; }
+            .modal-stat-primary .record-stat-value { font-size: 1.6rem; }
+            .modal-stat-speed .record-stat-value { font-size: 1.6rem; }
+            .record-stat-value { font-size: 1.2rem; }
             .record-modal-sensor-stats .record-stat-value { font-size: 1rem; }
             .record-modal-sensor-stats {
                 grid-template-columns: 1fr 1fr 1fr;
@@ -537,12 +556,13 @@
         }
         @media (max-width: 480px) {
             .record-modal-stats {
-                grid-template-columns: 1fr 1fr 1fr;
+                grid-template-columns: 1fr 1fr;
                 gap: 3px;
                 padding: 6px 3px;
             }
-            .modal-stat-primary .record-stat-value { font-size: 1.2rem; }
-            .record-stat-value { font-size: 0.9rem; }
+            .modal-stat-primary .record-stat-value { font-size: 1.4rem; }
+            .modal-stat-speed .record-stat-value { font-size: 1.4rem; }
+            .record-stat-value { font-size: 1rem; }
             .record-modal-sensor-stats .record-stat-value { font-size: 0.9rem; }
             .record-modal-sensor-stats {
                 grid-template-columns: 1fr 1fr 1fr;
@@ -743,23 +763,19 @@
             </div>
         </div>
         <div class="record-modal-stats-wrapper">
-            <!-- MAIN STATS - ONE ROW: TIMER, SPEED, DISTANCE, AVG SPEED -->
+            <!-- MAIN STATS - TIMER, SPEED, DISTANCE -->
             <div class="record-modal-stats">
                 <div class="modal-stat modal-stat-primary">
                     <div class="record-stat-label">⏱️ Timer</div>
                     <div class="record-stat-value" id="recTimer">00:00:00</div>
                 </div>
-                <div class="modal-stat">
+                <div class="modal-stat modal-stat-speed">
                     <div class="record-stat-label">⚡ Speed</div>
-                    <div class="record-stat-value"><span id="recSpeed">0.0</span> <span class="stat-unit">km/h</span></div>
+                    <div class="record-stat-value"><span id="recSpeed" class="">0.0</span> <span class="stat-unit">km/h</span></div>
                 </div>
                 <div class="modal-stat">
                     <div class="record-stat-label">📏 Distance</div>
-                    <div class="record-stat-value"><span id="recDistance">0.00</span> <span class="stat-unit">km</span></div>
-                </div>
-                <div class="modal-stat">
-                    <div class="record-stat-label">📊 Avg Speed</div>
-                    <div class="record-stat-value"><span id="recAvgSpeedDisplay">0.0</span> <span class="stat-unit">km/h</span></div>
+                    <div class="record-stat-value" id="recDistance">0.00 <span class="stat-unit">km</span></div>
                 </div>
             </div>
             <!-- SENSOR STATS - SEPARATE ROW -->
@@ -998,7 +1014,6 @@
         let recMap = null, recPolyline = null, recMarker = null;
         let mapInitialized = false;
         let currentMapStyle = 'standard';
-        let recPausedSpeed = '0.0';
 
         // Map style configurations
         const mapStyles = {
@@ -1332,9 +1347,9 @@
                 document.getElementById('recPower').textContent = sensorData.power !== null ? sensorData.power : '--';
             }
             if (sensorConnectionState.speed && sensorData.speed === null) {
-                document.getElementById('recSpeed').textContent = '0.0';
+                // Don't update recSpeed here - it's managed by recording logic
             } else {
-                document.getElementById('recSpeed').textContent = sensorData.speed !== null ? sensorData.speed.toFixed(1) : '0.0';
+                // Only update if not recording or if speed is available
             }
         }
 
@@ -1694,23 +1709,21 @@
         function updateRecordUI() {
             const durationStr = formatDuration(currentElapsedMs());
             document.getElementById('recTimer').textContent = durationStr;
-            document.getElementById('recDistance').textContent = recTotalDistanceKm.toFixed(2);
-            const elapsedHours = currentElapsedMs() / 3600000;
-            const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
-            document.getElementById('recAvgSpeedDisplay').textContent = avgSpeed.toFixed(1);
+            document.getElementById('recDistance').textContent = recTotalDistanceKm.toFixed(2) + ' km';
             const minimizedText = document.getElementById('minimizedText');
             if (minimizedText) minimizedText.textContent = `Recording... ${durationStr} · ${recTotalDistanceKm.toFixed(2)} km`;
             
             // Update speed - show current speed when recording, or avg speed when paused
+            const elapsedHours = currentElapsedMs() / 3600000;
+            const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
+            
             if (recIsPaused) {
-                // Show average speed in the speed position when paused
+                // Show average speed when paused
                 document.getElementById('recSpeed').textContent = avgSpeed.toFixed(1);
-                document.getElementById('recSpeed').style.color = '#94a3b8';
                 document.getElementById('recSpeed').classList.add('paused');
             } else if (recLastPoint && recLastPoint.speed !== undefined) {
                 // Show current speed when recording
                 document.getElementById('recSpeed').textContent = recLastPoint.speed.toFixed(1);
-                document.getElementById('recSpeed').style.color = '';
                 document.getElementById('recSpeed').classList.remove('paused');
             }
             
@@ -1752,7 +1765,6 @@
             // Only update speed if not paused (when paused, it shows avg speed)
             if (!recIsPaused) {
                 document.getElementById('recSpeed').textContent = speedKmh.toFixed(1);
-                document.getElementById('recSpeed').style.color = '';
                 document.getElementById('recSpeed').classList.remove('paused');
             }
             setGpsStatus('GPS locked', 'active');
@@ -1799,10 +1811,8 @@
             document.getElementById('recTimer').textContent = '00:00:00';
             document.getElementById('recTimer').classList.remove('paused');
             document.getElementById('recSpeed').textContent = '0.0';
-            document.getElementById('recSpeed').style.color = '';
             document.getElementById('recSpeed').classList.remove('paused');
-            document.getElementById('recAvgSpeedDisplay').textContent = '0.0';
-            document.getElementById('recDistance').textContent = '0.00';
+            document.getElementById('recDistance').textContent = '0.00 km';
             if (profileData.default_activity_type) {
                 document.getElementById('recRideTypeSelect').value = profileData.default_activity_type;
             }
@@ -1868,11 +1878,10 @@
             document.getElementById('recPauseBtn').style.display = 'none';
             document.getElementById('recResumeBtn').style.display = 'inline-block';
             
-            // Calculate average speed and show it in the speed position
+            // Show average speed in the speed position when paused
             const elapsedHours = currentElapsedMs() / 3600000;
             const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
             document.getElementById('recSpeed').textContent = avgSpeed.toFixed(1);
-            document.getElementById('recSpeed').style.color = '#94a3b8';
             document.getElementById('recSpeed').classList.add('paused');
             document.getElementById('recTimer').classList.add('paused');
         }
@@ -1899,7 +1908,6 @@
             } else {
                 document.getElementById('recSpeed').textContent = '0.0';
             }
-            document.getElementById('recSpeed').style.color = '';
             document.getElementById('recSpeed').classList.remove('paused');
             document.getElementById('recTimer').classList.remove('paused');
         }
@@ -1917,11 +1925,9 @@
             document.getElementById('recDiscardBtn').style.display = 'none';
             document.getElementById('recTimer').textContent = '00:00:00';
             document.getElementById('recTimer').classList.remove('paused');
-            document.getElementById('recDistance').textContent = '0.00';
+            document.getElementById('recDistance').textContent = '0.00 km';
             document.getElementById('recSpeed').textContent = '0.0';
-            document.getElementById('recSpeed').style.color = '';
             document.getElementById('recSpeed').classList.remove('paused');
-            document.getElementById('recAvgSpeedDisplay').textContent = '0.0';
             document.getElementById('recHR').textContent = '--';
             document.getElementById('recCadence').textContent = '--';
             document.getElementById('recPower').textContent = '--';
