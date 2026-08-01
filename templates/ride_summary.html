@@ -29,23 +29,24 @@
             --shadow: 0 2px 10px rgba(0,0,0,0.6);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            min-height: 100%;
+        }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Roboto, Arial, sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
+            overflow-y: auto;
             transition: background var(--transition), color var(--transition);
         }
         /* ── FULLSCREEN OVERRIDES (Fixed scrolling) ── */
         body.app-fullscreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            width: 100vw;
-            height: 100vh;
-            overflow-y: auto; /* Changed from 'hidden' to allow scrolling */
+            /* Removed position:fixed + fixed dimensions – now uses natural flow */
+            overflow-y: auto;
+            min-height: 100vh;
+            height: auto;
         }
 
         .navbar {
@@ -335,7 +336,7 @@
                 {% endif %}
             </div>
 
-            <!-- ALL Charts Grid (Combined Chart REMOVED) -->
+            <!-- ALL Charts Grid -->
             <div class="charts-grid">
                 <!-- Speed -->
                 {% if streams.speed and streams.speed|length > 0 %}
@@ -646,7 +647,6 @@
         const textColor = isDarkMode ? '#ccc' : '#666';
         const gridColor = isDarkMode ? '#2a2a2a' : '#e2e8f0';
 
-        // Store chart instances globally so we can resize them on fullscreen change
         let chartInstances = [];
 
         function createChart(canvasId, label, data, color, borderColor, startAtZero = true, yMax = null) {
@@ -698,7 +698,6 @@
         }
 
         if (timestamps.length > 0) {
-            // All individual charts
             createChart('speedChart', 'Speed (km/h)', streams.speed, 'rgba(66, 153, 225, 0.2)', 'rgb(66, 153, 225)', true);
             createChart('hrChart', 'Heart Rate (bpm)', streams.heart_rate, 'rgba(252, 129, 129, 0.2)', 'rgb(252, 129, 129)', true);
             createChart('cadenceChart', 'Cadence (rpm)', streams.cadence, 'rgba(159, 122, 234, 0.2)', 'rgb(159, 122, 234)', true);
@@ -719,12 +718,10 @@
                 document.body.classList.remove('app-fullscreen');
             }
             
-            // Resize Map
             if (mapInstance) {
                 setTimeout(() => mapInstance.invalidateSize(), 300);
             }
             
-            // Resize ALL Chart.js instances
             if (chartInstances.length > 0) {
                 setTimeout(() => {
                     chartInstances.forEach(chart => chart.resize());
@@ -733,42 +730,35 @@
         });
 
         // ── POWER ZONE COLOR COATING ──────────────────────
-        // This forces a cycling-standard color palette onto the Power Zones 
-        // (Z1=Green, Z2=Blue, Z3=Yellow, Z4=Orange, Z5=Red, Z6=Pink, Z7=Purple)
-        // regardless of what the backend sends.
         document.addEventListener('DOMContentLoaded', function() {
             const zoneContainer = document.getElementById('powerZonesContainer');
             if (!zoneContainer) return;
 
             const zoneColorMap = {
-                'Z1': '#22c55e', // Green
-                'Z2': '#3b82f6', // Blue
-                'Z3': '#facc15', // Yellow
-                'Z4': '#f97316', // Orange
-                'Z5': '#ef4444', // Red
-                'Z6': '#ec4899', // Pink
-                'Z7': '#8b5cf6'  // Purple
+                'Z1': '#22c55e',
+                'Z2': '#3b82f6',
+                'Z3': '#facc15',
+                'Z4': '#f97316',
+                'Z5': '#ef4444',
+                'Z6': '#ec4899',
+                'Z7': '#8b5cf6'
             };
 
-            // Get all legend items and bars
             const legendItems = zoneContainer.querySelectorAll('.zone-legend-item');
             const bars = zoneContainer.querySelectorAll('.zone-bar');
 
             legendItems.forEach((item, index) => {
                 const text = item.textContent.trim();
-                // Extract the zone name (e.g., "Z1 (10s)" -> "Z1")
                 const zoneMatch = text.match(/(Z[1-7])/);
                 if (zoneMatch) {
                     const zoneKey = zoneMatch[0];
                     const color = zoneColorMap[zoneKey] || '#888';
                     
-                    // Apply color to the legend swatch
                     const colorSpan = item.querySelector('.zone-color');
                     if (colorSpan) {
                         colorSpan.style.background = color;
                     }
                     
-                    // Apply color to the corresponding bar
                     if (bars[index]) {
                         bars[index].style.background = color;
                     }
