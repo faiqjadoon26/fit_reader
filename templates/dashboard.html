@@ -1765,33 +1765,41 @@
             }
         }
 
-        // ── Temperature polling (Open‑Meteo) ──────────────
+        // ── Temperature polling (Open‑Meteo) with immediate fetch ──
         function startTemperaturePolling(recordingStartTime) {
+            // Fetch immediately
+            fetchTemperature(recordingStartTime);
+
+            // Then set interval
             if (tempPollInterval) clearInterval(tempPollInterval);
-            tempPollInterval = setInterval(async () => {
-                navigator.geolocation.getCurrentPosition(async (pos) => {
-                    const { latitude, longitude } = pos.coords;
-                    try {
-                        const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m`;
-                        const res = await fetch(url);
-                        const data = await res.json();
-                        const temp = data.current?.temperature_2m;
-                        if (temp !== undefined) {
-                            currentTemp = temp;
-                            tempStream.push({
-                                timestamp: Date.now(),
-                                elapsed_s: Math.round((Date.now() - recordingStartTime) / 1000),
-                                temp_c: temp
-                            });
-                            updateTemperatureUI();
-                        }
-                    } catch (err) {
-                        console.warn('Temperature fetch failed:', err);
-                    }
-                }, () => {
-                    console.warn('Geolocation unavailable for temperature poll');
-                });
+            tempPollInterval = setInterval(() => {
+                fetchTemperature(recordingStartTime);
             }, 60000);
+        }
+
+        async function fetchTemperature(recordingStartTime) {
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                try {
+                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m`;
+                    const res = await fetch(url);
+                    const data = await res.json();
+                    const temp = data.current?.temperature_2m;
+                    if (temp !== undefined) {
+                        currentTemp = temp;
+                        tempStream.push({
+                            timestamp: Date.now(),
+                            elapsed_s: Math.round((Date.now() - recordingStartTime) / 1000),
+                            temp_c: temp
+                        });
+                        updateTemperatureUI();
+                    }
+                } catch (err) {
+                    console.warn('Temperature fetch failed:', err);
+                }
+            }, () => {
+                console.warn('Geolocation unavailable for temperature poll');
+            });
         }
 
         function stopTemperaturePolling() {
