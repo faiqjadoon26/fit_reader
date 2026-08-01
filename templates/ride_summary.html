@@ -18,7 +18,7 @@
             --shadow: 0 2px 10px rgba(0,0,0,0.06);
             --radius: 10px;
             --transition: 0.25s ease;
-            --chart-height: 300px;
+            --chart-height: 260px;
         }
         .dark-theme {
             --bg: #0d0d0d;
@@ -62,12 +62,8 @@
             transition: all 0.2s; white-space: nowrap;
         }
         .theme-btn:hover { border-color: var(--orange); background: var(--orange); color: white; }
-        .sensor-stub {
-            background: transparent; border: 1px solid var(--line); border-radius: 20px; padding: 4px 12px;
-            font-weight: 600; font-size: 0.75rem; color: var(--text-soft); white-space: nowrap; cursor: default;
-        }
 
-        .main-container { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem; }
+        .main-container { max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem; }
 
         .summary-card {
             background: var(--card);
@@ -89,14 +85,14 @@
         .btn-dashboard { background: var(--text-soft); color: white; }
         .btn-dashboard:hover { background: var(--text); }
 
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px,1fr)); gap: 12px; margin: 25px 0; }
-        .stat-card { background: var(--bg); padding: 16px; border-radius: var(--radius); text-align: center; border: 1px solid var(--line); transition: background var(--transition), border-color var(--transition); }
-        .stat-label { font-size: 0.6rem; text-transform: uppercase; color: var(--text-soft); font-weight: 700; letter-spacing: 0.5px; }
-        .stat-value { font-size: 1.4rem; font-weight: 800; margin-top: 4px; color: var(--text); }
-        .stat-unit { font-size: 0.8rem; color: var(--text-soft); font-weight: 500; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px,1fr)); gap: 10px; margin: 25px 0; }
+        .stat-card { background: var(--bg); padding: 14px 10px; border-radius: var(--radius); text-align: center; border: 1px solid var(--line); transition: background var(--transition), border-color var(--transition); }
+        .stat-label { font-size: 0.5rem; text-transform: uppercase; color: var(--text-soft); font-weight: 700; letter-spacing: 0.5px; }
+        .stat-value { font-size: 1.2rem; font-weight: 800; margin-top: 3px; color: var(--text); }
+        .stat-unit { font-size: 0.65rem; color: var(--text-soft); font-weight: 500; }
 
         .map-container {
-            height: 350px;
+            height: 400px;
             border-radius: var(--radius);
             overflow: hidden;
             margin: 20px 0;
@@ -113,24 +109,20 @@
             color: var(--text-soft);
             font-size: 1.1rem;
         }
-        /* Fix for Leaflet map container needing explicit dimensions */
         .map-container #map {
             width: 100%;
             height: 100%;
-            min-height: 350px;
+            min-height: 400px;
         }
 
-        .charts-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 24px;
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
             margin-top: 24px;
         }
         .chart-box {
-            width: 100%;
-            max-width: 900px;
-            padding: 20px 20px 16px;
+            padding: 16px 16px 12px;
             border-radius: var(--radius);
             border: 1px solid var(--line);
             background: var(--bg);
@@ -138,8 +130,8 @@
             box-shadow: var(--shadow);
         }
         .chart-box h3 {
-            margin-bottom: 14px;
-            font-size: 1rem;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
             color: var(--text);
             font-weight: 700;
             text-transform: uppercase;
@@ -149,14 +141,18 @@
         .chart-box canvas {
             width: 100% !important;
             height: var(--chart-height) !important;
-            max-height: 350px;
+            max-height: 260px;
+        }
+        .chart-full {
+            grid-column: 1 / -1;
+        }
+        .chart-full canvas {
+            height: 300px !important;
+            max-height: 320px;
         }
 
         .zone-container {
-            width: 100%;
-            max-width: 900px;
-            margin: 0 auto;
-            margin-top: 24px;
+            margin-top: 20px;
             padding: 20px;
             border-radius: var(--radius);
             border: 1px solid var(--line);
@@ -166,18 +162,61 @@
         }
         .zone-container h3 { 
             margin-bottom: 12px; 
-            font-size: 1rem; 
+            font-size: 0.95rem; 
             color: var(--text); 
             font-weight: 700; 
             text-transform: uppercase; 
             letter-spacing: 0.5px; 
             text-align: center;
         }
-        .zone-bars { display: flex; height: 32px; border-radius: 8px; overflow: hidden; margin-top: 10px; }
-        .zone-bar { display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: white; font-weight: 700; }
-        .zone-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; margin-top: 14px; }
-        .zone-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--text); }
-        .zone-color { width: 18px; height: 18px; border-radius: 4px; flex-shrink: 0; }
+        .zone-bars { display: flex; height: 30px; border-radius: 8px; overflow: hidden; margin-top: 10px; }
+        .zone-bar { display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: white; font-weight: 700; }
+        .zone-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 12px; }
+        .zone-legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text); }
+        .zone-color { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; }
+
+        .laps-container {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: var(--radius);
+            border: 1px solid var(--line);
+            background: var(--bg);
+            transition: background var(--transition), border-color var(--transition);
+            box-shadow: var(--shadow);
+            overflow-x: auto;
+        }
+        .laps-container h3 {
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            color: var(--text);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+        .laps-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+        .laps-table th {
+            text-align: left;
+            padding: 6px 8px;
+            border-bottom: 2px solid var(--line);
+            color: var(--text-soft);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.55rem;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+        }
+        .laps-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--line);
+        }
+        .laps-table tr:hover {
+            background: rgba(252, 76, 2, 0.05);
+        }
 
         .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #2d3748; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); opacity: 0; transition: all 0.3s; z-index: 1100; max-width: 90%; text-align: center; font-weight: 500; font-size: 0.9rem; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
@@ -185,28 +224,37 @@
         .toast.error { background: #fc8181; }
 
         @media print {
-            .navbar, .actions, .toast, .btn-back, .btn-dashboard { display: none !important; }
+            .navbar, .actions, .toast { display: none !important; }
             body { background: white; padding: 0; }
             .summary-card { box-shadow: none; border: none; padding: 0; }
             .stat-card { background: #f5f5f5; }
-            .chart-box, .zone-container { background: #f5f5f5; border-color: #ddd; box-shadow: none; }
+            .chart-box, .zone-container, .laps-container { background: #f5f5f5; border-color: #ddd; box-shadow: none; }
         }
-        @media (max-width: 600px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .summary-header h1 { font-size: 1.2rem; }
-            .summary-header h1 .icon { font-size: 1.6rem; }
+        @media (max-width: 768px) {
+            .charts-grid { grid-template-columns: 1fr; gap: 12px; }
+            .chart-full { grid-column: 1; }
+            .chart-full canvas { height: 220px !important; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .stat-card { padding: 10px 6px; }
+            .stat-value { font-size: 1rem; }
+            .summary-header h1 { font-size: 1.1rem; }
+            .summary-header h1 .icon { font-size: 1.4rem; }
             .navbar { padding: 0 0.6rem; height: 48px; }
-            .navbar-brand { font-size: 0.9rem; }
-            .main-container { padding: 0.8rem 0.6rem; }
-            .summary-card { padding: 16px; }
-            .map-container { height: 220px; }
-            .map-container #map { min-height: 220px; }
-            .chart-box canvas { height: 220px !important; }
-            :root { --chart-height: 220px; }
-            .chart-box { padding: 14px; }
+            .navbar-brand { font-size: 0.85rem; }
+            .main-container { padding: 0.6rem 0.6rem; }
+            .summary-card { padding: 14px; }
+            .map-container { height: 250px; }
+            .map-container #map { min-height: 250px; }
+            .chart-box canvas { height: 180px !important; }
+            :root { --chart-height: 180px; }
+            .chart-box { padding: 12px; }
+            .zone-container, .laps-container { padding: 14px; }
+            .laps-table { font-size: 0.65rem; }
+            .laps-table th, .laps-table td { padding: 4px 6px; }
         }
-        @media (min-width: 768px) {
-            :root { --chart-height: 320px; }
+        @media (min-width: 769px) {
+            :root { --chart-height: 260px; }
+            .chart-full canvas { height: 300px !important; }
         }
     </style>
 </head>
@@ -217,7 +265,6 @@
             <div class="navbar-brand">🚴 Fit Reader <span>Beta</span></div>
         </div>
         <div class="navbar-right">
-            <span class="sensor-stub">📡 Sensors (view only)</span>
             <button class="theme-btn" id="themeToggle" onclick="toggleDarkMode()">🌙</button>
         </div>
     </nav>
@@ -236,18 +283,29 @@
                 </div>
             </div>
 
+            <!-- Full Stats Grid -->
             <div class="stats-grid">
                 <div class="stat-card"><div class="stat-label">Distance</div><div class="stat-value">{{ "%.2f"|format(summary.distance_km|default(0)) }} <span class="stat-unit">km</span></div></div>
+                <div class="stat-card"><div class="stat-label">Duration</div><div class="stat-value">{{ summary.total_time_formatted|default('00:00:00') }}</div></div>
                 <div class="stat-card"><div class="stat-label">Avg Speed</div><div class="stat-value">{{ "%.1f"|format(summary.avg_speed|default(0)) }} <span class="stat-unit">km/h</span></div></div>
                 <div class="stat-card"><div class="stat-label">Max Speed</div><div class="stat-value">{{ "%.1f"|format(summary.max_speed|default(0)) }} <span class="stat-unit">km/h</span></div></div>
                 <div class="stat-card"><div class="stat-label">Elevation Gain</div><div class="stat-value">{{ "%.0f"|format(summary.elevation_gain|default(0)) }} <span class="stat-unit">m</span></div></div>
-                <div class="stat-card"><div class="stat-label">Calories</div><div class="stat-value">{{ summary.total_calories|default(0)|int }}</div></div>
-                <div class="stat-card"><div class="stat-label">Avg Power</div><div class="stat-value">{{ "%.0f"|format(summary.avg_power|default(0)) }} <span class="stat-unit">W</span></div></div>
+                <div class="stat-card"><div class="stat-label">Elevation Loss</div><div class="stat-value">{{ "%.0f"|format(summary.elevation_loss|default(0)) }} <span class="stat-unit">m</span></div></div>
+                <div class="stat-card"><div class="stat-label">Min Elevation</div><div class="stat-value">{{ "%.0f"|format(summary.min_elevation|default(0)) }} <span class="stat-unit">m</span></div></div>
+                <div class="stat-card"><div class="stat-label">Max Elevation</div><div class="stat-value">{{ "%.0f"|format(summary.max_elevation|default(0)) }} <span class="stat-unit">m</span></div></div>
+                <div class="stat-card"><div class="stat-label">Calories</div><div class="stat-value">{{ summary.total_calories|default(0)|int }} <span class="stat-unit">kcal</span></div></div>
                 <div class="stat-card"><div class="stat-label">Avg HR</div><div class="stat-value">{{ "%.0f"|format(summary.avg_hr|default(0)) if summary.avg_hr else '—' }} <span class="stat-unit">bpm</span></div></div>
+                <div class="stat-card"><div class="stat-label">Max HR</div><div class="stat-value">{{ "%.0f"|format(summary.max_hr|default(0)) if summary.max_hr else '—' }} <span class="stat-unit">bpm</span></div></div>
                 <div class="stat-card"><div class="stat-label">Avg Cadence</div><div class="stat-value">{{ "%.0f"|format(summary.avg_cadence|default(0)) }} <span class="stat-unit">rpm</span></div></div>
+                <div class="stat-card"><div class="stat-label">Max Cadence</div><div class="stat-value">{{ "%.0f"|format(summary.max_cadence|default(0)) }} <span class="stat-unit">rpm</span></div></div>
+                <div class="stat-card"><div class="stat-label">Avg Power</div><div class="stat-value">{{ "%.0f"|format(summary.avg_power|default(0)) }} <span class="stat-unit">W</span></div></div>
+                <div class="stat-card"><div class="stat-label">Max Power</div><div class="stat-value">{{ "%.0f"|format(summary.max_power|default(0)) }} <span class="stat-unit">W</span></div></div>
+                <div class="stat-card"><div class="stat-label">Avg Temperature</div><div class="stat-value">{{ "%.1f"|format(summary.avg_temp|default(0)) if summary.avg_temp else '—' }} <span class="stat-unit">°C</span></div></div>
+                <div class="stat-card"><div class="stat-label">Min Temperature</div><div class="stat-value">{{ "%.1f"|format(summary.min_temp|default(0)) if summary.min_temp else '—' }} <span class="stat-unit">°C</span></div></div>
+                <div class="stat-card"><div class="stat-label">Max Temperature</div><div class="stat-value">{{ "%.1f"|format(summary.max_temp|default(0)) if summary.max_temp else '—' }} <span class="stat-unit">°C</span></div></div>
             </div>
 
-            <!-- Map Container -->
+            <!-- Map -->
             <div class="map-container" id="mapContainer">
                 {% if route and route|length > 1 %}
                 <div id="map"></div>
@@ -256,48 +314,91 @@
                 {% endif %}
             </div>
 
-            <!-- Centered, large charts -->
-            <div class="charts-container">
+            <!-- ALL Charts Grid -->
+            <div class="charts-grid">
+                <!-- Speed -->
                 {% if streams.speed and streams.speed|length > 0 %}
                 <div class="chart-box">
-                    <h3>🚴 Speed</h3>
+                    <h3>🚴 Speed (km/h)</h3>
                     <canvas id="speedChart"></canvas>
                 </div>
                 {% endif %}
-                
+
+                <!-- Heart Rate -->
                 {% if streams.heart_rate and streams.heart_rate|length > 0 %}
                 <div class="chart-box">
-                    <h3>❤️ Heart Rate</h3>
+                    <h3>❤️ Heart Rate (bpm)</h3>
                     <canvas id="hrChart"></canvas>
                 </div>
                 {% endif %}
-                
+
+                <!-- Cadence -->
+                {% if streams.cadence and streams.cadence|length > 0 %}
+                <div class="chart-box">
+                    <h3>🔄 Cadence (rpm)</h3>
+                    <canvas id="cadenceChart"></canvas>
+                </div>
+                {% endif %}
+
+                <!-- Power -->
                 {% if streams.power and streams.power|length > 0 %}
                 <div class="chart-box">
-                    <h3>⚡ Power</h3>
+                    <h3>⚡ Power (W)</h3>
                     <canvas id="powerChart"></canvas>
                 </div>
                 {% endif %}
 
+                <!-- Elevation -->
                 {% if streams.elevation and streams.elevation|length > 0 %}
                 <div class="chart-box">
-                    <h3>⛰️ Elevation</h3>
+                    <h3>⛰️ Elevation (m)</h3>
                     <canvas id="elevationChart"></canvas>
                 </div>
                 {% endif %}
 
+                <!-- Temperature -->
                 {% if streams.temperature and streams.temperature|length > 0 %}
                 <div class="chart-box">
-                    <h3>🌡️ Temperature</h3>
+                    <h3>🌡️ Temperature (°C)</h3>
                     <canvas id="tempChart"></canvas>
                 </div>
                 {% endif %}
+
+                <!-- Gradient/Incline -->
+                {% if streams.grade and streams.grade|length > 0 %}
+                <div class="chart-box">
+                    <h3>📐 Gradient (%)</h3>
+                    <canvas id="gradeChart"></canvas>
+                </div>
+                {% endif %}
+
+                <!-- Torque -->
+                {% if streams.torque and streams.torque|length > 0 %}
+                <div class="chart-box">
+                    <h3>🔧 Torque (Nm)</h3>
+                    <canvas id="torqueChart"></canvas>
+                </div>
+                {% endif %}
+
+                <!-- Left/Right Balance -->
+                {% if streams.left_right_balance and streams.left_right_balance|length > 0 %}
+                <div class="chart-box">
+                    <h3>⚖️ Left/Right Balance (%)</h3>
+                    <canvas id="balanceChart"></canvas>
+                </div>
+                {% endif %}
+
+                <!-- Combined Metrics (Full Width) -->
+                <div class="chart-box chart-full">
+                    <h3>📊 Combined Metrics (Normalized %)</h3>
+                    <canvas id="combinedChart"></canvas>
+                </div>
             </div>
 
             <!-- Power Zones -->
+            {% if zone_distribution and zone_distribution|length > 0 %}
             <div class="zone-container">
                 <h3>⚡ Power Zones</h3>
-                {% if zone_distribution and zone_distribution|length > 0 %}
                 <div class="zone-bars">
                     {% for zone in zone_distribution %}
                     <div class="zone-bar" style="width: {{ zone.pct|default(0) }}%; background: {{ zone.color|default('#888') }};">
@@ -313,10 +414,91 @@
                     </div>
                     {% endfor %}
                 </div>
-                {% else %}
-                <p style="color: var(--text-soft); font-size: 0.9rem; text-align: center;">No power data available</p>
-                {% endif %}
             </div>
+            {% endif %}
+
+            <!-- Heart Rate Zones -->
+            {% if hr_zone_distribution and hr_zone_distribution|length > 0 %}
+            <div class="zone-container">
+                <h3>❤️ Heart Rate Zones</h3>
+                <div class="zone-bars">
+                    {% for zone in hr_zone_distribution %}
+                    <div class="zone-bar" style="width: {{ zone.pct|default(0) }}%; background: {{ zone.color|default('#888') }};">
+                        {{ zone.pct|default(0) }}%
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="zone-legend">
+                    {% for zone in hr_zone_distribution %}
+                    <div class="zone-legend-item">
+                        <span class="zone-color" style="background: {{ zone.color|default('#888') }};"></span>
+                        {{ zone.zone }} ({{ zone.seconds|default(0) }}s)
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Cadence Zones -->
+            {% if cadence_zone_distribution and cadence_zone_distribution|length > 0 %}
+            <div class="zone-container">
+                <h3>🔄 Cadence Zones</h3>
+                <div class="zone-bars">
+                    {% for zone in cadence_zone_distribution %}
+                    <div class="zone-bar" style="width: {{ zone.pct|default(0) }}%; background: {{ zone.color|default('#888') }};">
+                        {{ zone.pct|default(0) }}%
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="zone-legend">
+                    {% for zone in cadence_zone_distribution %}
+                    <div class="zone-legend-item">
+                        <span class="zone-color" style="background: {{ zone.color|default('#888') }};"></span>
+                        {{ zone.zone }} ({{ zone.seconds|default(0) }}s)
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Laps -->
+            {% if laps and laps|length > 0 %}
+            <div class="laps-container">
+                <h3>🏁 Lap Analysis</h3>
+                <table class="laps-table">
+                    <thead>
+                        <tr>
+                            <th>Lap</th>
+                            <th>Distance</th>
+                            <th>Time</th>
+                            <th>Avg Speed</th>
+                            <th>Avg HR</th>
+                            <th>Avg Cadence</th>
+                            <th>Avg Power</th>
+                            <th>Elevation</th>
+                            <th>Calories</th>
+                            <th>Temp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lap in laps %}
+                        <tr>
+                            <td><strong>#{{ loop.index }}</strong></td>
+                            <td>{{ "%.2f"|format(lap.distance_km|default(0)) }} km</td>
+                            <td>{{ lap.time_formatted|default('00:00') }}</td>
+                            <td>{{ "%.1f"|format(lap.avg_speed|default(0)) }} km/h</td>
+                            <td>{{ "%.0f"|format(lap.avg_heart_rate|default(0)) if lap.avg_heart_rate else '—' }} bpm</td>
+                            <td>{{ "%.0f"|format(lap.avg_cadence|default(0)) if lap.avg_cadence else '—' }} rpm</td>
+                            <td>{{ "%.0f"|format(lap.avg_power|default(0)) if lap.avg_power else '—' }} W</td>
+                            <td>{{ "%.0f"|format(lap.elevation_gain|default(0)) }} m</td>
+                            <td>{{ lap.calories|default(0)|int }}</td>
+                            <td>{{ "%.1f"|format(lap.avg_temp|default(0)) if lap.avg_temp else '—' }} °C</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
         </div>
     </div>
 
@@ -352,20 +534,18 @@
             toast._timeout = setTimeout(() => toast.classList.remove('show'), 3500);
         }
 
-        // ── Leaflet Map with robust loading ────────────────
+        // ── Leaflet Map ────────────────────────────────────
         {% if route and route|length > 1 %}
         (function initMap() {
             const mapContainer = document.getElementById('map');
             if (!mapContainer) return;
             
-            // Ensure container has dimensions
             const container = document.getElementById('mapContainer');
             if (container) {
-                container.style.height = '350px';
+                container.style.height = '400px';
                 container.style.position = 'relative';
             }
             
-            // Use requestAnimationFrame to ensure layout is done
             requestAnimationFrame(() => {
                 try {
                     const route = {{ route|tojson }};
@@ -384,25 +564,21 @@
                     const polyline = L.polyline(route, { color: '#fc4c02', weight: 4, opacity: 0.9 }).addTo(map);
                     map.fitBounds(polyline.getBounds());
                     
-                    // Start and end markers
                     if (route.length > 0) {
-                        L.circleMarker(route[0], { radius: 6, color: '#48bb78', fillColor: '#48bb78', fillOpacity: 1 })
+                        L.circleMarker(route[0], { radius: 8, color: '#48bb78', fillColor: '#48bb78', fillOpacity: 1, weight: 2 })
                             .addTo(map)
                             .bindPopup('🏁 Start');
-                        L.circleMarker(route[route.length - 1], { radius: 6, color: '#fc4c02', fillColor: '#fc4c02', fillOpacity: 1 })
+                        L.circleMarker(route[route.length - 1], { radius: 8, color: '#fc4c02', fillColor: '#fc4c02', fillOpacity: 1, weight: 2 })
                             .addTo(map)
                             .bindPopup('🏁 Finish');
                     }
                     
-                    // Force a size recalculation after a short delay
-                    setTimeout(() => map.invalidateSize(), 100);
-                    // Also invalidate on window resize
+                    setTimeout(() => map.invalidateSize(), 150);
                     window.addEventListener('resize', () => {
                         setTimeout(() => map.invalidateSize(), 200);
                     });
                 } catch (e) {
                     console.warn('Map initialization failed:', e);
-                    // Show fallback message
                     const container = document.getElementById('mapContainer');
                     if (container) {
                         container.innerHTML = '<div class="no-data">⚠️ Map could not be loaded</div>';
@@ -412,19 +588,19 @@
         })();
         {% endif %}
 
-        // ── Chart.js (5 Separate Charts) ──────────────────
+        // ── Chart.js ──────────────────────────────────────
         const streams = {{ streams|tojson }};
         const timestamps = streams.timestamps || [];
         const isDarkMode = document.body.classList.contains('dark-theme');
         const textColor = isDarkMode ? '#ccc' : '#666';
         const gridColor = isDarkMode ? '#2a2a2a' : '#e2e8f0';
 
-        function createChart(canvasId, label, data, color, borderColor, startAtZero = true) {
+        function createChart(canvasId, label, data, color, borderColor, startAtZero = true, yMax = null) {
             const canvas = document.getElementById(canvasId);
-            if (!canvas || !data || data.length === 0) return;
+            if (!canvas || !data || data.length === 0) return null;
             
             try {
-                new Chart(canvas, {
+                return new Chart(canvas, {
                     type: 'line',
                     data: {
                         labels: timestamps,
@@ -447,28 +623,122 @@
                         },
                         scales: {
                             x: { 
-                                ticks: { color: textColor, maxTicksLimit: 15, font: { size: 10 } }, 
+                                ticks: { color: textColor, maxTicksLimit: 10, font: { size: 8 } }, 
                                 grid: { color: gridColor } 
                             },
                             y: { 
                                 beginAtZero: startAtZero, 
-                                ticks: { color: textColor, font: { size: 10 } }, 
-                                grid: { color: gridColor } 
+                                ticks: { color: textColor, font: { size: 8 } }, 
+                                grid: { color: gridColor },
+                                max: yMax || undefined
                             }
                         }
                     }
                 });
             } catch (e) {
                 console.warn('Chart error for', canvasId, e);
+                return null;
             }
         }
 
         if (timestamps.length > 0) {
+            // All individual charts
             createChart('speedChart', 'Speed (km/h)', streams.speed, 'rgba(66, 153, 225, 0.2)', 'rgb(66, 153, 225)', true);
             createChart('hrChart', 'Heart Rate (bpm)', streams.heart_rate, 'rgba(252, 129, 129, 0.2)', 'rgb(252, 129, 129)', true);
+            createChart('cadenceChart', 'Cadence (rpm)', streams.cadence, 'rgba(159, 122, 234, 0.2)', 'rgb(159, 122, 234)', true);
             createChart('powerChart', 'Power (W)', streams.power, 'rgba(246, 173, 85, 0.2)', 'rgb(246, 173, 85)', true);
             createChart('elevationChart', 'Elevation (m)', streams.elevation, 'rgba(72, 187, 120, 0.2)', 'rgb(72, 187, 120)', false);
-            createChart('tempChart', 'Temperature (°C)', streams.temperature, 'rgba(159, 122, 234, 0.2)', 'rgb(159, 122, 234)', false);
+            createChart('tempChart', 'Temperature (°C)', streams.temperature, 'rgba(237, 137, 54, 0.2)', 'rgb(237, 137, 54)', false);
+            createChart('gradeChart', 'Gradient (%)', streams.grade, 'rgba(107, 114, 128, 0.2)', 'rgb(107, 114, 128)', false);
+            createChart('torqueChart', 'Torque (Nm)', streams.torque, 'rgba(236, 64, 122, 0.2)', 'rgb(236, 64, 122)', true);
+            createChart('balanceChart', 'Left/Right Balance (%)', streams.left_right_balance, 'rgba(56, 189, 248, 0.2)', 'rgb(56, 189, 248)', true);
+
+            // Combined Chart - Normalized values
+            const combinedCanvas = document.getElementById('combinedChart');
+            if (combinedCanvas && streams.speed && streams.speed.length > 0) {
+                const maxSpeed = Math.max(...streams.speed, 1);
+                const maxHR = Math.max(...(streams.heart_rate || [0]), 1);
+                const maxPower = Math.max(...(streams.power || [0]), 1);
+                const maxCadence = Math.max(...(streams.cadence || [0]), 1);
+                
+                try {
+                    new Chart(combinedCanvas, {
+                        type: 'line',
+                        data: {
+                            labels: timestamps,
+                            datasets: [
+                                {
+                                    label: 'Speed',
+                                    data: streams.speed.map(v => (v / maxSpeed) * 100),
+                                    borderColor: 'rgb(66, 153, 225)',
+                                    backgroundColor: 'rgba(66, 153, 225, 0.05)',
+                                    fill: false,
+                                    tension: 0.3,
+                                    pointRadius: 0,
+                                    borderWidth: 2
+                                },
+                                {
+                                    label: 'HR',
+                                    data: (streams.heart_rate || []).map(v => (v / maxHR) * 100),
+                                    borderColor: 'rgb(252, 129, 129)',
+                                    backgroundColor: 'rgba(252, 129, 129, 0.05)',
+                                    fill: false,
+                                    tension: 0.3,
+                                    pointRadius: 0,
+                                    borderWidth: 2
+                                },
+                                {
+                                    label: 'Power',
+                                    data: (streams.power || []).map(v => (v / maxPower) * 100),
+                                    borderColor: 'rgb(246, 173, 85)',
+                                    backgroundColor: 'rgba(246, 173, 85, 0.05)',
+                                    fill: false,
+                                    tension: 0.3,
+                                    pointRadius: 0,
+                                    borderWidth: 2
+                                },
+                                {
+                                    label: 'Cadence',
+                                    data: (streams.cadence || []).map(v => (v / maxCadence) * 100),
+                                    borderColor: 'rgb(159, 122, 234)',
+                                    backgroundColor: 'rgba(159, 122, 234, 0.05)',
+                                    fill: false,
+                                    tension: 0.3,
+                                    pointRadius: 0,
+                                    borderWidth: 2,
+                                    borderDash: [5, 5]
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { 
+                                legend: { 
+                                    labels: { 
+                                        color: textColor,
+                                        font: { size: 9 }
+                                    } 
+                                } 
+                            },
+                            scales: {
+                                x: { 
+                                    ticks: { color: textColor, maxTicksLimit: 10, font: { size: 8 } }, 
+                                    grid: { color: gridColor } 
+                                },
+                                y: { 
+                                    beginAtZero: true,
+                                    max: 110,
+                                    ticks: { color: textColor, font: { size: 8 }, callback: function(value) { return value + '%'; } }, 
+                                    grid: { color: gridColor } 
+                                }
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.warn('Combined chart error:', e);
+                }
+            }
         }
     </script>
 </body>
