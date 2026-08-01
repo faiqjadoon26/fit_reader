@@ -36,7 +36,7 @@
             background: var(--bg);
             color: var(--text);
             transition: background var(--transition), color var(--transition);
-            overflow: hidden; /* prevent body scroll, container scrolls */
+            overflow: hidden;
         }
         body {
             display: flex;
@@ -57,7 +57,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            flex-shrink: 0; /* don't shrink */
+            flex-shrink: 0;
             transition: background var(--transition), border-color var(--transition);
             z-index: 100;
         }
@@ -102,7 +102,7 @@
 
         /* ── Main content (scrollable) ── */
         .main-container {
-            flex: 1 1 auto; /* grow and shrink */
+            flex: 1 1 auto;
             overflow-y: auto;
             overflow-x: hidden;
             padding: 1rem 1rem 0.5rem;
@@ -111,14 +111,14 @@
             width: 100%;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
-            min-height: 0; /* critical: allows flex container to shrink below content */
+            min-height: 0;
         }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
         /* ── Bottom tabs ── */
         .bottom-tabs {
-            flex-shrink: 0; /* don't shrink */
+            flex-shrink: 0;
             height: var(--tab-height);
             background: var(--card);
             border-top: 1px solid var(--line);
@@ -1822,6 +1822,7 @@
             const coords = position.coords;
             const lat = coords.latitude;
             const lng = coords.longitude;
+            const altitude = coords.altitude || 0; // ← ADDED: capture elevation
             let speedKmh = 0;
             if (coords.speed !== null && coords.speed !== undefined && coords.speed >= 0) {
                 speedKmh = coords.speed * 3.6;
@@ -1836,6 +1837,7 @@
             recPoints.push({
                 timestamp: new Date(position.timestamp).toISOString(),
                 lat, lng,
+                altitude: altitude, // ← ADDED: store elevation
                 speed_kmh: speedKmh,
                 heart_rate: sensorData.heartRate || 0,
                 cadence: sensorData.cadence || 0,
