@@ -36,12 +36,12 @@
             background: var(--bg);
             color: var(--text);
             transition: background var(--transition), color var(--transition);
-            overflow: hidden;
+            overflow: hidden; /* prevent body scroll, container scrolls */
         }
         body {
             display: flex;
             flex-direction: column;
-            height: 100vh;
+            height: 100%;
         }
         :fullscreen, :-webkit-full-screen {
             overflow: hidden !important;
@@ -57,7 +57,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            flex-shrink: 0;
+            flex-shrink: 0; /* don't shrink */
             transition: background var(--transition), border-color var(--transition);
             z-index: 100;
         }
@@ -102,7 +102,7 @@
 
         /* ── Main content (scrollable) ── */
         .main-container {
-            flex: 1;
+            flex: 1 1 auto; /* grow and shrink */
             overflow-y: auto;
             overflow-x: hidden;
             padding: 1rem 1rem 0.5rem;
@@ -111,13 +111,14 @@
             width: 100%;
             -webkit-overflow-scrolling: touch;
             scroll-behavior: smooth;
+            min-height: 0; /* critical: allows flex container to shrink below content */
         }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
         /* ── Bottom tabs ── */
         .bottom-tabs {
-            flex-shrink: 0;
+            flex-shrink: 0; /* don't shrink */
             height: var(--tab-height);
             background: var(--card);
             border-top: 1px solid var(--line);
