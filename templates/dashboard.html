@@ -38,7 +38,6 @@
             transition: background var(--transition), color var(--transition);
             overflow-x: hidden;
         }
-        /* Fullscreen mode for the whole app */
         body.app-fullscreen {
             position: fixed;
             top: 0;
@@ -81,9 +80,7 @@
             font-weight: 700;
             display: none;
         }
-        body.app-fullscreen .fullscreen-badge {
-            display: inline-block;
-        }
+        body.app-fullscreen .fullscreen-badge { display: inline-block; }
 
         .main-container { 
             max-width: 1400px; 
@@ -336,7 +333,7 @@
         }
         .record-modal-stats-wrapper>* { pointer-events: auto; }
         
-        /* MAIN STATS - ONE ROW WITHOUT POINTS */
+        /* MAIN STATS - ONE ROW */
         .record-modal-stats {
             display: grid; 
             grid-template-columns: 1.5fr 1fr 1fr 1fr; 
@@ -423,6 +420,8 @@
         #recTimer { color: #ff8a5c; }
         #recTimer.paused { color: #facc15; }
         #recAvgSpeedDisplay { color: #94a3b8; }
+        /* Speed display dims when paused */
+        #recSpeed.paused { color: #94a3b8; }
         
         .record-modal-message {
             position: absolute; bottom: 58px; left: 0; right: 0; z-index: 1000;
@@ -490,7 +489,6 @@
         .record-tab-content .big-record-btn:active { transform: scale(0.88); box-shadow: 0 2px 10px rgba(252,76,2,0.3); }
         .record-tab-content .big-record-btn:hover { transform: scale(1.04); box-shadow: 0 8px 40px rgba(252,76,2,0.6); }
 
-        /* Fullscreen exit button */
         .exit-fullscreen-btn {
             background: rgba(255,255,255,0.1);
             border: 1px solid rgba(255,255,255,0.2);
@@ -504,9 +502,7 @@
             white-space: nowrap;
             display: none;
         }
-        body.app-fullscreen .exit-fullscreen-btn {
-            display: inline-block;
-        }
+        body.app-fullscreen .exit-fullscreen-btn { display: inline-block; }
         .exit-fullscreen-btn:hover {
             border-color: var(--orange);
             background: var(--orange);
@@ -747,7 +743,7 @@
             </div>
         </div>
         <div class="record-modal-stats-wrapper">
-            <!-- MAIN STATS - ONE ROW WITHOUT POINTS -->
+            <!-- MAIN STATS - ONE ROW: TIMER, SPEED, DISTANCE, AVG SPEED -->
             <div class="record-modal-stats">
                 <div class="modal-stat modal-stat-primary">
                     <div class="record-stat-label">⏱️ Timer</div>
@@ -1705,10 +1701,17 @@
             const minimizedText = document.getElementById('minimizedText');
             if (minimizedText) minimizedText.textContent = `Recording... ${durationStr} · ${recTotalDistanceKm.toFixed(2)} km`;
             
+            // Update speed - show current speed when recording, or avg speed when paused
             if (recIsPaused) {
-                // Keep showing the stored speed
+                // Show average speed in the speed position when paused
+                document.getElementById('recSpeed').textContent = avgSpeed.toFixed(1);
+                document.getElementById('recSpeed').style.color = '#94a3b8';
+                document.getElementById('recSpeed').classList.add('paused');
             } else if (recLastPoint && recLastPoint.speed !== undefined) {
+                // Show current speed when recording
                 document.getElementById('recSpeed').textContent = recLastPoint.speed.toFixed(1);
+                document.getElementById('recSpeed').style.color = '';
+                document.getElementById('recSpeed').classList.remove('paused');
             }
             
             const timerEl = document.getElementById('recTimer');
@@ -1746,8 +1749,11 @@
             if (!recMap || !mapInitialized) initRecordMap(lat, lng);
             else updateRecordMap(lat, lng);
             
+            // Only update speed if not paused (when paused, it shows avg speed)
             if (!recIsPaused) {
                 document.getElementById('recSpeed').textContent = speedKmh.toFixed(1);
+                document.getElementById('recSpeed').style.color = '';
+                document.getElementById('recSpeed').classList.remove('paused');
             }
             setGpsStatus('GPS locked', 'active');
             updateRecordUI();
@@ -1794,6 +1800,7 @@
             document.getElementById('recTimer').classList.remove('paused');
             document.getElementById('recSpeed').textContent = '0.0';
             document.getElementById('recSpeed').style.color = '';
+            document.getElementById('recSpeed').classList.remove('paused');
             document.getElementById('recAvgSpeedDisplay').textContent = '0.0';
             document.getElementById('recDistance').textContent = '0.00';
             if (profileData.default_activity_type) {
@@ -1861,11 +1868,12 @@
             document.getElementById('recPauseBtn').style.display = 'none';
             document.getElementById('recResumeBtn').style.display = 'inline-block';
             
-            const currentSpeed = document.getElementById('recSpeed').textContent;
-            recPausedSpeed = currentSpeed;
-            const avgSpeed = document.getElementById('recAvgSpeedDisplay').textContent;
-            document.getElementById('recSpeed').textContent = avgSpeed;
+            // Calculate average speed and show it in the speed position
+            const elapsedHours = currentElapsedMs() / 3600000;
+            const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
+            document.getElementById('recSpeed').textContent = avgSpeed.toFixed(1);
             document.getElementById('recSpeed').style.color = '#94a3b8';
+            document.getElementById('recSpeed').classList.add('paused');
             document.getElementById('recTimer').classList.add('paused');
         }
 
@@ -1885,8 +1893,14 @@
             document.getElementById('recPauseBtn').style.display = 'inline-block';
             document.getElementById('recResumeBtn').style.display = 'none';
             
-            document.getElementById('recSpeed').textContent = recPausedSpeed || '0.0';
+            // Restore current speed if available
+            if (recLastPoint && recLastPoint.speed !== undefined) {
+                document.getElementById('recSpeed').textContent = recLastPoint.speed.toFixed(1);
+            } else {
+                document.getElementById('recSpeed').textContent = '0.0';
+            }
             document.getElementById('recSpeed').style.color = '';
+            document.getElementById('recSpeed').classList.remove('paused');
             document.getElementById('recTimer').classList.remove('paused');
         }
 
@@ -1906,6 +1920,7 @@
             document.getElementById('recDistance').textContent = '0.00';
             document.getElementById('recSpeed').textContent = '0.0';
             document.getElementById('recSpeed').style.color = '';
+            document.getElementById('recSpeed').classList.remove('paused');
             document.getElementById('recAvgSpeedDisplay').textContent = '0.0';
             document.getElementById('recHR').textContent = '--';
             document.getElementById('recCadence').textContent = '--';
