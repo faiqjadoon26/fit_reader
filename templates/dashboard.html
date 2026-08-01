@@ -765,7 +765,7 @@
         }
         .record-modal-stats {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(4, 1fr);
             gap: 8px;
             background: rgba(18, 22, 42, 0.85);
             border-radius: 16px;
@@ -793,14 +793,14 @@
             padding: 4px 0;
         }
         .modal-stat-primary {
-            grid-column: span 2;
+            grid-column: span 1;
             background: linear-gradient(135deg, rgba(252, 76, 2, 0.25), rgba(252, 76, 2, 0.05));
             border-radius: 12px;
             padding: 6px 4px;
             border: 1px solid rgba(252, 76, 2, 0.2);
         }
         .modal-stat-primary .record-stat-value {
-            font-size: 2.2rem;
+            font-size: 2.4rem;
             font-weight: 800;
             color: #ff8a5c;
             text-shadow: 0 0 30px rgba(252, 76, 2, 0.3);
@@ -814,7 +814,7 @@
             margin-bottom: 2px;
         }
         .record-stat-value {
-            font-size: 1.4rem;
+            font-size: 1.8rem;
             font-weight: 700;
             color: #f1f5f9;
             margin-top: 2px;
@@ -822,7 +822,7 @@
         }
         .record-stat-value .stat-unit {
             color: #94a3b8;
-            font-size: 0.7rem;
+            font-size: 0.8rem;
             font-weight: 500;
             margin-left: 2px;
         }
@@ -833,11 +833,11 @@
             border: 1px solid rgba(255, 255, 255, 0.06);
         }
         .record-modal-sensor-stats .record-stat-value {
-            font-size: 1.5rem;
+            font-size: 1.8rem;
             color: #f1f5f9;
         }
         .record-modal-sensor-stats .record-stat-value .stat-unit {
-            font-size: 0.65rem;
+            font-size: 0.7rem;
         }
         /* Sensor value colors */
         #recHR {
@@ -1059,14 +1059,17 @@
                 grid-column: 1;
             }
             .record-modal-stats {
-                grid-template-columns: repeat(3, 1fr);
+                grid-template-columns: repeat(2, 1fr);
                 gap: 6px;
                 padding: 12px 8px;
             }
             .modal-stat-primary {
-                grid-column: span 3;
+                grid-column: span 2;
             }
             .modal-stat-primary .record-stat-value {
+                font-size: 2.8rem;
+            }
+            .record-stat-value {
                 font-size: 2rem;
             }
             .record-modal-sensor-stats {
@@ -1075,7 +1078,7 @@
                 padding: 10px 6px;
             }
             .record-modal-sensor-stats .record-stat-value {
-                font-size: 1.3rem;
+                font-size: 1.6rem;
             }
             .record-btn {
                 padding: 12px 20px;
@@ -1158,15 +1161,20 @@
             }
             .record-modal-stats {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 4px;
+                padding: 10px 6px;
             }
             .modal-stat-primary {
                 grid-column: span 2;
             }
             .modal-stat-primary .record-stat-value {
-                font-size: 1.8rem;
+                font-size: 2.4rem;
+            }
+            .record-stat-value {
+                font-size: 1.6rem;
             }
             .record-modal-sensor-stats .record-stat-value {
-                font-size: 1.1rem;
+                font-size: 1.4rem;
             }
             .record-btn {
                 padding: 10px 16px;
@@ -1198,13 +1206,16 @@
             .record-modal-stats {
                 grid-template-columns: 1fr 1fr;
                 gap: 4px;
-                padding: 8px 6px;
+                padding: 8px 4px;
             }
             .modal-stat-primary {
                 grid-column: span 2;
             }
             .modal-stat-primary .record-stat-value {
-                font-size: 1.6rem;
+                font-size: 2rem;
+            }
+            .record-stat-value {
+                font-size: 1.4rem;
             }
             .record-modal-sensor-stats {
                 grid-template-columns: 1fr 1fr 1fr;
@@ -1212,7 +1223,7 @@
                 padding: 8px 4px;
             }
             .record-modal-sensor-stats .record-stat-value {
-                font-size: 1rem;
+                font-size: 1.2rem;
             }
             .record-btn {
                 padding: 8px 12px;
@@ -1392,10 +1403,9 @@
         </div>
         <div class="record-modal-stats-wrapper">
             <div class="record-modal-stats">
-                <div class="modal-stat modal-stat-primary"><div class="record-stat-label">⏱ Duration</div><div class="record-stat-value" id="recDuration">00:00:00</div></div>
+                <div class="modal-stat modal-stat-primary"><div class="record-stat-label">⚡ Speed</div><div class="record-stat-value"><span id="recSpeed">0.0</span> <span class="stat-unit">km/h</span></div></div>
                 <div class="modal-stat"><div class="record-stat-label">📏 Distance</div><div class="record-stat-value"><span id="recDistance">0.00</span> <span class="stat-unit">km</span></div></div>
-                <div class="modal-stat"><div class="record-stat-label">⚡ Speed</div><div class="record-stat-value"><span id="recSpeed">0.0</span> <span class="stat-unit">km/h</span></div></div>
-                <div class="modal-stat"><div class="record-stat-label">📊 Avg</div><div class="record-stat-value"><span id="recAvgSpeed">0.0</span> <span class="stat-unit">km/h</span></div></div>
+                <div class="modal-stat"><div class="record-stat-label">📊 Avg Speed</div><div class="record-stat-value"><span id="recAvgSpeed">0.0</span> <span class="stat-unit">km/h</span></div></div>
                 <div class="modal-stat"><div class="record-stat-label">📍 Points</div><div class="record-stat-value" id="recPoints">0</div></div>
             </div>
             <div class="record-modal-sensor-stats">
@@ -1600,6 +1610,23 @@
         let sensorData = { heartRate: null, cadence: null, power: null, speed: null };
         let deviceIdCounter = 0;
         let isScanning = false;
+        
+        // Track connection state per sensor type
+        let sensorConnectionState = {
+            heartRate: false,
+            cadence: false,
+            power: false,
+            speed: false
+        };
+        
+        // Add timeout trackers for sensor data
+        let sensorTimeouts = {
+            heartRate: null,
+            cadence: null,
+            power: null,
+            speed: null
+        };
+        const SENSOR_TIMEOUT_MS = 3000; // Clear value after 3 seconds of no data
 
         // ── Profile Data ────────────────────────────────────
         let profileData = {};
@@ -1889,9 +1916,53 @@
         }
 
         function updateSensorUI() {
-            document.getElementById('recHR').textContent = sensorData.heartRate !== null ? sensorData.heartRate : '--';
-            document.getElementById('recCadence').textContent = sensorData.cadence !== null ? sensorData.cadence : '--';
-            document.getElementById('recPower').textContent = sensorData.power !== null ? sensorData.power : '--';
+            // Heart Rate: show 0 when connected but no data, -- when disconnected or timed out
+            if (sensorConnectionState.heartRate && sensorData.heartRate === null) {
+                document.getElementById('recHR').textContent = '0';
+            } else {
+                document.getElementById('recHR').textContent = sensorData.heartRate !== null ? sensorData.heartRate : '--';
+            }
+            
+            // Cadence: show 0 when connected but no data, -- when disconnected or timed out
+            if (sensorConnectionState.cadence && sensorData.cadence === null) {
+                document.getElementById('recCadence').textContent = '0';
+            } else {
+                document.getElementById('recCadence').textContent = sensorData.cadence !== null ? sensorData.cadence : '--';
+            }
+            
+            // Power: show 0 when connected but no data, -- when disconnected or timed out
+            if (sensorConnectionState.power && sensorData.power === null) {
+                document.getElementById('recPower').textContent = '0';
+            } else {
+                document.getElementById('recPower').textContent = sensorData.power !== null ? sensorData.power : '--';
+            }
+            
+            // Speed: show 0.0 when connected but no data, -- when disconnected or timed out
+            if (sensorConnectionState.speed && sensorData.speed === null) {
+                document.getElementById('recSpeed').textContent = '0.0';
+            } else {
+                document.getElementById('recSpeed').textContent = sensorData.speed !== null ? sensorData.speed.toFixed(1) : '0.0';
+            }
+        }
+        
+        // Clear a specific sensor value after timeout
+        function clearSensorValue(sensorKey) {
+            if (sensorData[sensorKey] !== null) {
+                sensorData[sensorKey] = null;
+                updateSensorUI();
+            }
+        }
+        
+        // Reset timeout for a sensor
+        function resetSensorTimeout(sensorKey) {
+            if (sensorTimeouts[sensorKey]) {
+                clearTimeout(sensorTimeouts[sensorKey]);
+                sensorTimeouts[sensorKey] = null;
+            }
+            sensorTimeouts[sensorKey] = setTimeout(() => {
+                clearSensorValue(sensorKey);
+                sensorTimeouts[sensorKey] = null;
+            }, SENSOR_TIMEOUT_MS);
         }
 
         // ── Profile Management ─────────────────────────────
@@ -1975,9 +2046,20 @@
                 await setupSensorListeners(server, uniqueId);
                 server.addEventListener('gattserverdisconnected', () => {
                     const idx = connectedDevices.findIndex(d => d.id === uniqueId);
-                    if (idx > -1) { connectedDevices.splice(idx, 1);
+                    if (idx > -1) { 
+                        connectedDevices.splice(idx, 1); 
                         updateSensorBtnUI();
-                        showToast(`⚠️ ${devInfo.name} disconnected`, 'error'); }
+                        Object.keys(sensorData).forEach(key => {
+                            sensorData[key] = null;
+                            sensorConnectionState[key] = false;
+                            if (sensorTimeouts[key]) {
+                                clearTimeout(sensorTimeouts[key]);
+                                sensorTimeouts[key] = null;
+                            }
+                        });
+                        updateSensorUI();
+                        showToast(`⚠️ ${devInfo.name} disconnected`, 'error'); 
+                    }
                 });
             } catch (error) {
                 console.error("Connection error:", error);
@@ -1994,10 +2076,14 @@
 
         async function setupSensorListeners(server, devId) {
             let cscState = { lastCrankRevs: 0, lastCrankTime: 0, lastWheelRevs: 0, lastWheelTime: 0 };
+            
+            // Try Heart Rate
             try {
                 const hrService = await server.getPrimaryService('heart_rate');
                 const hrChar = await hrService.getCharacteristic('heart_rate_measurement');
                 await hrChar.startNotifications();
+                sensorConnectionState.heartRate = true;
+                updateSensorUI();
                 hrChar.addEventListener('characteristicvaluechanged', event => {
                     const value = event.target.value;
                     const flags = value.getUint8(0);
@@ -2005,14 +2091,23 @@
                     if (flags & 0x01) hr = value.getUint16(1, true);
                     else hr = value.getUint8(1);
                     sensorData.heartRate = hr;
+                    resetSensorTimeout('heartRate');
                     updateSensorUI();
                 });
-            } catch (e) { console.warn(`[${devId}] HR not found`); }
+            } catch (e) { 
+                console.warn(`[${devId}] HR not found`);
+                sensorConnectionState.heartRate = false;
+                updateSensorUI();
+            }
 
+            // Try Cycling Speed and Cadence
             try {
                 const cscService = await server.getPrimaryService('cycling_speed_and_cadence');
                 const cscChar = await cscService.getCharacteristic('csc_measurement');
                 await cscChar.startNotifications();
+                sensorConnectionState.cadence = true;
+                sensorConnectionState.speed = true;
+                updateSensorUI();
                 cscChar.addEventListener('characteristicvaluechanged', event => {
                     const value = event.target.value;
                     const flags = value.getUint8(0);
@@ -2027,6 +2122,8 @@
                                 const wheelCirc = 2.1;
                                 const speedKmh = (revDiff * wheelCirc / timeDiff) * 3.6;
                                 sensorData.speed = speedKmh;
+                                resetSensorTimeout('speed');
+                                updateSensorUI();
                             }
                         }
                         cscState.lastWheelRevs = wheelRevs;
@@ -2042,6 +2139,7 @@
                             if (timeDiff > 0) {
                                 const cadenceRpm = (revDiff / timeDiff) * 60;
                                 sensorData.cadence = Math.round(cadenceRpm);
+                                resetSensorTimeout('cadence');
                                 updateSensorUI();
                             }
                         }
@@ -2049,19 +2147,32 @@
                         cscState.lastCrankTime = crankTime;
                     }
                 });
-            } catch (e) { console.warn(`[${devId}] CSC not found`); }
+            } catch (e) { 
+                console.warn(`[${devId}] CSC not found`);
+                sensorConnectionState.cadence = false;
+                sensorConnectionState.speed = false;
+                updateSensorUI();
+            }
 
+            // Try Cycling Power
             try {
                 const powerService = await server.getPrimaryService('cycling_power');
                 const powerChar = await powerService.getCharacteristic('cycling_power_measurement');
                 await powerChar.startNotifications();
+                sensorConnectionState.power = true;
+                updateSensorUI();
                 powerChar.addEventListener('characteristicvaluechanged', event => {
                     const value = event.target.value;
                     const powerVal = value.getUint16(2, true);
                     sensorData.power = powerVal;
+                    resetSensorTimeout('power');
                     updateSensorUI();
                 });
-            } catch (e) { console.warn(`[${devId}] Power not found`); }
+            } catch (e) { 
+                console.warn(`[${devId}] Power not found`);
+                sensorConnectionState.power = false;
+                updateSensorUI();
+            }
         }
 
         // ── Recording Logic ────────────────────────────────
@@ -2160,7 +2271,6 @@
 
         function updateRecordUI() {
             const durationStr = formatDuration(currentElapsedMs());
-            document.getElementById('recDuration').textContent = durationStr;
             document.getElementById('recDistance').textContent = recTotalDistanceKm.toFixed(2);
             document.getElementById('recPoints').textContent = recPoints.length;
             const elapsedHours = currentElapsedMs() / 3600000;
@@ -2168,6 +2278,10 @@
             document.getElementById('recAvgSpeed').textContent = avgSpeed.toFixed(1);
             const minimizedText = document.getElementById('minimizedText');
             if (minimizedText) minimizedText.textContent = `Recording... ${durationStr} · ${recTotalDistanceKm.toFixed(2)} km`;
+            // Update speed if available from GPS
+            if (recLastPoint && recLastPoint.speed !== undefined) {
+                document.getElementById('recSpeed').textContent = recLastPoint.speed.toFixed(1);
+            }
         }
 
         function onGpsPosition(position) {
@@ -2193,7 +2307,7 @@
                 cadence: sensorData.cadence || 0,
                 power: sensorData.power || 0
             });
-            recLastPoint = { lat, lng, rawTimestamp: position.timestamp };
+            recLastPoint = { lat, lng, rawTimestamp: position.timestamp, speed: speedKmh };
             if (!recMap || !mapInitialized) initRecordMap(lat, lng);
             else updateRecordMap(lat, lng);
             document.getElementById('recSpeed').textContent = speedKmh.toFixed(1);
@@ -2336,7 +2450,6 @@
             document.getElementById('recResumeBtn').style.display = 'none';
             document.getElementById('recStopBtn').style.display = 'none';
             document.getElementById('recDiscardBtn').style.display = 'none';
-            document.getElementById('recDuration').textContent = '00:00:00';
             document.getElementById('recDistance').textContent = '0.00';
             document.getElementById('recSpeed').textContent = '0.0';
             document.getElementById('recAvgSpeed').textContent = '0.0';
