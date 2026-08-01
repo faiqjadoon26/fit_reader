@@ -336,9 +336,10 @@
         }
         .record-modal-stats-wrapper>* { pointer-events: auto; }
         
+        /* MAIN STATS - ONE ROW WITHOUT POINTS */
         .record-modal-stats {
             display: grid; 
-            grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr; 
+            grid-template-columns: 1.5fr 1fr 1fr 1fr; 
             gap: 6px;
             background: rgba(18,22,42,0.85); 
             border-radius: 14px; 
@@ -746,7 +747,7 @@
             </div>
         </div>
         <div class="record-modal-stats-wrapper">
-            <!-- MAIN STATS - ONE ROW -->
+            <!-- MAIN STATS - ONE ROW WITHOUT POINTS -->
             <div class="record-modal-stats">
                 <div class="modal-stat modal-stat-primary">
                     <div class="record-stat-label">⏱️ Timer</div>
@@ -763,10 +764,6 @@
                 <div class="modal-stat">
                     <div class="record-stat-label">📊 Avg Speed</div>
                     <div class="record-stat-value"><span id="recAvgSpeedDisplay">0.0</span> <span class="stat-unit">km/h</span></div>
-                </div>
-                <div class="modal-stat">
-                    <div class="record-stat-label">📍 Points</div>
-                    <div class="record-stat-value" id="recPoints">0</div>
                 </div>
             </div>
             <!-- SENSOR STATS - SEPARATE ROW -->
@@ -798,17 +795,12 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // ── AUTO FULLSCREEN ON PAGE LOAD ──────────────────
-        // Force fullscreen as soon as the page loads
         document.addEventListener('DOMContentLoaded', function() {
-            // Try to enter fullscreen immediately
             enterFullscreen();
-            
-            // Also try after a short delay (for iOS)
             setTimeout(enterFullscreen, 500);
             setTimeout(enterFullscreen, 1000);
         });
 
-        // Also try when user interacts (for browsers that require user gesture)
         document.addEventListener('click', function firstClick() {
             enterFullscreen();
             document.removeEventListener('click', firstClick);
@@ -822,7 +814,6 @@
         function enterFullscreen() {
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().catch(err => {
-                    // Silently fail - some browsers require user gesture
                     console.log('Fullscreen requires user interaction');
                 });
                 document.body.classList.add('app-fullscreen');
@@ -838,7 +829,6 @@
             document.body.classList.remove('app-fullscreen');
         }
 
-        // Listen for fullscreen change to update UI
         document.addEventListener('fullscreenchange', function() {
             const isFullscreen = !!document.fullscreenElement;
             if (isFullscreen) {
@@ -846,7 +836,6 @@
             } else {
                 document.body.classList.remove('app-fullscreen');
             }
-            // Force map resize if needed
             if (recMap) {
                 setTimeout(() => recMap.invalidateSize(), 300);
             }
@@ -1710,7 +1699,6 @@
             const durationStr = formatDuration(currentElapsedMs());
             document.getElementById('recTimer').textContent = durationStr;
             document.getElementById('recDistance').textContent = recTotalDistanceKm.toFixed(2);
-            document.getElementById('recPoints').textContent = recPoints.length;
             const elapsedHours = currentElapsedMs() / 3600000;
             const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
             document.getElementById('recAvgSpeedDisplay').textContent = avgSpeed.toFixed(1);
@@ -1808,7 +1796,6 @@
             document.getElementById('recSpeed').style.color = '';
             document.getElementById('recAvgSpeedDisplay').textContent = '0.0';
             document.getElementById('recDistance').textContent = '0.00';
-            document.getElementById('recPoints').textContent = '0';
             if (profileData.default_activity_type) {
                 document.getElementById('recRideTypeSelect').value = profileData.default_activity_type;
             }
@@ -1920,7 +1907,6 @@
             document.getElementById('recSpeed').textContent = '0.0';
             document.getElementById('recSpeed').style.color = '';
             document.getElementById('recAvgSpeedDisplay').textContent = '0.0';
-            document.getElementById('recPoints').textContent = '0';
             document.getElementById('recHR').textContent = '--';
             document.getElementById('recCadence').textContent = '--';
             document.getElementById('recPower').textContent = '--';
