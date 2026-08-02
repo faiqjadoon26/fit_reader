@@ -533,6 +533,27 @@
         .record-tab-content .big-record-btn:active { transform: scale(0.88); box-shadow: 0 2px 10px rgba(252,76,2,0.3); }
         .record-tab-content .big-record-btn:hover { transform: scale(1.04); box-shadow: 0 8px 40px rgba(252,76,2,0.6); }
 
+        /* ── Direction Marker Styles ── */
+        .direction-marker {
+            background: transparent !important;
+            border: none !important;
+            transition: transform 0.3s ease;
+        }
+
+        .pulse-marker {
+            animation: pulse-marker 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse-marker {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .leaflet-marker-icon {
+            transition: transform 0.3s ease !important;
+        }
+
         /* ── Responsive ── */
         @media (max-width: 768px) {
             .record-modal-stats {
@@ -1040,7 +1061,7 @@
         let uploadInProgress = false;
         let recWatchId = null, recPoints = [], recStartTime = null, recElapsedBeforePause = 0, recTimerInterval = null;
         let recTotalDistanceKm = 0, recLastPoint = null, recIsPaused = false, recIsRecording = false;
-        let recMap = null, recPolyline = null, recMarker = null;
+        let recMap = null, recPolyline = null, recMarker = null, recArrow = null;
         let mapInitialized = false;
         let currentMapStyle = 'standard';
 
@@ -1658,12 +1679,54 @@
             if (recMarker) {
                 recMap.addLayer(recMarker);
             }
+            if (recArrow) {
+                recMap.addLayer(recArrow);
+            }
             
             showToast(`🗺️ ${styleName.charAt(0).toUpperCase() + styleName.slice(1)} map`, 'success');
         }
 
-        function initRecordMap(lat, lng) {
-            if (recMap) { recMap.remove(); recMap = null; recPolyline = null; recMarker = null; }
+        // ── Create a direction arrow icon ─────────────────────────
+        function createDirectionIcon(heading) {
+            const iconHtml = `
+                <div style="
+                    transform: rotate(${heading || 0}deg);
+                    width: 40px;
+                    height: 40px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+                    transition: transform 0.3s ease;
+                ">
+                    <svg width="40" height="40" viewBox="0 0 40 40">
+                        <polygon points="20,4 8,30 20,24 32,30" 
+                                 fill="#fc4c02" 
+                                 stroke="#ffffff" 
+                                 stroke-width="2.5"/>
+                        <circle cx="20" cy="20" r="5" fill="#ffffff" opacity="0.9"/>
+                        <circle cx="20" cy="20" r="2.5" fill="#fc4c02"/>
+                    </svg>
+                </div>
+            `;
+            
+            return L.divIcon({
+                html: iconHtml,
+                className: 'direction-marker',
+                iconSize: [40, 40],
+                iconAnchor: [20, 20],
+                popupAnchor: [0, -25]
+            });
+        }
+
+        function initRecordMap(lat, lng, heading) {
+            if (recMap) { 
+                recMap.remove(); 
+                recMap = null; 
+                recPolyline = null; 
+                recMarker = null; 
+                recArrow = null;
+            }
             const container = document.getElementById('recordMap');
             if (!container) return;
             container.style.width = '100%';
@@ -1680,18 +1743,55 @@
 
             requestAnimationFrame(() => {
                 const rect = container.getBoundingClientRect();
-                if (rect.width === 0 || rect.height === 0) { setTimeout(() => initRecordMap(lat, lng), 100); return; }
+                if (rect.width === 0 || rect.height === 0) { 
+                    setTimeout(() => initRecordMap(lat, lng, heading), 100); 
+                    return; 
+                }
                 try {
-                    recMap = L.map('recordMap', { center: [lat, lng], zoom: 16, zoomControl: true, fadeAnimation: true, attributionControl: true });
+                    recMap = L.map('recordMap', { 
+                        center: [lat, lng], 
+                        zoom: 17, 
+                        zoomControl: true, 
+                        fadeAnimation: true, 
+                        attributionControl: true 
+                    });
                     
                     L.tileLayer(style.url, {
                         attribution: style.attribution,
                         maxZoom: 19
                     }).addTo(recMap);
                     
-                    recPolyline = L.polyline([], { color: '#fc4c02', weight: 4, opacity: 0.9, smoothFactor: 1 }).addTo(recMap);
-                    recMarker = L.circleMarker([lat, lng], { radius: 7, color: '#fff', weight: 2, fillColor: '#48bb78', fillOpacity: 1 }).addTo(recMap);
-                    setTimeout(() => { if (recMap) { recMap.invalidateSize(true); recMap.setView([lat, lng], 16); } }, 100);
+                    // Polyline for the route
+                    recPolyline = L.polyline([], { 
+                        color: '#fc4c02', 
+                        weight: 4, 
+                        opacity: 0.9, 
+                        smoothFactor: 1 
+                    }).addTo(recMap);
+                    
+                    // ── Direction Arrow Marker ──────────────────────
+                    const arrowIcon = createDirectionIcon(heading || 0);
+                    recMarker = L.marker([lat, lng], { 
+                        icon: arrowIcon
+                    }).addTo(recMap);
+                    
+                    // Also add a small circle for better visibility
+                    recArrow = L.circleMarker([lat, lng], {
+                        radius: 12,
+                        color: '#fc4c02',
+                        weight: 3,
+                        fillColor: '#fc4c02',
+                        fillOpacity: 0.3,
+                        className: 'pulse-marker'
+                    }).addTo(recMap);
+                    
+                    setTimeout(() => { 
+                        if (recMap) { 
+                            recMap.invalidateSize(true); 
+                            recMap.setView([lat, lng], 17); 
+                        } 
+                    }, 100);
+                    
                     const resizeHandler = () => { if (recMap) recMap.invalidateSize(); };
                     window.addEventListener('resize', resizeHandler);
                     recMap._resizeHandler = resizeHandler;
@@ -1705,19 +1805,48 @@
             });
         }
 
-        function updateRecordMap(lat, lng) {
-            if (!recMap) { initRecordMap(lat, lng); return; }
+        function updateRecordMap(lat, lng, heading) {
+            if (!recMap) { 
+                initRecordMap(lat, lng, heading); 
+                return; 
+            }
             try {
+                // Add point to polyline
                 if (recPolyline) recPolyline.addLatLng([lat, lng]);
-                if (recMarker) recMarker.setLatLng([lat, lng]);
+                
+                // Update marker position with direction
+                if (recMarker) {
+                    // Update the icon with new heading
+                    const newIcon = createDirectionIcon(heading || 0);
+                    recMarker.setLatLng([lat, lng]);
+                    recMarker.setIcon(newIcon);
+                }
+                
+                // Update arrow circle position
+                if (recArrow) {
+                    recArrow.setLatLng([lat, lng]);
+                }
+                
+                // Always center the map on the current position
                 recMap.panTo([lat, lng], { animate: true, duration: 0.5 });
-            } catch (err) { console.warn('Map update error:', err); }
+                
+            } catch (err) { 
+                console.warn('Map update error:', err); 
+            }
         }
 
         function teardownRecordMap() {
             if (recMap) {
-                if (recMap._resizeHandler) { window.removeEventListener('resize', recMap._resizeHandler); recMap._resizeHandler = null; }
-                recMap.remove(); recMap = null; recPolyline = null; recMarker = null; mapInitialized = false;
+                if (recMap._resizeHandler) { 
+                    window.removeEventListener('resize', recMap._resizeHandler); 
+                    recMap._resizeHandler = null; 
+                }
+                recMap.remove(); 
+                recMap = null; 
+                recPolyline = null; 
+                recMarker = null; 
+                recArrow = null;
+                mapInitialized = false;
             }
         }
 
@@ -1822,10 +1951,13 @@
             const coords = position.coords;
             const lat = coords.latitude;
             const lng = coords.longitude;
-            const altitude = coords.altitude || 0; // ← ADDED: capture elevation
+            const altitude = coords.altitude || 0;
+            const heading = coords.heading || 0; // direction in degrees
+            const speed = coords.speed || 0;
+            
             let speedKmh = 0;
-            if (coords.speed !== null && coords.speed !== undefined && coords.speed >= 0) {
-                speedKmh = coords.speed * 3.6;
+            if (speed !== null && speed !== undefined && speed >= 0) {
+                speedKmh = speed * 3.6;
             } else if (recLastPoint) {
                 const dtSec = (position.timestamp - recLastPoint.rawTimestamp) / 1000;
                 if (dtSec > 0) {
@@ -1833,19 +1965,34 @@
                     speedKmh = (distKm / dtSec) * 3600;
                 }
             }
+            
             if (recLastPoint) recTotalDistanceKm += haversineKm(recLastPoint.lat, recLastPoint.lng, lat, lng);
+            
             recPoints.push({
                 timestamp: new Date(position.timestamp).toISOString(),
                 lat, lng,
-                altitude: altitude, // ← ADDED: store elevation
+                altitude: altitude,
+                heading: heading,
                 speed_kmh: speedKmh,
                 heart_rate: sensorData.heartRate || 0,
                 cadence: sensorData.cadence || 0,
                 power: sensorData.power || 0
             });
-            recLastPoint = { lat, lng, rawTimestamp: position.timestamp, speed: speedKmh };
-            if (!recMap || !mapInitialized) initRecordMap(lat, lng);
-            else updateRecordMap(lat, lng);
+            
+            recLastPoint = { 
+                lat, 
+                lng, 
+                rawTimestamp: position.timestamp, 
+                speed: speedKmh, 
+                heading: heading 
+            };
+            
+            // ── Map with direction ──────────────────────────────────
+            if (!recMap || !mapInitialized) {
+                initRecordMap(lat, lng, heading);
+            } else {
+                updateRecordMap(lat, lng, heading);
+            }
             
             if (!recIsPaused) {
                 document.getElementById('recSpeed').textContent = speedKmh.toFixed(1);
@@ -1914,8 +2061,8 @@
             }
             setTimeout(() => {
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude); setGpsStatus('Ready', ''); },
-                    (err) => { console.warn('Map fallback:', err); initRecordMap(40.7128, -74.0060); setGpsStatus('Location unavailable', 'error'); },
+                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude, pos.coords.heading || 0); setGpsStatus('Ready', ''); },
+                    (err) => { console.warn('Map fallback:', err); initRecordMap(40.7128, -74.0060, 0); setGpsStatus('Location unavailable', 'error'); },
                     { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
                 );
             }, 150);
@@ -1935,8 +2082,8 @@
             setGpsStatus('Acquiring GPS...', 'active');
             if (!recMap || !mapInitialized) {
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude); startGpsWatch(); },
-                    (err) => { console.warn('GPS fallback:', err); initRecordMap(40.7128, -74.0060); startGpsWatch(); },
+                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude, pos.coords.heading || 0); startGpsWatch(); },
+                    (err) => { console.warn('GPS fallback:', err); initRecordMap(40.7128, -74.0060, 0); startGpsWatch(); },
                     { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
                 );
             } else startGpsWatch();
@@ -1982,8 +2129,8 @@
             recLastPoint = null;
             if (!recMap || !mapInitialized) {
                 navigator.geolocation.getCurrentPosition(
-                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude); startGpsWatch(); },
-                    (err) => { console.warn('GPS fallback:', err); initRecordMap(40.7128, -74.0060); startGpsWatch(); },
+                    (pos) => { initRecordMap(pos.coords.latitude, pos.coords.longitude, pos.coords.heading || 0); startGpsWatch(); },
+                    (err) => { console.warn('GPS fallback:', err); initRecordMap(40.7128, -74.0060, 0); startGpsWatch(); },
                     { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
                 );
             } else startGpsWatch();
