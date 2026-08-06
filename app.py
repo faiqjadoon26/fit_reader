@@ -12,6 +12,7 @@ from psycopg2.extras import Json
 from datetime import datetime
 import math
 from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'cycling_dashboard_secret_2024_xk9_fallback')
@@ -730,7 +731,7 @@ def save_live_ride():
             ride_type = 'cycling'
 
         # ── Extract temperature stream ──────────────────────
-        temperature_stream = data.get('temperature', [])  # list of {timestamp, elapsed_s, temp_c}
+        temperature_stream = data.get('temperature', [])
 
         # Extract just the values and timestamps
         temperature_values = [t['temp_c'] for t in temperature_stream if 'temp_c' in t]
@@ -792,7 +793,7 @@ def save_live_ride():
             "avg_speed": avg_speed,
             "avg_cadence": round(sum(valid_cad)/len(valid_cad), 1) if valid_cad else 0,
             "elevation_gain": round(total_climbing, 1),
-            "elevation_loss": 0,  # Not calculated in this version
+            "elevation_loss": 0,
             "min_elevation": min_elevation,
             "max_elevation": max_elevation,
             "total_calories": total_calories,
@@ -858,12 +859,274 @@ def download_ride(ride_id):
         return jsonify({"error": "File not found on server"}), 404
     return send_file(file_path, as_attachment=True, download_name=filename)
 
-# ─── Share route with lazy PIL import ────────────────────────
+# ─── SHARE IMAGE ROUTE ────────────────────────────────────────
+@app.route('/share-image/<int:ride_id>', methods=['POST'])
+@login_required
+def share_image(ride_id):
+    try:
+        data = request.get_json()
+        style = data.get('style', 'classic')
+        
+        rides = get_user_rides(session['user']['username'])
+        ride = next((r for r in rides if r.get('id') == ride_id), None)
+        if not ride:
+            return jsonify({"error": "Ride not found"}), 404
+
+        summary = ride.get('summary', {})
+        ride_type = ride.get('ride_type', 'cycling')
+        ride_type_info = next((t for t in RIDE_TYPES_INFO if t['id'] == ride_type), RIDE_TYPES_INFO[0])
+        route = ride.get('route', [])
+
+        width, height = 1080, 1920
+        
+        # Choose style
+        if style == 'classic':
+            img = generate_classic_style(summary, ride_type_info, route, width, height)
+        elif style == 'full':
+            img = generate_full_style(summary, ride_type_info, route, width, height)
+        elif style == 'map':
+            img = generate_map_style(summary, ride_type_info, route, width, height)
+        elif style == 'social':
+            img = generate_social_style(summary, ride_type_info, route, width, height)
+        elif style == 'minimal':
+            img = generate_minimal_style(summary, ride_type_info, route, width, height)
+        else:
+            img = generate_classic_style(summary, ride_type_info, route, width, height)
+
+        buffer = BytesIO()
+        img.save(buffer, format='PNG')
+        buffer.seek(0)
+        return send_file(buffer, mimetype='image/png', as_attachment=True, 
+                        download_name=f"ride_share_{style}_{ride_id}.png")
+
+    except Exception as e:
+        print(f"Share image error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+# ── Style generation functions ──────────────────────────────
+def load_font(size):
+    font_paths = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
+        "/System/Library/Fonts/Helvetica.ttc",
+        "C:/Windows/Fonts/Arial.ttf",
+    ]
+    for path in font_paths:
+        try:
+            return ImageFont.truetype(path, size)
+        except:
+            continue
+    return ImageFont.load_default()
+
+def draw_route_on_image(draw, route, x, y, w, h, color=(252,76,2,255)):
+    if not route or len(route) < 2:
+        return
+    
+    lats = [p[0] for p in route]
+    lngs = [p[1] for p in route]
+    min_lat, max_lat = min(lats), max(lats)
+    min_lng, max_lng = min(lngs), max(lngs)
+    lat_range = (max_lat - min_lat) or 1e-6
+    lng_range = (max_lng - min_lng) or 1e-6
+    
+    padding = 20
+    avail_w, avail_h = w - 2*padding, h - 2*padding
+    scale = min(avail_w / lng_range, avail_h / lat_range)
+    
+    points = [
+        (x + padding + (lng - min_lng) * scale, 
+         y + padding + (max_lat - lat) * scale)
+        for lat, lng in route
+    ]
+    
+    if len(points) > 1:
+        draw.line(points, fill=color, width=6, joint="curve")
+
+def generate_classic_style(summary, ride_type_info, route, width, height):
+    img = Image.new('RGBA', (width, height), (13, 13, 26, 255))
+    draw = ImageDraw.Draw(img)
+    
+    font = load_font(60)
+    small_font = load_font(40)
+    label_font = load_font(30)
+    
+    # Header
+    draw.text((width//2 - 100, 80), f"{ride_type_info['icon']}  {ride_type_info['name']}", 
+              font=font, fill=(255,255,255,255))
+    
+    # Stats
+    stats = [
+        ("Distance", f"{summary.get('distance_km', 0):.1f} km", (255,255,255,255)),
+        ("Time", "2:15:30", (255,255,255,255)),
+        ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m", (255,255,255,255)),
+        ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h", (255,255,255,255)),
+    ]
+    
+    y = 300
+    for i, (label, value, color) in enumerate(stats):
+        col, row = i % 2, i // 2
+        x = 200 + col * 350
+        cy = y + row * 250
+        draw.text((x, cy), label, font=label_font, fill=(150,150,155,255))
+        draw.text((x, cy + 50), value, font=small_font, fill=color)
+    
+    # Route
+    if route:
+        draw_route_on_image(draw, route, 200, 900, width-400, height-1200)
+    else:
+        draw.text((width//2 - 100, 1000), "No GPS data", font=label_font, fill=(120,120,125,255))
+    
+    # Footer
+    draw.text((width//2 - 120, height - 80), f"{ride_type_info['icon']}  FIT READER", 
+              font=font, fill=(252,76,2,255))
+    return img
+
+def generate_full_style(summary, ride_type_info, route, width, height):
+    img = Image.new('RGBA', (width, height), (13, 13, 26, 255))
+    draw = ImageDraw.Draw(img)
+    
+    font = load_font(50)
+    small_font = load_font(45)
+    label_font = load_font(28)
+    
+    draw.text((width//2 - 100, 60), f"{ride_type_info['icon']}  {ride_type_info['name']}", 
+              font=font, fill=(255,255,255,255))
+    
+    stats = [
+        ("Distance", f"{summary.get('distance_km', 0):.1f} km"),
+        ("Time", "2:15:30"),
+        ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m"),
+        ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h"),
+        ("Avg HR", f"{summary.get('avg_hr', 0):.0f} bpm" if summary.get('avg_hr') else "—"),
+        ("Calories", f"{summary.get('total_calories', 0)}"),
+        ("Avg Power", f"{summary.get('avg_power', 0):.0f} W"),
+        ("Cadence", f"{summary.get('avg_cadence', 0):.0f} rpm"),
+    ]
+    
+    y = 180
+    for i, (label, value) in enumerate(stats):
+        col, row = i % 4, i // 4
+        x = 60 + col * 250
+        cy = y + row * 160
+        draw.text((x, cy), label, font=label_font, fill=(150,150,155,255))
+        draw.text((x, cy + 35), value, font=small_font, fill=(255,255,255,255))
+    
+    if route:
+        draw_route_on_image(draw, route, 100, 700, width-200, 800)
+    
+    draw.text((width//2 - 120, height - 80), f"{ride_type_info['icon']}  FIT READER", 
+              font=font, fill=(252,76,2,255))
+    return img
+
+def generate_map_style(summary, ride_type_info, route, width, height):
+    img = Image.new('RGBA', (width, height), (10, 14, 26, 255))
+    draw = ImageDraw.Draw(img)
+    
+    font = load_font(40)
+    small_font = load_font(50)
+    label_font = load_font(28)
+    
+    if route:
+        draw_route_on_image(draw, route, 100, 300, width-200, height-600, color=(252,76,2,200))
+    
+    overlay = Image.new('RGBA', (width, 500), (0,0,0,200))
+    img.paste(overlay, (0, height-500), overlay)
+    
+    stats = [
+        ("Distance", f"{summary.get('distance_km', 0):.1f} km"),
+        ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m"),
+        ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h"),
+    ]
+    
+    x = 180
+    for label, value in stats:
+        draw.text((x, height-420), label, font=label_font, fill=(150,150,155,255))
+        draw.text((x, height-370), value, font=small_font, fill=(255,255,255,255))
+        x += 300
+    
+    draw.text((width//2 - 100, 80), f"{ride_type_info['icon']}  {ride_type_info['name']}", 
+              font=font, fill=(255,255,255,255))
+    draw.text((width//2 - 80, height - 100), "FIT READER", 
+              font=label_font, fill=(252,76,2,255))
+    return img
+
+def generate_social_style(summary, ride_type_info, route, width, height):
+    img = Image.new('RGBA', (width, height), (0,0,0,255))
+    draw = ImageDraw.Draw(img)
+    
+    for y in range(height):
+        ratio = y / height
+        r = int(252 * (1 - ratio * 0.7))
+        g = int(76 * (1 - ratio * 0.8))
+        b = int(1 * (1 - ratio * 0.9))
+        draw.rectangle([(0, y), (width, y+1)], fill=(r, g, b, 255))
+    
+    font = load_font(70)
+    small_font = load_font(60)
+    label_font = load_font(35)
+    tiny_font = load_font(25)
+    
+    draw.text((width//2 - 180, 120), "🏁 RIDE COMPLETE", 
+              font=font, fill=(255,255,255,255))
+    
+    stats = [
+        (f"{summary.get('distance_km', 0):.1f} km", "Distance"),
+        (f"{summary.get('avg_speed', 0):.1f} km/h", "Avg Speed"),
+        (f"{summary.get('elevation_gain', 0):.0f} m", "Elevation"),
+    ]
+    
+    y = 500
+    for value, label in stats:
+        draw.text((width//2 - 150, y), value, font=small_font, fill=(255,255,255,255))
+        draw.text((width//2 - 80, y + 70), label, font=label_font, fill=(255,255,255,200))
+        y += 200
+    
+    if route:
+        draw_route_on_image(draw, route, 200, 1200, width-400, 400, color=(255,255,255,100))
+    
+    draw.text((width//2 - 100, height - 100), "#FitReader #Cycling", 
+              font=tiny_font, fill=(255,255,255,150))
+    return img
+
+def generate_minimal_style(summary, ride_type_info, route, width, height):
+    img = Image.new('RGBA', (width, height), (13, 13, 26, 255))
+    draw = ImageDraw.Draw(img)
+    
+    big_font = load_font(160)
+    medium_font = load_font(60)
+    small_font = load_font(40)
+    tiny_font = load_font(30)
+    
+    draw.text((width//2 - 120, 500), f"{summary.get('distance_km', 0):.1f}", 
+              font=big_font, fill=(255,255,255,255))
+    draw.text((width//2 - 60, 700), "km", 
+              font=medium_font, fill=(150,150,155,255))
+    
+    stats = [
+        ("⏱️", f"{summary.get('total_time', '00:00:00')}"),
+        ("⛰️", f"{summary.get('elevation_gain', 0)}m"),
+        ("⚡", f"{summary.get('avg_speed', 0)} km/h"),
+    ]
+    
+    x = 250
+    for icon, value in stats:
+        draw.text((x, 1100), icon, font=small_font, fill=(255,255,255,255))
+        draw.text((x - 20, 1150), value, font=tiny_font, fill=(150,150,155,255))
+        x += 250
+    
+    if route:
+        draw_route_on_image(draw, route, 200, 1300, width-400, 300, color=(252,76,2,150))
+    
+    draw.text((width//2 - 120, height - 80), f"{ride_type_info['icon']}  FIT READER", 
+              font=small_font, fill=(252,76,2,255))
+    return img
+
+# ─── Share route with PIL import ────────────────────────
 @app.route('/share/<int:ride_id>')
 @login_required
 def share_ride(ride_id):
-    from PIL import Image, ImageDraw, ImageFont  # <-- lazy import
-
     rides = get_user_rides(session['user']['username'])
     ride = next((r for r in rides if r.get('id') == ride_id), None)
     if not ride:
@@ -875,10 +1138,9 @@ def share_ride(ride_id):
     route = ride.get('route', [])
 
     width, height = 1080, 1920
-    img = Image.new('RGBA', (width, height), (0, 0, 0, 0))  # fully transparent — for IG story overlay
+    img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
 
-    # ── Fonts ──────────────────────────────────────────
     font_paths = [
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
         "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf",
@@ -903,10 +1165,8 @@ def share_ride(ride_id):
         w = bbox[2] - bbox[0]
         draw.text((cx - w / 2, y), text, font=font, fill=fill)
 
-    # ── Header ─────────────────────────────────────────
     centered_text(90, f"{ride_type_info['icon']}  {ride_type_info['name']}", font_header, (255, 255, 255, 255))
 
-    # ── Stats: 2 cols x 3 rows, centered as one block ──
     stats = [
         ("Distance", f"{summary.get('distance_km', 0):.2f} km", (255, 255, 255, 255)),
         ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h", (66, 153, 225, 255)),
@@ -924,7 +1184,6 @@ def share_ride(ride_id):
         centered_text(y, label.upper(), font_label, (150, 150, 155, 255), cx=cx)
         centered_text(y + 40, value, font_value, color, cx=cx)
 
-    # ── Route: large, centered, dedicated lower-middle section ──
     box_x0, box_y0 = 120, 950
     box_x1, box_y1 = width - 120, 1550
     box_w, box_h = box_x1 - box_x0, box_y1 - box_y0
@@ -958,7 +1217,6 @@ def share_ride(ride_id):
     else:
         centered_text((box_y0 + box_y1) // 2, "No GPS data available", font_footer, (120, 120, 125, 255))
 
-    # ── Footer logo ─────────────────────────────────────
     centered_text(height - 130, f"{ride_type_info['icon']}  FIT READER", font_footer, (252, 76, 2, 255))
 
     buffer = BytesIO()
