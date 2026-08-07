@@ -61,15 +61,64 @@
             transition: background var(--transition), border-color var(--transition);
             z-index: 100;
         }
-        .navbar-brand { font-size: 1.1rem; font-weight: 800; color: var(--text); display: flex; align-items: center; gap: 6px; letter-spacing: -0.02em; }
-        .navbar-brand span { background: var(--orange); color: white; padding: 1px 6px; border-radius: 4px; font-size: 0.6rem; font-weight: 700; }
-        .navbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .user-info { display: flex; align-items: center; gap: 6px; }
-        .user-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); }
-        .username { font-weight: 600; font-size: 0.8rem; display: none; }
-        @media (min-width: 500px) { .username { display: inline; } }
-        .logout-btn { color: var(--text-soft); text-decoration: none; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; transition: background 0.2s; }
-        .logout-btn:hover { background: #fff1ec; color: var(--orange-dark); }
+        .navbar-brand { 
+            font-size: 1.1rem; 
+            font-weight: 800; 
+            color: var(--text); 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            letter-spacing: -0.02em; 
+        }
+        .navbar-brand span { 
+            background: var(--orange); 
+            color: white; 
+            padding: 1px 6px; 
+            border-radius: 4px; 
+            font-size: 0.6rem; 
+            font-weight: 700; 
+        }
+        .navbar-brand .brand-icon {
+            color: var(--orange);
+        }
+        .navbar-right { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            flex-wrap: wrap; 
+        }
+        .user-info { 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+        }
+        .user-avatar { 
+            width: 28px; 
+            height: 28px; 
+            border-radius: 50%; 
+            object-fit: cover; 
+            border: 1px solid var(--line); 
+        }
+        .username { 
+            font-weight: 600; 
+            font-size: 0.8rem; 
+            display: none; 
+        }
+        @media (min-width: 500px) { 
+            .username { display: inline; } 
+        }
+        .logout-btn { 
+            color: var(--text-soft); 
+            text-decoration: none; 
+            padding: 4px 10px; 
+            border-radius: 6px; 
+            font-size: 0.8rem; 
+            transition: background 0.2s; 
+        }
+        .logout-btn:hover { 
+            background: #fff1ec; 
+            color: var(--orange-dark); 
+        }
         .fullscreen-badge {
             background: rgba(252,76,2,0.15);
             color: var(--orange);
@@ -100,23 +149,7 @@
             color: white;
         }
 
-        /* ── Main content (scrollable) ── */
-        .main-container {
-            flex: 1 1 auto;
-            overflow-y: auto;
-            overflow-x: hidden;
-            padding: 1rem 1rem 0.5rem;
-            max-width: 1400px;
-            margin: 0 auto;
-            width: 100%;
-            -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
-            min-height: 0;
-        }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        /* ── Bottom tabs ── */
+        /* ── Bottom tabs with orange icons ── */
         .bottom-tabs {
             flex-shrink: 0;
             height: var(--tab-height);
@@ -146,11 +179,39 @@
             padding: 4px 0;
             position: relative;
         }
-        .tab-btn .tab-icon { font-size: 1.4rem; line-height: 1.2; }
-        .tab-btn .tab-label { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.03em; }
-        .tab-btn.active { color: var(--orange); }
-        .tab-btn.active .tab-icon { transform: scale(1.05); }
+        .tab-btn .tab-icon { 
+            font-size: 1.4rem; 
+            line-height: 1.2;
+            transition: transform 0.2s;
+        }
+        .tab-btn .tab-label { 
+            font-size: 0.55rem; 
+            text-transform: uppercase; 
+            letter-spacing: 0.03em; 
+        }
+        .tab-btn.active { 
+            color: var(--orange); 
+        }
+        .tab-btn.active .tab-icon { 
+            transform: scale(1.05); 
+        }
         .tab-btn:active { opacity: 0.7; }
+
+        /* ── Main content (scrollable) ── */
+        .main-container {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 1rem 1rem 0.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            min-height: 0;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
 
         /* ── Profile, upload, rides, stats ── */
         .profile-card {
@@ -270,14 +331,11 @@
         .ride-item .ride-stats .stat-block { display: flex; flex-direction: column; }
         .ride-item .ride-stats .stat-block .stat-num-label { font-size: 0.55rem; text-transform: uppercase; color: var(--text-soft); font-weight: 700; letter-spacing: 0.03em; }
         .ride-item .ride-stats .stat-block .stat-num-value { font-size: 0.9rem; font-weight: 800; color: var(--text); }
-        .ride-item .click-hint {
-            text-align: right;
-            font-size: 0.6rem;
-            color: var(--text-soft);
-            border-top: 1px solid var(--line);
-            padding-top: 0.4rem;
-            margin-top: 0.4rem;
-        }
+        .ride-item .actions { display: flex; gap: 4px; align-items: center; justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 0.5rem; }
+        .action-btn { background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; color: var(--text-soft); }
+        .action-btn:hover { background: #f0f0f2; }
+        .delete-btn { background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; color: var(--text-soft); }
+        .delete-btn:hover { background: #fff1ec; color: var(--orange-dark); }
         .no-rides { text-align: center; padding: 2rem; color: var(--text-soft); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
         .no-rides .big-icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
         .loading { text-align: center; padding: 1.5rem; color: var(--text-soft); }
@@ -542,17 +600,14 @@
             border: none !important;
             transition: transform 0.3s ease;
         }
-
         .pulse-marker {
             animation: pulse-marker 1.5s ease-in-out infinite;
         }
-
         @keyframes pulse-marker {
             0% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.6; transform: scale(0.8); }
             100% { opacity: 1; transform: scale(1); }
         }
-
         .leaflet-marker-icon {
             transition: transform 0.3s ease !important;
         }
@@ -608,7 +663,9 @@
 <body>
     <!-- TOP NAVBAR -->
     <nav class="navbar">
-        <div class="navbar-brand">🚴 Fit Reader <span>Beta</span></div>
+        <div class="navbar-brand">
+            <span class="brand-icon">🚴</span> Fit Reader <span>Beta</span>
+        </div>
         <div class="navbar-right">
             <div class="user-info">
                 <img src="https://avatars.githubusercontent.com/u/142338253?v=4" alt="Faiq Jadoon" class="user-avatar" />
@@ -761,13 +818,28 @@
         </div>
     </div>
 
-    <!-- BOTTOM TAB BAR -->
+    <!-- BOTTOM TAB BAR - ALL ORANGE ICONS -->
     <div class="bottom-tabs" id="bottomTabs">
-        <button class="tab-btn active" data-tab="home"><span class="tab-icon">🏠</span><span class="tab-label">Home</span></button>
-        <button class="tab-btn" data-tab="maps"><span class="tab-icon">🗺️</span><span class="tab-label">Maps</span></button>
-        <button class="tab-btn" data-tab="record"><span class="tab-icon">⏺️</span><span class="tab-label">Record</span></button>
-        <button class="tab-btn" data-tab="activities"><span class="tab-icon">📋</span><span class="tab-label">Activities</span></button>
-        <button class="tab-btn" data-tab="profile"><span class="tab-icon">👤</span><span class="tab-label">Profile</span></button>
+        <button class="tab-btn active" data-tab="home">
+            <span class="tab-icon" style="color: var(--orange);">🏠</span>
+            <span class="tab-label">Home</span>
+        </button>
+        <button class="tab-btn" data-tab="maps">
+            <span class="tab-icon" style="color: var(--orange);">🗺️</span>
+            <span class="tab-label">Maps</span>
+        </button>
+        <button class="tab-btn" data-tab="record">
+            <span class="tab-icon" style="color: var(--orange);">⏺️</span>
+            <span class="tab-label">Record</span>
+        </button>
+        <button class="tab-btn" data-tab="activities">
+            <span class="tab-icon" style="color: var(--orange);">📋</span>
+            <span class="tab-label">Activities</span>
+        </button>
+        <button class="tab-btn" data-tab="profile">
+            <span class="tab-icon" style="color: var(--orange);">👤</span>
+            <span class="tab-label">Profile</span>
+        </button>
     </div>
 
     <!-- RECORD MODAL -->
@@ -1045,7 +1117,12 @@
                         <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
                         <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
                     </div>
-                    <div class="click-hint">👆 Click to view details</div>
+                    <div class="actions">
+                        <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
+                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
+                    </div>
                 `;
                 div.onclick = () => viewSummary(ride.id);
                 list.appendChild(div);
@@ -1263,7 +1340,12 @@
                         <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
                         <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
                     </div>
-                    <div class="click-hint">👆 Click to view details</div>
+                    <div class="actions">
+                        <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
+                        <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
+                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
+                    </div>
                 `;
                 div.onclick = () => viewSummary(ride.id);
                 rideList.appendChild(div);
@@ -1338,8 +1420,17 @@
         });
 
         // ── Actions ────────────────────────────────────────
-        function viewSummary(rideId) { 
-            window.open(`/ride-summary/${rideId}`, '_blank'); 
+        function downloadRide(rideId) { window.location.href = `/download/${rideId}`; }
+        function shareRide(rideId) { window.open(`/share/${rideId}`, '_blank'); }
+        function viewSummary(rideId) { window.open(`/ride-summary/${rideId}`, '_blank'); }
+
+        async function deleteRide(rideId) {
+            if (!confirm('Delete this activity?')) return;
+            try {
+                const response = await fetch(`/ride/${rideId}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (response.ok) { showToast('🗑️ Deleted', 'success'); await loadRides(); } else showToast(`❌ Failed: ${result.error || 'Unknown error'}`, 'error');
+            } catch (error) { console.error(error); showToast('❌ Delete failed', 'error'); }
         }
 
         // ── Toast ──────────────────────────────────────────
@@ -1745,6 +1836,7 @@
                         maxZoom: 19
                     }).addTo(recMap);
                     
+                    // Polyline for the route
                     recPolyline = L.polyline([], { 
                         color: '#fc4c02', 
                         weight: 4, 
@@ -1752,11 +1844,13 @@
                         smoothFactor: 1 
                     }).addTo(recMap);
                     
+                    // ── Direction Arrow Marker ──────────────────────
                     const arrowIcon = createDirectionIcon(heading || 0);
                     recMarker = L.marker([lat, lng], { 
                         icon: arrowIcon
                     }).addTo(recMap);
                     
+                    // Also add a small circle for better visibility
                     recArrow = L.circleMarker([lat, lng], {
                         radius: 12,
                         color: '#fc4c02',
@@ -1792,14 +1886,17 @@
                 return; 
             }
             try {
+                // Add point to polyline
                 if (recPolyline) recPolyline.addLatLng([lat, lng]);
                 
+                // Update marker position with direction
                 if (recMarker) {
                     const newIcon = createDirectionIcon(heading || 0);
                     recMarker.setLatLng([lat, lng]);
                     recMarker.setIcon(newIcon);
                 }
                 
+                // Update arrow circle position
                 if (recArrow) {
                     recArrow.setLatLng([lat, lng]);
                 }
