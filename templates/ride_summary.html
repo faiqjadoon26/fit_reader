@@ -492,6 +492,23 @@
             font-weight: 600;
         }
 
+        /* ── Transparent Preview (for Instagram Stories) ── */
+        .transparent-preview {
+            background: repeating-conic-gradient(#e0e0e0 0% 25%, #ffffff 0% 50%) 0 0 / 20px 20px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .transparent-preview .transparent-label {
+            color: #666;
+            font-size: 0.5rem;
+            font-weight: 600;
+            background: rgba(255,255,255,0.8);
+            padding: 4px 12px;
+            border-radius: 4px;
+        }
+
         /* ── Share Result with Download Button ── */
         .share-result-container {
             display: flex;
@@ -507,12 +524,22 @@
             border-radius: 12px;
             box-shadow: var(--shadow);
         }
+        .share-result-container .preview-img.transparent-bg {
+            box-shadow: 0 0 0 2px #e0e0e0, var(--shadow);
+        }
         .share-result-container .download-row {
             display: flex;
             gap: 12px;
             align-items: center;
             flex-wrap: wrap;
             justify-content: center;
+        }
+        .share-result-container .transparent-badge {
+            font-size: 0.6rem;
+            color: var(--text-soft);
+            background: var(--bg);
+            padding: 2px 10px;
+            border-radius: 12px;
         }
 
         .share-loading {
@@ -827,6 +854,7 @@
             </div>
             
             <div class="share-styles-grid">
+                <!-- Style 1: Map + Stats -->
                 <div class="share-style-card" onclick="generateShareImage('strava')">
                     <div class="share-style-preview strava-preview">
                         <div class="preview-map"></div>
@@ -851,6 +879,7 @@
                     <div class="share-style-name">🗺️ Map + Stats</div>
                 </div>
 
+                <!-- Style 2: Clean Stats -->
                 <div class="share-style-card" onclick="generateShareImage('clean')">
                     <div class="share-style-preview clean-preview">
                         <div class="preview-header">
@@ -888,6 +917,7 @@
                     <div class="share-style-name">📊 Clean Stats</div>
                 </div>
 
+                <!-- Style 3: Minimal -->
                 <div class="share-style-card" onclick="generateShareImage('minimal')">
                     <div class="share-style-preview minimal-preview">
                         <div>
@@ -912,12 +942,21 @@
                     </div>
                     <div class="share-style-name">✨ Minimal</div>
                 </div>
+
+                <!-- Style 4: Transparent (NEW - for Instagram Stories) -->
+                <div class="share-style-card" onclick="generateShareImage('transparent')">
+                    <div class="share-style-preview transparent-preview">
+                        <div class="transparent-label">✨ Transparent</div>
+                    </div>
+                    <div class="share-style-name">✨ Transparent</div>
+                </div>
             </div>
 
             <!-- ── Preview + Download Button ── -->
             <div class="share-result-container" id="shareResultContainer" style="display:none;">
                 <img id="sharePreviewImage" class="preview-img" src="" alt="Share preview" />
                 <div class="download-row">
+                    <span class="transparent-badge" id="transparentBadge" style="display:none;">✨ Transparent background - overlay on any photo</span>
                     <button class="btn btn-secondary" onclick="closeShareModal()">Close</button>
                     <button class="btn btn-download" onclick="downloadShareImage()">
                         ⬇️ Download Image
@@ -995,6 +1034,7 @@
         function openShareModal() {
             document.getElementById('shareModal').classList.add('active');
             document.getElementById('shareResultContainer').style.display = 'none';
+            document.getElementById('transparentBadge').style.display = 'none';
             currentShareBlob = null;
             currentShareUrl = null;
         }
@@ -1040,6 +1080,16 @@
                 
                 const previewImg = document.getElementById('sharePreviewImage');
                 previewImg.src = currentShareUrl;
+                
+                // Show transparent badge if transparent style
+                const badge = document.getElementById('transparentBadge');
+                if (style === 'transparent') {
+                    badge.style.display = 'inline-block';
+                    previewImg.className = 'preview-img transparent-bg';
+                } else {
+                    badge.style.display = 'none';
+                    previewImg.className = 'preview-img';
+                }
                 
                 showToast('✅ Share image generated!', 'success');
             })
