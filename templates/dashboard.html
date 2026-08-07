@@ -152,7 +152,7 @@
         .tab-btn.active .tab-icon { transform: scale(1.05); }
         .tab-btn:active { opacity: 0.7; }
 
-        /* ── Profile, upload, rides, stats (unchanged) ── */
+        /* ── Profile, upload, rides, stats ── */
         .profile-card {
             background: var(--card);
             border: 1px solid var(--line);
@@ -270,11 +270,14 @@
         .ride-item .ride-stats .stat-block { display: flex; flex-direction: column; }
         .ride-item .ride-stats .stat-block .stat-num-label { font-size: 0.55rem; text-transform: uppercase; color: var(--text-soft); font-weight: 700; letter-spacing: 0.03em; }
         .ride-item .ride-stats .stat-block .stat-num-value { font-size: 0.9rem; font-weight: 800; color: var(--text); }
-        .ride-item .actions { display: flex; gap: 4px; align-items: center; justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 0.5rem; }
-        .action-btn { background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; color: var(--text-soft); }
-        .action-btn:hover { background: #f0f0f2; }
-        .delete-btn { background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; color: var(--text-soft); }
-        .delete-btn:hover { background: #fff1ec; color: var(--orange-dark); }
+        .ride-item .click-hint {
+            text-align: right;
+            font-size: 0.6rem;
+            color: var(--text-soft);
+            border-top: 1px solid var(--line);
+            padding-top: 0.4rem;
+            margin-top: 0.4rem;
+        }
         .no-rides { text-align: center; padding: 2rem; color: var(--text-soft); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
         .no-rides .big-icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
         .loading { text-align: center; padding: 1.5rem; color: var(--text-soft); }
@@ -1042,12 +1045,7 @@
                         <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
                         <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
                     </div>
-                    <div class="actions">
-                        <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
-                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
-                    </div>
+                    <div class="click-hint">👆 Click to view details</div>
                 `;
                 div.onclick = () => viewSummary(ride.id);
                 list.appendChild(div);
@@ -1265,12 +1263,7 @@
                         <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
                         <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
                     </div>
-                    <div class="actions">
-                        <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
-                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
-                    </div>
+                    <div class="click-hint">👆 Click to view details</div>
                 `;
                 div.onclick = () => viewSummary(ride.id);
                 rideList.appendChild(div);
@@ -1345,17 +1338,8 @@
         });
 
         // ── Actions ────────────────────────────────────────
-        function downloadRide(rideId) { window.location.href = `/download/${rideId}`; }
-        function shareRide(rideId) { window.open(`/share/${rideId}`, '_blank'); }
-        function viewSummary(rideId) { window.open(`/ride-summary/${rideId}`, '_blank'); }
-
-        async function deleteRide(rideId) {
-            if (!confirm('Delete this activity?')) return;
-            try {
-                const response = await fetch(`/ride/${rideId}`, { method: 'DELETE' });
-                const result = await response.json();
-                if (response.ok) { showToast('🗑️ Deleted', 'success'); await loadRides(); } else showToast(`❌ Failed: ${result.error || 'Unknown error'}`, 'error');
-            } catch (error) { console.error(error); showToast('❌ Delete failed', 'error'); }
+        function viewSummary(rideId) { 
+            window.open(`/ride-summary/${rideId}`, '_blank'); 
         }
 
         // ── Toast ──────────────────────────────────────────
@@ -1761,7 +1745,6 @@
                         maxZoom: 19
                     }).addTo(recMap);
                     
-                    // Polyline for the route
                     recPolyline = L.polyline([], { 
                         color: '#fc4c02', 
                         weight: 4, 
@@ -1769,13 +1752,11 @@
                         smoothFactor: 1 
                     }).addTo(recMap);
                     
-                    // ── Direction Arrow Marker ──────────────────────
                     const arrowIcon = createDirectionIcon(heading || 0);
                     recMarker = L.marker([lat, lng], { 
                         icon: arrowIcon
                     }).addTo(recMap);
                     
-                    // Also add a small circle for better visibility
                     recArrow = L.circleMarker([lat, lng], {
                         radius: 12,
                         color: '#fc4c02',
@@ -1811,23 +1792,18 @@
                 return; 
             }
             try {
-                // Add point to polyline
                 if (recPolyline) recPolyline.addLatLng([lat, lng]);
                 
-                // Update marker position with direction
                 if (recMarker) {
-                    // Update the icon with new heading
                     const newIcon = createDirectionIcon(heading || 0);
                     recMarker.setLatLng([lat, lng]);
                     recMarker.setIcon(newIcon);
                 }
                 
-                // Update arrow circle position
                 if (recArrow) {
                     recArrow.setLatLng([lat, lng]);
                 }
                 
-                // Always center the map on the current position
                 recMap.panTo([lat, lng], { animate: true, duration: 0.5 });
                 
             } catch (err) { 
@@ -1897,10 +1873,7 @@
 
         // ── Temperature polling (Open‑Meteo) with immediate fetch ──
         function startTemperaturePolling(recordingStartTime) {
-            // Fetch immediately
             fetchTemperature(recordingStartTime);
-
-            // Then set interval
             if (tempPollInterval) clearInterval(tempPollInterval);
             tempPollInterval = setInterval(() => {
                 fetchTemperature(recordingStartTime);
@@ -1952,7 +1925,7 @@
             const lat = coords.latitude;
             const lng = coords.longitude;
             const altitude = coords.altitude || 0;
-            const heading = coords.heading || 0; // direction in degrees
+            const heading = coords.heading || 0;
             const speed = coords.speed || 0;
             
             let speedKmh = 0;
@@ -1987,7 +1960,6 @@
                 heading: heading 
             };
             
-            // ── Map with direction ──────────────────────────────────
             if (!recMap || !mapInitialized) {
                 initRecordMap(lat, lng, heading);
             } else {
