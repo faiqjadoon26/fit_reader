@@ -318,7 +318,9 @@
         .ride-list { display: grid; gap: 10px; }
         .ride-item {
             background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
-            padding: 0.9rem; cursor: pointer; transition: box-shadow 0.15s, border-color 0.15s;
+            padding: 0.9rem;
+            cursor: pointer;
+            transition: box-shadow 0.15s, border-color 0.15s;
         }
         .ride-item:hover { border-color: #d0d0d5; box-shadow: var(--shadow); }
         .ride-item .ride-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 0.6rem; }
@@ -331,11 +333,9 @@
         .ride-item .ride-stats .stat-block { display: flex; flex-direction: column; }
         .ride-item .ride-stats .stat-block .stat-num-label { font-size: 0.55rem; text-transform: uppercase; color: var(--text-soft); font-weight: 700; letter-spacing: 0.03em; }
         .ride-item .ride-stats .stat-block .stat-num-value { font-size: 0.9rem; font-weight: 800; color: var(--text); }
-        .ride-item .actions { display: flex; gap: 4px; align-items: center; justify-content: flex-end; border-top: 1px solid var(--line); padding-top: 0.5rem; }
-        .action-btn { background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; color: var(--text-soft); }
-        .action-btn:hover { background: #f0f0f2; }
-        .delete-btn { background: none; border: none; font-size: 0.9rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: background 0.2s; color: var(--text-soft); }
-        .delete-btn:hover { background: #fff1ec; color: var(--orange-dark); }
+        /* No actions buttons on ride cards - they're on the summary page */
+        .ride-item .actions { display: none; }
+        
         .no-rides { text-align: center; padding: 2rem; color: var(--text-soft); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
         .no-rides .big-icon { font-size: 2.5rem; display: block; margin-bottom: 0.5rem; }
         .loading { text-align: center; padding: 1.5rem; color: var(--text-soft); }
@@ -725,7 +725,7 @@
             </div>
         </div>
 
-        <!-- ACTIVITIES TAB -->
+        <!-- ACTIVITIES TAB - CLEAN, NO BUTTONS -->
         <div id="tab-activities" class="tab-content">
             <div class="rides-section">
                 <div class="rides-header">
@@ -1088,6 +1088,7 @@
             }
         }
 
+        // ── Clean render function (NO action buttons) ──
         function renderRidesInContainer(rides, containerId) {
             const list = document.getElementById(containerId);
             if (!list) return;
@@ -1117,13 +1118,8 @@
                         <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
                         <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
                     </div>
-                    <div class="actions">
-                        <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); shareRide(${ride.id})">📸</button>
-                        <button class="action-btn" onclick="event.stopPropagation(); viewSummary(${ride.id})">📊</button>
-                        <button class="delete-btn" onclick="event.stopPropagation(); deleteRide(${ride.id})">🗑️</button>
-                    </div>
                 `;
+                // Click goes to ride summary
                 div.onclick = () => viewSummary(ride.id);
                 list.appendChild(div);
             });
@@ -1312,6 +1308,7 @@
             }
         }
 
+        // ── Render rides for Home page (with action buttons) ──
         function renderRides(rides) {
             const rideList = document.getElementById('rideList');
             if (rides.length === 0) {
@@ -1836,7 +1833,6 @@
                         maxZoom: 19
                     }).addTo(recMap);
                     
-                    // Polyline for the route
                     recPolyline = L.polyline([], { 
                         color: '#fc4c02', 
                         weight: 4, 
@@ -1844,13 +1840,11 @@
                         smoothFactor: 1 
                     }).addTo(recMap);
                     
-                    // ── Direction Arrow Marker ──────────────────────
                     const arrowIcon = createDirectionIcon(heading || 0);
                     recMarker = L.marker([lat, lng], { 
                         icon: arrowIcon
                     }).addTo(recMap);
                     
-                    // Also add a small circle for better visibility
                     recArrow = L.circleMarker([lat, lng], {
                         radius: 12,
                         color: '#fc4c02',
@@ -1886,17 +1880,14 @@
                 return; 
             }
             try {
-                // Add point to polyline
                 if (recPolyline) recPolyline.addLatLng([lat, lng]);
                 
-                // Update marker position with direction
                 if (recMarker) {
                     const newIcon = createDirectionIcon(heading || 0);
                     recMarker.setLatLng([lat, lng]);
                     recMarker.setIcon(newIcon);
                 }
                 
-                // Update arrow circle position
                 if (recArrow) {
                     recArrow.setLatLng([lat, lng]);
                 }
