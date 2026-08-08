@@ -333,7 +333,6 @@
         .ride-item .ride-stats .stat-block { display: flex; flex-direction: column; }
         .ride-item .ride-stats .stat-block .stat-num-label { font-size: 0.55rem; text-transform: uppercase; color: var(--text-soft); font-weight: 700; letter-spacing: 0.03em; }
         .ride-item .ride-stats .stat-block .stat-num-value { font-size: 0.9rem; font-weight: 800; color: var(--text); }
-        /* No actions buttons on ride cards - they're on the summary page */
         .ride-item .actions { display: none; }
         
         .no-rides { text-align: center; padding: 2rem; color: var(--text-soft); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
@@ -668,8 +667,8 @@
         </div>
         <div class="navbar-right">
             <div class="user-info">
-                <img src="https://avatars.githubusercontent.com/u/142338253?v=4" alt="Faiq Jadoon" class="user-avatar" />
-                <span class="username">Faiq Jadoon</span>
+                <img src="{{ user.avatar }}" alt="{{ user.name }}" class="user-avatar" />
+                <span class="username">{{ user.name }}</span>
             </div>
             <span class="fullscreen-badge">⛶ Fullscreen</span>
             <button class="exit-fullscreen-btn" onclick="exitFullscreen()">⛶ Exit Fullscreen</button>
@@ -740,10 +739,10 @@
         <div id="tab-profile" class="tab-content">
             <div class="profile-card">
                 <div class="profile-header">
-                    <img src="https://avatars.githubusercontent.com/u/142338253?v=4" alt="Faiq Jadoon" class="profile-avatar" id="profileAvatar" />
+                    <img src="{{ user.avatar }}" alt="{{ user.name }}" class="profile-avatar" id="profileAvatar" />
                     <div>
-                        <div class="profile-name" id="profileDisplayName">Faiq Jadoon</div>
-                        <div class="profile-email" id="profileDisplayEmail">None</div>
+                        <div class="profile-name" id="profileDisplayName">{{ user.name }}</div>
+                        <div class="profile-email" id="profileDisplayEmail">{{ user.email }}</div>
                     </div>
                 </div>
 
@@ -1117,6 +1116,7 @@
                         <div class="stat-block"><span class="stat-num-label">Elevation</span><span class="stat-num-value">${summary.elevation_gain || 0} m</span></div>
                         <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
                         <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
+                        <div class="stat-block"><span class="stat-num-label">Time</span><span class="stat-num-value">${summary.total_time_formatted || '00:00:00'}</span></div>
                     </div>
                 `;
                 // Click goes to ride summary
@@ -1336,6 +1336,7 @@
                         <div class="stat-block"><span class="stat-num-label">Elevation</span><span class="stat-num-value">${summary.elevation_gain || 0} m</span></div>
                         <div class="stat-block"><span class="stat-num-label">Avg Speed</span><span class="stat-num-value">${summary.avg_speed || 0} km/h</span></div>
                         <div class="stat-block"><span class="stat-num-label">Calories</span><span class="stat-num-value">${summary.total_calories || 0}</span></div>
+                        <div class="stat-block"><span class="stat-num-label">Time</span><span class="stat-num-value">${summary.total_time_formatted || '00:00:00'}</span></div>
                     </div>
                     <div class="actions">
                         <button class="action-btn" onclick="event.stopPropagation(); downloadRide(${ride.id})">⬇️</button>
