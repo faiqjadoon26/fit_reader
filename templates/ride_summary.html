@@ -332,39 +332,33 @@
             border-radius: 8px;
             overflow: hidden;
             position: relative;
-            background: #0d0d0d;
+            background: repeating-conic-gradient(#e0e0e0 0% 25%, #ffffff 0% 50%) 0 0 / 20px 20px;
+            min-height: 200px;
         }
 
-        /* ── Preview Styles ── */
+        /* ── Preview Styles (All Transparent) ── */
         .strava-preview {
-            background: #1a1a2e;
+            background: repeating-conic-gradient(#e0e0e0 0% 25%, #ffffff 0% 50%) 0 0 / 20px 20px;
             position: relative;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 200px;
         }
-        .strava-preview .preview-map {
-            position: absolute;
-            inset: 0;
-            background: 
-                radial-gradient(circle at 40% 30%, rgba(252,76,2,0.2) 0%, transparent 60%),
-                radial-gradient(circle at 60% 70%, rgba(252,76,2,0.15) 0%, transparent 50%);
-        }
-        .strava-preview .preview-map::after {
-            content: '';
-            position: absolute;
-            top: 35%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 50%;
-            height: 30%;
-            border: 2px solid rgba(252,76,2,0.3);
-            border-radius: 50%;
+        .strava-preview .preview-title {
+            font-size: 0.5rem;
+            font-weight: 700;
+            color: #fc4c02;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(0,0,0,0.3);
         }
         .strava-preview .preview-stats-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 70%, transparent 100%);
-            padding: 16px 12px 12px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 8px;
+            padding: 12px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.1);
         }
         .strava-preview .preview-stats-grid {
             display: grid;
@@ -376,7 +370,7 @@
         }
         .strava-preview .preview-stat .value {
             display: block;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: 700;
             color: #fff;
         }
@@ -387,22 +381,25 @@
             color: #94a3b8;
             letter-spacing: 0.5px;
         }
-        .strava-preview .preview-title {
+        .strava-preview .preview-map-indicator {
             position: absolute;
-            top: 12px;
-            left: 12px;
-            font-size: 0.45rem;
-            font-weight: 700;
-            color: rgba(255,255,255,0.5);
-            letter-spacing: 1px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60%;
+            height: 40%;
+            border: 2px solid rgba(252,76,2,0.3);
+            border-radius: 50%;
+            opacity: 0.3;
         }
 
         .clean-preview {
-            background: #0d0d0d;
+            background: repeating-conic-gradient(#e0e0e0 0% 25%, #ffffff 0% 50%) 0 0 / 20px 20px;
             padding: 16px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            min-height: 200px;
         }
         .clean-preview .preview-header {
             display: flex;
@@ -413,7 +410,7 @@
         .clean-preview .preview-header .name { 
             font-size: 0.5rem; 
             font-weight: 700; 
-            color: #94a3b8;
+            color: #fc4c02;
             letter-spacing: 0.5px;
         }
         .clean-preview .preview-stats-list {
@@ -423,10 +420,12 @@
             margin: 8px 0;
         }
         .clean-preview .preview-stat {
-            background: rgba(255,255,255,0.05);
+            background: rgba(0,0,0,0.7);
             border-radius: 4px;
             padding: 4px 6px;
             text-align: center;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.05);
         }
         .clean-preview .preview-stat .value {
             display: block;
@@ -448,17 +447,19 @@
         }
 
         .minimal-preview {
-            background: #0d0d0d;
+            background: repeating-conic-gradient(#e0e0e0 0% 25%, #ffffff 0% 50%) 0 0 / 20px 20px;
             padding: 16px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            min-height: 200px;
         }
         .minimal-preview .big-num {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 800;
             color: #fff;
+            text-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
         .minimal-preview .big-label {
             font-size: 0.5rem;
@@ -473,6 +474,11 @@
         }
         .minimal-preview .mini-stats .stat {
             text-align: center;
+            background: rgba(0,0,0,0.7);
+            padding: 4px 10px;
+            border-radius: 6px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.05);
         }
         .minimal-preview .mini-stats .stat .v {
             display: block;
@@ -864,11 +870,11 @@
             </div>
             
             <div class="share-styles-grid">
-                <!-- Style 1: Map + Stats -->
+                <!-- Style 1: Map + Stats (Transparent) -->
                 <div class="share-style-card" onclick="generateShareImage('strava')">
                     <div class="share-style-preview strava-preview">
-                        <div class="preview-map"></div>
                         <div class="preview-title">🚴 FIT READER</div>
+                        <div class="preview-map-indicator"></div>
                         <div class="preview-stats-overlay">
                             <div class="preview-stats-grid">
                                 <div class="preview-stat">
@@ -889,7 +895,7 @@
                     <div class="share-style-name">🗺️ Map + Stats</div>
                 </div>
 
-                <!-- Style 2: Clean Stats -->
+                <!-- Style 2: Clean Stats (Transparent) -->
                 <div class="share-style-card" onclick="generateShareImage('clean')">
                     <div class="share-style-preview clean-preview">
                         <div class="preview-header">
@@ -927,7 +933,7 @@
                     <div class="share-style-name">📊 Clean Stats</div>
                 </div>
 
-                <!-- Style 3: Minimal -->
+                <!-- Style 3: Minimal (Transparent) -->
                 <div class="share-style-card" onclick="generateShareImage('minimal')">
                     <div class="share-style-preview minimal-preview">
                         <div>
@@ -953,7 +959,7 @@
                     <div class="share-style-name">✨ Minimal</div>
                 </div>
 
-                <!-- Style 4: Transparent (for Instagram Stories) -->
+                <!-- Style 4: Pure Transparent -->
                 <div class="share-style-card" onclick="generateShareImage('transparent')">
                     <div class="share-style-preview transparent-preview">
                         <div class="transparent-label">
