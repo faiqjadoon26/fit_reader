@@ -1054,7 +1054,7 @@ def draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 200)):
                     fill=(252, 76, 2, 255))
 
 def generate_strava_style(summary, ride_type_info, route, width, height):
-    """Strava-style share - FULLY TRANSPARENT boxes, COLORFUL stats"""
+    """Strava-style share - NO boxes, just COLORFUL stats on map"""
     # Dark background with gradient
     img = Image.new('RGBA', (width, height), (10, 14, 26, 255))
     
@@ -1072,7 +1072,7 @@ def generate_strava_style(summary, ride_type_info, route, width, height):
     font = load_font(50)
     draw.text((40, 40), f"{ride_type_info['icon']}  FIT READER", font=font, fill=(255,255,255,200))
     
-    # Stats with FULLY TRANSPARENT backgrounds and COLORFUL text
+    # Stats - NO boxes, just colorful text with shadow for readability
     font_small = load_font(30)
     font_big = load_font(55)
     
@@ -1090,36 +1090,15 @@ def generate_strava_style(summary, ride_type_info, route, width, height):
         x = 150 + col * 500
         y = y_start + row * 280
         
-        # FULLY TRANSPARENT box behind value (just a subtle border)
-        bbox = draw.textbbox((0, 0), value, font=font_big)
-        val_w = bbox[2] - bbox[0]
-        val_h = bbox[3] - bbox[1]
-        
-        # Just draw a subtle outline, NO fill
-        draw.rounded_rectangle(
-            [(x - val_w//2 - 30, y - 15),
-             (x + val_w//2 + 30, y + val_h + 20)],
-            radius=15,
-            fill=(0, 0, 0, 0),  # COMPLETELY TRANSPARENT
-            outline=(255, 255, 255, 20),
-            width=1
-        )
+        # Draw text shadow for readability
+        draw.text((x - val_w//2 + 2, y + 2), value, font=font_big, fill=(0,0,0,100))
         # COLORFUL text
         draw.text((x - val_w//2, y), value, font=font_big, fill=color)
         
-        # Label - completely transparent box
+        # Label with shadow
         bbox = draw.textbbox((0, 0), label, font=font_small)
         label_w = bbox[2] - bbox[0]
-        label_h = bbox[3] - bbox[1]
-        
-        draw.rounded_rectangle(
-            [(x - label_w//2 - 15, y + val_h + 15),
-             (x + label_w//2 + 15, y + val_h + label_h + 30)],
-            radius=10,
-            fill=(0, 0, 0, 0),
-            outline=(255, 255, 255, 15),
-            width=1
-        )
+        draw.text((x - label_w//2 + 1, y + val_h + 21), label, font=font_small, fill=(0,0,0,80))
         draw.text((x - label_w//2, y + val_h + 20), label, font=font_small, fill=(255, 255, 255, 180))
     
     # Extra stats with colors
@@ -1133,26 +1112,18 @@ def generate_strava_style(summary, ride_type_info, route, width, height):
         extra_text = "  •  ".join(extra_stats)
         bbox = draw.textbbox((0, 0), extra_text, font=font_small)
         extra_w = bbox[2] - bbox[0]
-        extra_h = bbox[3] - bbox[1]
-        
-        draw.rounded_rectangle(
-            [(width//2 - extra_w//2 - 25, extra_y - 10),
-             (width//2 + extra_w//2 + 25, extra_y + extra_h + 20)],
-            radius=15,
-            fill=(0, 0, 0, 0),
-            outline=(255, 255, 255, 20),
-            width=1
-        )
+        draw.text((width//2 - extra_w//2 + 1, extra_y + 5), extra_text, font=font_small, fill=(0,0,0,80))
         draw.text((width//2 - extra_w//2, extra_y + 4), extra_text, font=font_small, fill=(255, 255, 255, 220))
     
     # Brand at bottom
     font_brand = load_font(28)
+    draw.text((width//2 - 79, height - 49), "🚴 FIT READER", font=font_brand, fill=(0,0,0,80))
     draw.text((width//2 - 80, height - 50), "🚴 FIT READER", font=font_brand, fill=(252, 76, 2, 180))
     
     return img
 
 def generate_clean_style(summary, ride_type_info, route, width, height):
-    """Clean stats card - FULLY TRANSPARENT boxes, COLORFUL stats"""
+    """Clean stats card - NO boxes, just COLORFUL stats"""
     img = Image.new('RGBA', (width, height), (13, 13, 26, 255))
     draw = ImageDraw.Draw(img)
     
@@ -1164,6 +1135,8 @@ def generate_clean_style(summary, ride_type_info, route, width, height):
     
     # Header
     font = load_font(60)
+    draw.text((width//2 - 99, 51), f"{ride_type_info['icon']}  {ride_type_info['name']}", 
+              font=font, fill=(0,0,0,100))
     draw.text((width//2 - 100, 50), f"{ride_type_info['icon']}  {ride_type_info['name']}", 
               font=font, fill=(255, 255, 255, 220))
     
@@ -1192,39 +1165,22 @@ def generate_clean_style(summary, ride_type_info, route, width, height):
         x = col * cell_w + cell_w // 2
         y = 160 + row * cell_h
         
+        # Text shadow for readability
         bbox = draw.textbbox((0, 0), value, font=font_value)
         val_w = bbox[2] - bbox[0]
-        val_h = bbox[3] - bbox[1]
-        
-        # FULLY TRANSPARENT box
-        draw.rounded_rectangle(
-            [(x - val_w//2 - 25, y - 12),
-             (x + val_w//2 + 25, y + val_h + 16)],
-            radius=12,
-            fill=(0, 0, 0, 0),
-            outline=(255, 255, 255, 15),
-            width=1
-        )
-        # COLORFUL text
+        draw.text((x - val_w//2 + 2, y + 2), value, font=font_value, fill=(0,0,0,80))
         draw.text((x - val_w//2, y), value, font=font_value, fill=color)
         
-        # FULLY TRANSPARENT box for label
+        # Label with shadow
         bbox = draw.textbbox((0, 0), label, font=font_label)
         label_w = bbox[2] - bbox[0]
-        draw.rounded_rectangle(
-            [(x - label_w//2 - 15, y + val_h + 10),
-             (x + label_w//2 + 15, y + val_h + label_h + 24)],
-            radius=8,
-            fill=(0, 0, 0, 0),
-            outline=(255, 255, 255, 15),
-            width=1
-        )
+        draw.text((x - label_w//2 + 1, y + val_h + 15), label, font=font_label, fill=(0,0,0,60))
         draw.text((x - label_w//2, y + val_h + 14), label, font=font_label, fill=(255, 255, 255, 180))
     
     return img
 
 def generate_minimal_style(summary, ride_type_info, route, width, height):
-    """Minimal style - FULLY TRANSPARENT boxes, COLORFUL stats"""
+    """Minimal style - NO boxes, just COLORFUL stats"""
     img = Image.new('RGBA', (width, height), (10, 10, 20, 255))
     draw = ImageDraw.Draw(img)
     
@@ -1235,36 +1191,19 @@ def generate_minimal_style(summary, ride_type_info, route, width, height):
     font_med = load_font(50)
     font_small = load_font(35)
     
-    # Big distance with FULLY TRANSPARENT box
+    # Big distance with text shadow
     dist_text = f"{summary.get('distance_km', 0):.1f}"
     bbox = draw.textbbox((0, 0), dist_text, font=font_big)
     dist_w = bbox[2] - bbox[0]
-    dist_h = bbox[3] - bbox[1]
-    
-    draw.rounded_rectangle(
-        [(width//2 - dist_w//2 - 50, 350 - 20),
-         (width//2 + dist_w//2 + 50, 350 + dist_h + 25)],
-        radius=20,
-        fill=(0, 0, 0, 0),
-        outline=(255, 255, 255, 20),
-        width=2
-    )
-    # BLUE distance
+    draw.text((width//2 - dist_w//2 + 4, 354), dist_text, font=font_big, fill=(0,0,0,100))
     draw.text((width//2 - dist_w//2, 350), dist_text, font=font_big, fill='#60a5fa')
     
     bbox = draw.textbbox((0, 0), "km", font=font_med)
     km_w = bbox[2] - bbox[0]
-    draw.rounded_rectangle(
-        [(width//2 - km_w//2 - 25, 550 - 10),
-         (width//2 + km_w//2 + 25, 550 + 60)],
-        radius=10,
-        fill=(0, 0, 0, 0),
-        outline=(255, 255, 255, 15),
-        width=1
-    )
+    draw.text((width//2 - km_w//2 + 2, 552), "km", font=font_med, fill=(0,0,0,80))
     draw.text((width//2 - km_w//2, 550), "km", font=font_med, fill=(200, 200, 205, 255))
     
-    # Mini stats with FULLY TRANSPARENT boxes and COLORS
+    # Mini stats with COLORS and shadows
     stats = [
         ("⏱️", summary.get('total_time_formatted', '00:00:00'), '#facc15'),
         ("⛰️", f"{summary.get('elevation_gain', 0)}m", '#34d399'),
@@ -1278,27 +1217,18 @@ def generate_minimal_style(summary, ride_type_info, route, width, height):
         text = f"{icon} {value}"
         bbox = draw.textbbox((0, 0), text, font=font_small)
         text_w = bbox[2] - bbox[0]
-        text_h = bbox[3] - bbox[1]
-        
-        draw.rounded_rectangle(
-            [(x - text_w//2 - 25, y - 10),
-             (x + text_w//2 + 25, y + text_h + 15)],
-            radius=12,
-            fill=(0, 0, 0, 0),
-            outline=(255, 255, 255, 15),
-            width=1
-        )
-        # COLORFUL text
+        draw.text((x - text_w//2 + 2, y + 2), text, font=font_small, fill=(0,0,0,80))
         draw.text((x - text_w//2, y), text, font=font_small, fill=color)
     
     # Brand
     font_brand = load_font(28)
+    draw.text((width//2 - 79, height - 49), "🚴 FIT READER", font=font_brand, fill=(0,0,0,80))
     draw.text((width//2 - 80, height - 50), "🚴 FIT READER", font=font_brand, fill=(252, 76, 2, 180))
     
     return img
 
 def generate_transparent_style(summary, ride_type_info, route, width, height):
-    """Pure transparent style - FULLY TRANSPARENT boxes, COLORFUL stats"""
+    """Pure transparent style - NO boxes, just COLORFUL stats on transparent background"""
     img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     
@@ -1306,23 +1236,14 @@ def generate_transparent_style(summary, ride_type_info, route, width, height):
     font_medium = load_font(55)
     font_small = load_font(35)
     
-    # Header with FULLY TRANSPARENT box
+    # Header with text shadow
     header_text = f"{ride_type_info['icon']}  {ride_type_info['name']}"
     bbox = draw.textbbox((0, 0), header_text, font=font_large)
     text_w = bbox[2] - bbox[0]
+    draw.text((width//2 - text_w//2 + 2, 82), header_text, font=font_large, fill=(0,0,0,100))
+    draw.text((width//2 - text_w//2, 80), header_text, font=font_large, fill=(255, 255, 255, 255))
     
-    header_y = 80
-    draw.rounded_rectangle(
-        [(width//2 - text_w//2 - 40, header_y - 20), 
-         (width//2 + text_w//2 + 40, header_y + 75)],
-        radius=20,
-        fill=(0, 0, 0, 0),
-        outline=(255, 255, 255, 20),
-        width=2
-    )
-    draw.text((width//2 - text_w//2, header_y), header_text, font=font_large, fill=(255, 255, 255, 255))
-    
-    # Stats with FULLY TRANSPARENT boxes and COLORS
+    # Stats with COLORS and shadows
     stats = [
         ("Distance", f"{summary.get('distance_km', 0):.1f} km", '#60a5fa'),
         ("Time", summary.get('total_time_formatted', '00:00:00'), '#facc15'),
@@ -1337,35 +1258,16 @@ def generate_transparent_style(summary, ride_type_info, route, width, height):
         x = 120 + col * 500
         y = y_start + row * 280
         
+        # Value with shadow
         bbox = draw.textbbox((0, 0), value, font=font_medium)
         val_w = bbox[2] - bbox[0]
-        val_h = bbox[3] - bbox[1]
-        
-        # FULLY TRANSPARENT box for value
-        draw.rounded_rectangle(
-            [(x - val_w//2 - 30, y - 15),
-             (x + val_w//2 + 30, y + val_h + 20)],
-            radius=15,
-            fill=(0, 0, 0, 0),
-            outline=(255, 255, 255, 20),
-            width=2
-        )
-        # COLORFUL text
+        draw.text((x - val_w//2 + 2, y + 2), value, font=font_medium, fill=(0,0,0,100))
         draw.text((x - val_w//2, y), value, font=font_medium, fill=color)
         
-        # FULLY TRANSPARENT box for label
+        # Label with shadow
         bbox_label = draw.textbbox((0, 0), label.upper(), font=font_small)
         label_w = bbox_label[2] - bbox_label[0]
-        label_h = bbox_label[3] - bbox_label[1]
-        
-        draw.rounded_rectangle(
-            [(x - label_w//2 - 15, y + val_h + 20),
-             (x + label_w//2 + 15, y + val_h + label_h + 32)],
-            radius=10,
-            fill=(0, 0, 0, 0),
-            outline=(255, 255, 255, 15),
-            width=1
-        )
+        draw.text((x - label_w//2 + 1, y + val_h + 25), label.upper(), font=font_small, fill=(0,0,0,80))
         draw.text((x - label_w//2, y + val_h + 24), label.upper(), font=font_small, fill=(255, 255, 255, 200))
     
     # Extra stats
@@ -1382,31 +1284,14 @@ def generate_transparent_style(summary, ride_type_info, route, width, height):
         extra_text = "  •  ".join(extra_stats)
         bbox = draw.textbbox((0, 0), extra_text, font=font_small)
         extra_w = bbox[2] - bbox[0]
-        extra_h = bbox[3] - bbox[1]
-        
-        draw.rounded_rectangle(
-            [(width//2 - extra_w//2 - 30, extra_y - 10),
-             (width//2 + extra_w//2 + 30, extra_y + extra_h + 20)],
-            radius=15,
-            fill=(0, 0, 0, 0),
-            outline=(255, 255, 255, 20),
-            width=1
-        )
+        draw.text((width//2 - extra_w//2 + 1, extra_y + 5), extra_text, font=font_small, fill=(0,0,0,80))
         draw.text((width//2 - extra_w//2, extra_y + 4), extra_text, font=font_small, fill=(255, 255, 255, 220))
     
-    # Brand
+    # Brand with shadow
     brand_text = "FIT READER"
     bbox = draw.textbbox((0, 0), brand_text, font=font_small)
     brand_w = bbox[2] - bbox[0]
-    
-    draw.rounded_rectangle(
-        [(width//2 - brand_w//2 - 25, height - 75),
-         (width//2 + brand_w//2 + 25, height - 35)],
-        radius=12,
-        fill=(0, 0, 0, 0),
-        outline=(255, 255, 255, 15),
-        width=1
-    )
+    draw.text((width//2 - brand_w//2 + 1, height - 61), brand_text, font=font_small, fill=(0,0,0,80))
     draw.text((width//2 - brand_w//2, height - 62), brand_text, font=font_small, fill=(255, 255, 255, 180))
     
     return img
