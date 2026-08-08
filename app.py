@@ -1327,7 +1327,7 @@ def generate_transparent_style(summary, ride_type_info, route, width, height):
         ("Distance", f"{summary.get('distance_km', 0):.1f} km", '#60a5fa'),
         ("Time", summary.get('total_time_formatted', '00:00:00'), '#facc15'),
         ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m", '#34d399'),
-        ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h', '#f87171'),
+        ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h", '#f87171'),
     ]
     
     y_start = 350
