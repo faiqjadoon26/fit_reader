@@ -67,8 +67,8 @@ def init_db():
         cur.execute("ALTER TABLE rides ADD COLUMN ride_type VARCHAR(50) DEFAULT 'cycling'")
     cur.execute("""
         CREATE INDEX IF NOT EXISTS idx_rides_username ON rides(username);
-        CREATE INDEX IF NOT EXISTS idx_rides_date ON rides(ride_date);
-        CREATE INDEX IF NOT EXISTS idx_rides_type ON rides(ride_type);
+        CREATE INDEX IF NOT NULL idx_rides_date ON rides(ride_date);
+        CREATE INDEX IF NOT NULL idx_rides_type ON rides(ride_type);
     """)
     conn.commit()
     cur.close()
@@ -369,7 +369,7 @@ def parse_ride(file_path, profile):
             last_ts = df['timestamp'].iloc[-1]
             if first_ts and last_ts:
                 if hasattr(first_ts, 'timestamp'):
-                    total_duration_seconds = int(last_ts.timestamp() - first_ts.timestamp())
+                    total_duration_seconds = int((last_ts - first_ts).total_seconds())
                 else:
                     total_duration_seconds = len(df)
         except Exception as e:
@@ -739,6 +739,59 @@ def club():
     if ride_type and ride_type not in VALID_RIDE_TYPES:
         return jsonify({"error": "Invalid ride type"}), 400
     return jsonify(get_all_users_stats(ride_type))
+
+# ─── FIX EXISTING RIDES - Recalculate times ──────────────────
+@app.route('/fix-times', methods=['POST'])
+@login_required
+def fix_times():
+    username = session['user']['username']
+    rides = get_user_rides(username)
+    results = {"fixed": 0, "errors": [], "updated": []}
+    
+    for ride in rides:
+        try:
+            streams = ride.get('streams', {})
+            timestamps = streams.get('timestamps', [])
+            
+            if timestamps and len(timestamps) > 1:
+                try:
+                    first = datetime.strptime(timestamps[0], '%H:%M:%S')
+                    last = datetime.strptime(timestamps[-1], '%H:%M:%S')
+                    total_seconds = int((last - first).total_seconds())
+                    if total_seconds < 0:
+                        total_seconds = len(timestamps)
+                except:
+                    total_seconds = len(timestamps)
+                
+                hours = total_seconds // 3600
+                minutes = (total_seconds % 3600) // 60
+                seconds = total_seconds % 60
+                time_formatted = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+                
+                conn = get_db_connection()
+                cur = conn.cursor()
+                cur.execute("""
+                    UPDATE rides 
+                    SET summary = jsonb_set(
+                        jsonb_set(summary, '{total_duration_seconds}', %s::jsonb),
+                        '{total_time_formatted}', %s::jsonb
+                    )
+                    WHERE username = %s AND id = %s
+                """, (json.dumps(total_seconds), json.dumps(time_formatted), username, ride['id']))
+                conn.commit()
+                cur.close()
+                conn.close()
+                results["fixed"] += 1
+                results["updated"].append({
+                    "id": ride['id'],
+                    "filename": ride['filename'],
+                    "old_time": "00:00:00",
+                    "new_time": time_formatted
+                })
+        except Exception as e:
+            results["errors"].append(f"Ride {ride['id']}: {str(e)}")
+    
+    return jsonify(results)
 
 # ─── SAVE LIVE RIDE ──────────────────────────────────────────
 @app.route('/save-live-ride', methods=['POST'])
