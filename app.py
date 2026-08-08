@@ -1054,7 +1054,7 @@ def draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 200)):
                     fill=(252, 76, 2, 255))
 
 def generate_strava_style(summary, ride_type_info, route, width, height):
-    """Strava-style with map background (NOT transparent)"""
+    """Strava-style - map background with stats"""
     img = Image.new('RGBA', (width, height), (10, 14, 26, 255))
     draw = ImageDraw.Draw(img)
     draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 220))
@@ -1092,7 +1092,7 @@ def generate_strava_style(summary, ride_type_info, route, width, height):
     return img
 
 def generate_clean_style(summary, ride_type_info, route, width, height):
-    """Clean stats with dark background (NOT transparent)"""
+    """Clean stats - dark background"""
     img = Image.new('RGBA', (width, height), (13, 13, 26, 255))
     draw = ImageDraw.Draw(img)
     draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 160))
@@ -1139,7 +1139,7 @@ def generate_clean_style(summary, ride_type_info, route, width, height):
     return img
 
 def generate_minimal_style(summary, ride_type_info, route, width, height):
-    """Minimal style with dark background (NOT transparent)"""
+    """Minimal style - dark background"""
     img = Image.new('RGBA', (width, height), (10, 10, 20, 255))
     draw = ImageDraw.Draw(img)
     draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 140))
@@ -1178,25 +1178,63 @@ def generate_minimal_style(summary, ride_type_info, route, width, height):
     return img
 
 def generate_transparent_style(summary, ride_type_info, route, width, height):
-    """PURE TRANSPARENT - NO background, just stats on transparent PNG"""
+    """PURE TRANSPARENT with MAP - overlay on any photo"""
     # COMPLETELY TRANSPARENT BACKGROUND
     img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     
+    # ── Draw the ROUTE on the transparent background ──
+    if route and len(route) > 1:
+        lats = [p[0] for p in route]
+        lngs = [p[1] for p in route]
+        min_lat, max_lat = min(lats), max(lats)
+        min_lng, max_lng = min(lngs), max(lngs)
+        lat_range = (max_lat - min_lat) or 1e-6
+        lng_range = (max_lng - min_lng) or 1e-6
+        
+        padding = 80
+        map_w, map_h = width - 2*padding, height - 2*padding
+        scale = min(map_w / lng_range, map_h / lat_range) * 0.85
+        
+        points = []
+        for lat, lng in route:
+            x = padding + (lng - min_lng) * scale + (map_w - lng_range * scale) / 2
+            y = padding + (max_lat - lat) * scale + (map_h - lat_range * scale) / 2
+            points.append((x, y))
+        
+        if len(points) > 1:
+            # Draw route with glow effect
+            for width_mult in [4, 3, 2, 1]:
+                draw.line(points, fill=(252, 76, 2, 80 // width_mult), width=14 * width_mult, joint="curve")
+            draw.line(points, fill=(252, 76, 2, 220), width=6, joint="curve")
+            
+            # Start marker (green)
+            r = 18
+            draw.ellipse([points[0][0]-r, points[0][1]-r, points[0][0]+r, points[0][1]+r], 
+                        fill=(72, 187, 120, 255))
+            draw.ellipse([points[0][0]-r//2, points[0][1]-r//2, points[0][0]+r//2, points[0][1]+r//2], 
+                        fill=(72, 187, 120, 255))
+            # Finish marker (orange)
+            draw.ellipse([points[-1][0]-r, points[-1][1]-r, points[-1][0]+r, points[-1][1]+r], 
+                        fill=(252, 76, 2, 255))
+            draw.ellipse([points[-1][0]-r//2, points[-1][1]-r//2, points[-1][0]+r//2, points[-1][1]+r//2], 
+                        fill=(252, 76, 2, 255))
+    
+    # ── Load fonts ──
     font_large = load_font(80)
     font_medium = load_font(55)
     font_small = load_font(35)
     
-    # Header with shadow for readability
+    # ── Header with shadow for readability ──
     header_text = f"{ride_type_info['icon']}  {ride_type_info['name']}"
     bbox = draw.textbbox((0, 0), header_text, font=font_large)
     text_w = bbox[2] - bbox[0]
     # Shadow
-    draw.text((width//2 - text_w//2 + 3, 83), header_text, font=font_large, fill=(0,0,0,120))
+    draw.text((width//2 - text_w//2 + 3, 83), header_text, font=font_large, fill=(0,0,0,150))
     # Main text
     draw.text((width//2 - text_w//2, 80), header_text, font=font_large, fill=(255,255,255,255))
     
-    # Stats with colors and shadows (NO backgrounds)
+    # ── Stats with colors and shadows (NO backgrounds) ──
     stats = [
         ("Distance", f"{summary.get('distance_km', 0):.1f} km", '#60a5fa'),
         ("Time", summary.get('total_time_formatted', '00:00:00'), '#facc15'),
@@ -1215,7 +1253,7 @@ def generate_transparent_style(summary, ride_type_info, route, width, height):
         bbox = draw.textbbox((0, 0), value, font=font_medium)
         val_w = bbox[2] - bbox[0]
         # Shadow
-        draw.text((x - val_w//2 + 3, y + 3), value, font=font_medium, fill=(0,0,0,120))
+        draw.text((x - val_w//2 + 3, y + 3), value, font=font_medium, fill=(0,0,0,150))
         # Colorful text
         draw.text((x - val_w//2, y), value, font=font_medium, fill=color)
         
@@ -1223,11 +1261,11 @@ def generate_transparent_style(summary, ride_type_info, route, width, height):
         bbox_label = draw.textbbox((0, 0), label.upper(), font=font_small)
         label_w = bbox_label[2] - bbox_label[0]
         # Shadow
-        draw.text((x - label_w//2 + 2, y + 61), label.upper(), font=font_small, fill=(0,0,0,100))
+        draw.text((x - label_w//2 + 2, y + 61), label.upper(), font=font_small, fill=(0,0,0,120))
         # Label text
         draw.text((x - label_w//2, y + 59), label.upper(), font=font_small, fill=(255,255,255,200))
     
-    # Extra stats
+    # ── Extra stats ──
     extra_y = 1200
     extra_stats = []
     if summary.get('avg_hr'):
@@ -1242,19 +1280,23 @@ def generate_transparent_style(summary, ride_type_info, route, width, height):
         bbox = draw.textbbox((0, 0), extra_text, font=font_small)
         extra_w = bbox[2] - bbox[0]
         # Shadow
-        draw.text((width//2 - extra_w//2 + 2, extra_y + 2), extra_text, font=font_small, fill=(0,0,0,100))
+        draw.text((width//2 - extra_w//2 + 2, extra_y + 2), extra_text, font=font_small, fill=(0,0,0,120))
         # Main text
         draw.text((width//2 - extra_w//2, extra_y), extra_text, font=font_small, fill=(255,255,255,220))
     
-    # Brand with shadow
+    # ── Brand with shadow ──
     brand_text = "FIT READER"
     bbox = draw.textbbox((0, 0), brand_text, font=font_small)
     brand_w = bbox[2] - bbox[0]
     # Shadow
-    draw.text((width//2 - brand_w//2 + 2, height - 60), brand_text, font=font_small, fill=(0,0,0,100))
+    draw.text((width//2 - brand_w//2 + 2, height - 60), brand_text, font=font_small, fill=(0,0,0,120))
     # Main text
     draw.text((width//2 - brand_w//2, height - 62), brand_text, font=font_small, fill=(255,255,255,180))
     
+    # THE BACKGROUND IS COMPLETELY TRANSPARENT (0,0,0,0)
+    # The route is drawn on the transparent background
+    # Stats are overlaid on top
+    # Perfect for Instagram Stories overlay!
     return img
 
 # ─── SHARE ROUTE ─────────────────────────────────────────────
