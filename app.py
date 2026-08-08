@@ -361,6 +361,26 @@ def parse_ride(file_path, profile):
     df = pd.DataFrame(data_points)
     df.dropna(subset=['timestamp'], inplace=True)
 
+    # ── Calculate total duration ──────────────────────────
+    total_duration_seconds = 0
+    if len(df) > 0:
+        try:
+            first_ts = df['timestamp'].iloc[0]
+            last_ts = df['timestamp'].iloc[-1]
+            if first_ts and last_ts:
+                if hasattr(first_ts, 'timestamp'):
+                    total_duration_seconds = int(last_ts.timestamp() - first_ts.timestamp())
+                else:
+                    total_duration_seconds = len(df)
+        except Exception as e:
+            print(f"Duration calculation error: {e}")
+            total_duration_seconds = len(df)
+
+    hours = total_duration_seconds // 3600
+    minutes = (total_duration_seconds % 3600) // 60
+    seconds = total_duration_seconds % 60
+    total_time_formatted = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
     if 'enhanced_altitude' in df.columns:
         df['elevation'] = pd.to_numeric(df['enhanced_altitude'], errors='coerce').fillna(0)
     elif 'altitude' in df.columns:
@@ -438,6 +458,9 @@ def parse_ride(file_path, profile):
         "avg_speed": round(float(df['speed_kmh'].mean()), 1),
         "avg_cadence": round(float(valid_cadence.mean()), 1) if len(valid_cadence) > 0 else 0,
         "elevation_gain": round(total_climbing, 1),
+        "elevation_loss": 0,
+        "min_elevation": round(float(df['elevation'].min()), 1) if len(df['elevation']) > 0 else 0,
+        "max_elevation": round(float(df['elevation'].max()), 1) if len(df['elevation']) > 0 else 0,
         "total_calories": total_calories,
         "avg_power": avg_power,
         "max_power": max_power,
@@ -449,6 +472,8 @@ def parse_ride(file_path, profile):
         "max_temp": round(float(valid_temp.max()), 1) if len(valid_temp) > 0 else None,
         "has_temperature": has_temperature,
         "has_hr": has_hr,
+        "total_duration_seconds": total_duration_seconds,
+        "total_time_formatted": total_time_formatted,
     }
 
     MAX_POINTS = 300
@@ -730,6 +755,7 @@ def save_live_ride():
         if ride_type not in VALID_RIDE_TYPES:
             ride_type = 'cycling'
 
+        # ── Extract temperature stream ──────────────────────
         temperature_stream = data.get('temperature', [])
         temperature_values = [t['temp_c'] for t in temperature_stream if 'temp_c' in t]
         temperature_timestamps = [t['timestamp'] for t in temperature_stream if 'temp_c' in t]
@@ -742,6 +768,26 @@ def save_live_ride():
         cadence_list = [int(p.get('cadence', 0)) for p in points]
         route = [[float(p['lat']), float(p['lng'])] for p in points if p.get('lat') and p.get('lng')]
         elevation_list = [float(p.get('altitude', 0)) for p in points]
+
+        # ── Calculate total duration ──────────────────────────
+        total_duration_seconds = 0
+        if len(points) > 1:
+            first_ts = points[0].get('timestamp')
+            last_ts = points[-1].get('timestamp')
+            if first_ts and last_ts:
+                try:
+                    if isinstance(first_ts, str):
+                        first_dt = datetime.fromisoformat(first_ts.replace('Z', '+00:00'))
+                        last_dt = datetime.fromisoformat(last_ts.replace('Z', '+00:00'))
+                        total_duration_seconds = int((last_dt - first_dt).total_seconds())
+                except Exception as e:
+                    print(f"Duration calculation error: {e}")
+                    total_duration_seconds = len(points)
+
+        hours = total_duration_seconds // 3600
+        minutes = (total_duration_seconds % 3600) // 60
+        seconds = total_duration_seconds % 60
+        total_time_formatted = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
         total_dist = 0.0
         for i in range(1, len(points)):
@@ -768,6 +814,7 @@ def save_live_ride():
         ftp = float(profile.get('ftp', 200))
         zone_distribution = classify_power_zones(power_list, ftp)
 
+        # ── Temperature stats ──────────────────────────────
         if temperature_values:
             avg_temp = round(sum(temperature_values) / len(temperature_values), 1)
             min_temp = round(min(temperature_values), 1)
@@ -777,6 +824,7 @@ def save_live_ride():
             avg_temp = min_temp = max_temp = None
             has_temperature = False
 
+        # ── Elevation stats ──────────────────────────────────
         if elevation_list:
             min_elevation = round(min(elevation_list), 1)
             max_elevation = round(max(elevation_list), 1)
@@ -802,6 +850,8 @@ def save_live_ride():
             "max_temp": max_temp,
             "has_temperature": has_temperature,
             "has_hr": len(valid_hr) > 0,
+            "total_duration_seconds": total_duration_seconds,
+            "total_time_formatted": total_time_formatted,
         }
 
         file_hash = hashlib.md5(json.dumps(points).encode()).hexdigest()
@@ -878,11 +928,13 @@ def share_image(ride_id):
             img = generate_clean_style(summary, ride_type_info, route, width, height)
         elif style == 'minimal':
             img = generate_minimal_style(summary, ride_type_info, route, width, height)
+        elif style == 'transparent':
+            img = generate_transparent_style(summary, ride_type_info, route, width, height)
         else:
             img = generate_strava_style(summary, ride_type_info, route, width, height)
 
         buffer = BytesIO()
-        img.save(buffer, format='PNG')
+        img.save(buffer, format='PNG', optimize=True)
         buffer.seek(0)
         return send_file(buffer, mimetype='image/png', as_attachment=True, 
                         download_name=f"ride_share_{style}_{ride_id}.png")
@@ -913,13 +965,11 @@ def generate_strava_style(summary, ride_type_info, route, width, height):
     img = Image.new('RGBA', (width, height), (18, 18, 30, 255))
     draw = ImageDraw.Draw(img)
     
-    # Draw a subtle map pattern
     for i in range(0, width, 20):
         for j in range(0, height, 20):
             if (i + j) % 40 < 20:
                 draw.point((i, j), fill=(30, 30, 50, 50))
     
-    # Draw route if available
     if route and len(route) > 1:
         lats = [p[0] for p in route]
         lngs = [p[1] for p in route]
@@ -940,18 +990,15 @@ def generate_strava_style(summary, ride_type_info, route, width, height):
         
         if len(points) > 1:
             draw.line(points, fill=(252, 76, 2, 180), width=12, joint="curve")
-            
             r = 18
             draw.ellipse([points[0][0]-r, points[0][1]-r, points[0][0]+r, points[0][1]+r], 
                         fill=(72, 187, 120, 255))
             draw.ellipse([points[-1][0]-r, points[-1][1]-r, points[-1][0]+r, points[-1][1]+r], 
                         fill=(252, 76, 2, 255))
     
-    # Title
     font = load_font(50)
     draw.text((40, 40), f"{ride_type_info['icon']}  FIT READER", font=font, fill=(255,255,255,180))
     
-    # Stats overlay at bottom
     overlay = Image.new('RGBA', (width, 350), (0,0,0,180))
     img.paste(overlay, (0, height-350), overlay)
     
@@ -960,7 +1007,7 @@ def generate_strava_style(summary, ride_type_info, route, width, height):
     
     stats = [
         ("Distance", f"{summary.get('distance_km', 0):.1f} km"),
-        ("Time", "2:15:30"),
+        ("Time", summary.get('total_time_formatted', '00:00:00')),
         ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m"),
         ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h"),
     ]
@@ -972,7 +1019,6 @@ def generate_strava_style(summary, ride_type_info, route, width, height):
         draw.text((x - 60, y), value, font=font_big, fill=(255,255,255,255))
         draw.text((x - 40, y + 65), label, font=font_small, fill=(150,150,155,255))
     
-    # Extra stats if available
     extra_stats = []
     if summary.get('avg_hr'):
         extra_stats.append(f"{summary['avg_hr']:.0f} bpm")
@@ -990,18 +1036,15 @@ def generate_clean_style(summary, ride_type_info, route, width, height):
     img = Image.new('RGBA', (width, height), (13, 13, 26, 255))
     draw = ImageDraw.Draw(img)
     
-    # Border
     draw.rectangle([(20, 20), (width-20, height-20)], outline=(252,76,2,100), width=2)
     
-    # Header
     font = load_font(60)
     draw.text((width//2 - 100, 50), f"{ride_type_info['icon']}  {ride_type_info['name']}", 
               font=font, fill=(255,255,255,255))
     
-    # Stats grid
     stats = [
         ("Distance", f"{summary.get('distance_km', 0):.1f} km"),
-        ("Time", "2:15:30"),
+        ("Time", summary.get('total_time_formatted', '00:00:00')),
         ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m"),
         ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h"),
         ("Avg HR", f"{summary.get('avg_hr', 0):.0f} bpm" if summary.get('avg_hr') else "—"),
@@ -1027,7 +1070,6 @@ def generate_clean_style(summary, ride_type_info, route, width, height):
         draw.text((x - 50, y), value, font=font_value, fill=(255,255,255,255))
         draw.text((x - 30, y + 50), label, font=font_label, fill=(150,150,155,255))
     
-    # Footer
     draw.text((width//2 - 80, height - 60), "🚴 FIT READER", 
               font=font_label, fill=(252,76,2,255))
     
@@ -1038,7 +1080,6 @@ def generate_minimal_style(summary, ride_type_info, route, width, height):
     img = Image.new('RGBA', (width, height), (10, 10, 20, 255))
     draw = ImageDraw.Draw(img)
     
-    # Big distance
     font_big = load_font(180)
     draw.text((width//2 - 130, 400), f"{summary.get('distance_km', 0):.1f}", 
               font=font_big, fill=(255,255,255,255))
@@ -1046,10 +1087,9 @@ def generate_minimal_style(summary, ride_type_info, route, width, height):
     font_med = load_font(50)
     draw.text((width//2 - 50, 600), "km", font=font_med, fill=(150,150,155,255))
     
-    # Sub stats
     font_small = load_font(35)
     stats = [
-        ("⏱️", f"{summary.get('total_time', '00:00:00')}"),
+        ("⏱️", summary.get('total_time_formatted', '00:00:00')),
         ("⛰️", f"{summary.get('elevation_gain', 0)}m"),
         ("⚡", f"{summary.get('avg_speed', 0)} km/h"),
     ]
@@ -1060,13 +1100,71 @@ def generate_minimal_style(summary, ride_type_info, route, width, height):
         draw.text((x - 20, 950), value, font=load_font(30), fill=(150,150,155,255))
         x += 280
     
-    # Footer
     draw.text((width//2 - 100, height - 80), f"{ride_type_info['icon']}  FIT READER", 
               font=font_med, fill=(252,76,2,255))
     
     return img
 
-# ─── SHARE ROUTE (Original share) ─────────────────────────────
+def generate_transparent_style(summary, ride_type_info, route, width, height):
+    """Transparent style for Instagram Stories - overlay on any photo"""
+    # Fully transparent background
+    img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    
+    # Stats with white text (works on any background)
+    font = load_font(70)
+    font_small = load_font(40)
+    font_label = load_font(30)
+    font_time = load_font(50)
+    
+    # Ride type icon and name
+    draw.text((width//2 - 100, 100), f"{ride_type_info['icon']}  {ride_type_info['name']}", 
+              font=font, fill=(255, 255, 255, 200))
+    
+    # Main stats - big and centered
+    stats = [
+        ("Distance", f"{summary.get('distance_km', 0):.1f} km"),
+        ("Time", summary.get('total_time_formatted', '00:00:00')),
+        ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m"),
+        ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h"),
+    ]
+    
+    # Create a semi-transparent background for text readability
+    # Draw a subtle shadow/glow behind text
+    y_start = 400
+    for i, (label, value) in enumerate(stats):
+        col = i % 2
+        row = i // 2
+        x = 200 + col * 500
+        y = y_start + row * 250
+        
+        # Text shadow for readability
+        draw.text((x-2, y+2), value, font=font_time, fill=(0,0,0,100))
+        draw.text((x, y), value, font=font_time, fill=(255,255,255,255))
+        
+        draw.text((x-30, y + 70), label.upper(), font=font_label, fill=(255,255,255,180))
+    
+    # Additional stats if available
+    extra_y = 1200
+    extra_stats = []
+    if summary.get('avg_hr'):
+        extra_stats.append(f"❤️ {summary['avg_hr']:.0f} bpm")
+    if summary.get('total_calories'):
+        extra_stats.append(f"🔥 {summary['total_calories']} cal")
+    if summary.get('avg_power'):
+        extra_stats.append(f"⚡ {summary['avg_power']:.0f} W")
+    
+    if extra_stats:
+        extra_text = "  •  ".join(extra_stats)
+        draw.text((width//2 - 150, extra_y), extra_text, font=font_small, fill=(255,255,255,200))
+    
+    # Brand watermark (subtle)
+    draw.text((width//2 - 80, height - 80), "FIT READER", 
+              font=font_small, fill=(255,255,255,120))
+    
+    return img
+
+# ─── SHARE ROUTE ─────────────────────────────────────────────
 @app.route('/share/<int:ride_id>')
 @login_required
 def share_ride(ride_id):
