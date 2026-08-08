@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        /* ── All your existing styles remain the same ── */
         :root {
             --bg: #f7f7f9;
             --card: #ffffff;
@@ -111,7 +110,6 @@
         .btn-secondary:hover { background: var(--text); }
         .btn-download { background: #22c55e; color: white; }
         .btn-download:hover { background: #16a34a; transform: scale(1.02); }
-        /* ── Delete button ── */
         .btn-delete { background: #ef4444; color: white; }
         .btn-delete:hover { background: #dc2626; transform: scale(1.02); }
 
@@ -207,15 +205,6 @@
             transition: background var(--transition), border-color var(--transition);
             box-shadow: var(--shadow);
             overflow-x: auto;
-        }
-        .laps-container h3 {
-            margin-bottom: 12px;
-            font-size: 0.95rem;
-            color: var(--text);
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            text-align: center;
         }
         .laps-table {
             width: 100%;
@@ -336,13 +325,32 @@
             border-radius: 8px;
             overflow: hidden;
             position: relative;
-            background: repeating-conic-gradient(#e0e0e0 0% 25%, #ffffff 0% 50%) 0 0 / 20px 20px;
+            background: #0d0d0d;
             min-height: 200px;
         }
 
-        /* ── Preview Styles (All Transparent) ── */
+        .preview-map-bg {
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 30% 40%, rgba(252,76,2,0.15) 0%, transparent 60%),
+                radial-gradient(circle at 70% 60%, rgba(252,76,2,0.1) 0%, transparent 50%);
+        }
+        .preview-map-bg::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50%;
+            height: 35%;
+            border: 2px solid rgba(252,76,2,0.2);
+            border-radius: 40%;
+        }
+
+        /* ── Style 1: Map + Color Stats ── */
         .strava-preview {
-            background: repeating-conic-gradient(#e0e0e0 0% 25%, #ffffff 0% 50%) 0 0 / 20px 20px;
+            background: linear-gradient(180deg, #0a0e1a 0%, #1a1a2e 100%);
             position: relative;
             padding: 16px;
             display: flex;
@@ -356,18 +364,22 @@
             color: #fc4c02;
             letter-spacing: 1px;
             text-shadow: 0 0 10px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 2;
         }
         .strava-preview .preview-stats-overlay {
-            background: rgba(0,0,0,0.7);
-            border-radius: 8px;
+            background: rgba(0,0,0,0.75);
+            border-radius: 10px;
             padding: 12px;
-            backdrop-filter: blur(4px);
-            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.08);
+            position: relative;
+            z-index: 2;
         }
         .strava-preview .preview-stats-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: 4px;
+            gap: 6px;
         }
         .strava-preview .preview-stat {
             text-align: center;
@@ -376,7 +388,6 @@
             display: block;
             font-size: 0.8rem;
             font-weight: 700;
-            color: #fff;
         }
         .strava-preview .preview-stat .label {
             display: block;
@@ -385,30 +396,32 @@
             color: #94a3b8;
             letter-spacing: 0.5px;
         }
-        .strava-preview .preview-map-indicator {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 60%;
-            height: 40%;
-            border: 2px solid rgba(252,76,2,0.3);
-            border-radius: 50%;
-            opacity: 0.3;
-        }
+        /* Color coded stats */
+        .stat-distance .value { color: #60a5fa; }
+        .stat-time .value { color: #facc15; }
+        .stat-elevation .value { color: #34d399; }
+        .stat-speed .value { color: #f87171; }
+        .stat-hr .value { color: #fb923c; }
+        .stat-calories .value { color: #f472b6; }
+        .stat-power .value { color: #c084fc; }
+        .stat-cadence .value { color: #22d3ee; }
 
+        /* ── Style 2: Clean Stats ── */
         .clean-preview {
-            background: repeating-conic-gradient(#e0e0e0 0% 25%, #ffffff 0% 50%) 0 0 / 20px 20px;
+            background: linear-gradient(180deg, #0d0d0d 0%, #1a1a2e 100%);
             padding: 16px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             min-height: 200px;
+            position: relative;
         }
         .clean-preview .preview-header {
             display: flex;
             align-items: center;
             gap: 6px;
+            position: relative;
+            z-index: 2;
         }
         .clean-preview .preview-header .icon { font-size: 0.7rem; }
         .clean-preview .preview-header .name { 
@@ -420,22 +433,23 @@
         .clean-preview .preview-stats-list {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 4px;
+            gap: 6px;
             margin: 8px 0;
+            position: relative;
+            z-index: 2;
         }
         .clean-preview .preview-stat {
-            background: rgba(0,0,0,0.7);
-            border-radius: 4px;
-            padding: 4px 6px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 8px;
+            padding: 6px 8px;
             text-align: center;
             backdrop-filter: blur(4px);
             border: 1px solid rgba(255,255,255,0.05);
         }
         .clean-preview .preview-stat .value {
             display: block;
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             font-weight: 700;
-            color: #fff;
         }
         .clean-preview .preview-stat .label {
             display: block;
@@ -448,39 +462,49 @@
             font-size: 0.35rem;
             color: #fc4c02;
             font-weight: 600;
+            position: relative;
+            z-index: 2;
         }
 
+        /* ── Style 3: Minimal ── */
         .minimal-preview {
-            background: repeating-conic-gradient(#e0e0e0 0% 25%, #ffffff 0% 50%) 0 0 / 20px 20px;
+            background: linear-gradient(180deg, #0d0d0d 0%, #1a1a2e 100%);
             padding: 16px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 200px;
+            position: relative;
         }
         .minimal-preview .big-num {
             font-size: 2.2rem;
             font-weight: 800;
-            color: #fff;
-            text-shadow: 0 0 20px rgba(0,0,0,0.5);
+            color: #60a5fa;
+            text-shadow: 0 0 30px rgba(96,165,250,0.3);
+            position: relative;
+            z-index: 2;
         }
         .minimal-preview .big-label {
             font-size: 0.5rem;
             color: #94a3b8;
             text-transform: uppercase;
             letter-spacing: 2px;
+            position: relative;
+            z-index: 2;
         }
         .minimal-preview .mini-stats {
             display: flex;
             gap: 16px;
-            margin-top: 8px;
+            margin-top: 12px;
+            position: relative;
+            z-index: 2;
         }
         .minimal-preview .mini-stats .stat {
             text-align: center;
-            background: rgba(0,0,0,0.7);
-            padding: 4px 10px;
-            border-radius: 6px;
+            background: rgba(0,0,0,0.6);
+            padding: 6px 12px;
+            border-radius: 8px;
             backdrop-filter: blur(4px);
             border: 1px solid rgba(255,255,255,0.05);
         }
@@ -488,7 +512,6 @@
             display: block;
             font-size: 0.6rem;
             font-weight: 700;
-            color: #fff;
         }
         .minimal-preview .mini-stats .stat .l {
             font-size: 0.3rem;
@@ -500,8 +523,11 @@
             font-size: 0.35rem;
             color: #fc4c02;
             font-weight: 600;
+            position: relative;
+            z-index: 2;
         }
 
+        /* ── Style 4: Transparent ── */
         .transparent-preview {
             background: repeating-conic-gradient(#e0e0e0 0% 25%, #ffffff 0% 50%) 0 0 / 20px 20px;
             position: relative;
@@ -529,7 +555,7 @@
             margin-top: 2px;
         }
 
-        /* ── Share Result with Download Button ── */
+        /* ── Share Result ── */
         .share-result-container {
             display: flex;
             flex-direction: column;
@@ -686,74 +712,30 @@
                 {% endif %}
             </div>
 
-            <!-- ALL Charts Grid -->
+            <!-- Charts Grid -->
             <div class="charts-grid">
-                <!-- Speed -->
                 {% if streams.speed and streams.speed|length > 0 %}
-                <div class="chart-box">
-                    <h3>🚴 Speed (km/h)</h3>
-                    <canvas id="speedChart"></canvas>
-                </div>
+                <div class="chart-box"><h3>🚴 Speed (km/h)</h3><canvas id="speedChart"></canvas></div>
                 {% endif %}
-
-                <!-- Heart Rate -->
                 {% if streams.heart_rate and streams.heart_rate|length > 0 %}
-                <div class="chart-box">
-                    <h3>❤️ Heart Rate (bpm)</h3>
-                    <canvas id="hrChart"></canvas>
-                </div>
+                <div class="chart-box"><h3>❤️ Heart Rate (bpm)</h3><canvas id="hrChart"></canvas></div>
                 {% endif %}
-
-                <!-- Cadence -->
                 {% if streams.cadence and streams.cadence|length > 0 %}
-                <div class="chart-box">
-                    <h3>🔄 Cadence (rpm)</h3>
-                    <canvas id="cadenceChart"></canvas>
-                </div>
+                <div class="chart-box"><h3>🔄 Cadence (rpm)</h3><canvas id="cadenceChart"></canvas></div>
                 {% endif %}
-
-                <!-- Power -->
                 {% if streams.power and streams.power|length > 0 %}
-                <div class="chart-box">
-                    <h3>⚡ Power (W)</h3>
-                    <canvas id="powerChart"></canvas>
-                </div>
+                <div class="chart-box"><h3>⚡ Power (W)</h3><canvas id="powerChart"></canvas></div>
                 {% endif %}
-
-                <!-- Elevation -->
-                <div class="chart-box">
-                    <h3>⛰️ Elevation (m)</h3>
-                    <canvas id="elevationChart"></canvas>
-                </div>
-
-                <!-- Temperature -->
-                <div class="chart-box">
-                    <h3>🌡️ Temperature (°C)</h3>
-                    <canvas id="tempChart"></canvas>
-                </div>
-
-                <!-- Gradient/Incline -->
+                <div class="chart-box"><h3>⛰️ Elevation (m)</h3><canvas id="elevationChart"></canvas></div>
+                <div class="chart-box"><h3>🌡️ Temperature (°C)</h3><canvas id="tempChart"></canvas></div>
                 {% if streams.grade and streams.grade|length > 0 %}
-                <div class="chart-box">
-                    <h3>📐 Gradient (%)</h3>
-                    <canvas id="gradeChart"></canvas>
-                </div>
+                <div class="chart-box"><h3>📐 Gradient (%)</h3><canvas id="gradeChart"></canvas></div>
                 {% endif %}
-
-                <!-- Torque -->
                 {% if streams.torque and streams.torque|length > 0 %}
-                <div class="chart-box">
-                    <h3>🔧 Torque (Nm)</h3>
-                    <canvas id="torqueChart"></canvas>
-                </div>
+                <div class="chart-box"><h3>🔧 Torque (Nm)</h3><canvas id="torqueChart"></canvas></div>
                 {% endif %}
-
-                <!-- Left/Right Balance -->
                 {% if streams.left_right_balance and streams.left_right_balance|length > 0 %}
-                <div class="chart-box">
-                    <h3>⚖️ Left/Right Balance (%)</h3>
-                    <canvas id="balanceChart"></canvas>
-                </div>
+                <div class="chart-box"><h3>⚖️ Left/Right Balance (%)</h3><canvas id="balanceChart"></canvas></div>
                 {% endif %}
             </div>
 
@@ -829,18 +811,7 @@
                 <h3>🏁 Lap Analysis</h3>
                 <table class="laps-table">
                     <thead>
-                        <tr>
-                            <th>Lap</th>
-                            <th>Distance</th>
-                            <th>Time</th>
-                            <th>Avg Speed</th>
-                            <th>Avg HR</th>
-                            <th>Avg Cadence</th>
-                            <th>Avg Power</th>
-                            <th>Elevation</th>
-                            <th>Calories</th>
-                            <th>Temp</th>
-                        </tr>
+                        <tr><th>Lap</th><th>Distance</th><th>Time</th><th>Avg Speed</th><th>Avg HR</th><th>Avg Cadence</th><th>Avg Power</th><th>Elevation</th><th>Calories</th><th>Temp</th></tr>
                     </thead>
                     <tbody>
                         {% for lap in laps %}
@@ -878,19 +849,19 @@
                 <!-- Style 1: Map + Stats -->
                 <div class="share-style-card" onclick="generateShareImage('strava')">
                     <div class="share-style-preview strava-preview">
+                        <div class="preview-map-bg"></div>
                         <div class="preview-title">🚴 FIT READER</div>
-                        <div class="preview-map-indicator"></div>
                         <div class="preview-stats-overlay">
                             <div class="preview-stats-grid">
-                                <div class="preview-stat">
+                                <div class="preview-stat stat-distance">
                                     <span class="value">42.5</span>
                                     <span class="label">km</span>
                                 </div>
-                                <div class="preview-stat">
+                                <div class="preview-stat stat-time">
                                     <span class="value">2:15</span>
                                     <span class="label">time</span>
                                 </div>
-                                <div class="preview-stat">
+                                <div class="preview-stat stat-elevation">
                                     <span class="value">850</span>
                                     <span class="label">elevation</span>
                                 </div>
@@ -903,35 +874,20 @@
                 <!-- Style 2: Clean Stats -->
                 <div class="share-style-card" onclick="generateShareImage('clean')">
                     <div class="share-style-preview clean-preview">
+                        <div class="preview-map-bg"></div>
                         <div class="preview-header">
                             <span class="icon">🚴</span>
                             <span class="name">FIT READER</span>
                         </div>
                         <div class="preview-stats-list">
-                            <div class="preview-stat">
-                                <span class="value">42.5 km</span>
-                                <span class="label">Distance</span>
-                            </div>
-                            <div class="preview-stat">
-                                <span class="value">2:15:30</span>
-                                <span class="label">Time</span>
-                            </div>
-                            <div class="preview-stat">
-                                <span class="value">850 m</span>
-                                <span class="label">Elevation</span>
-                            </div>
-                            <div class="preview-stat">
-                                <span class="value">18.8 km/h</span>
-                                <span class="label">Avg Speed</span>
-                            </div>
-                            <div class="preview-stat">
-                                <span class="value">145 bpm</span>
-                                <span class="label">Avg HR</span>
-                            </div>
-                            <div class="preview-stat">
-                                <span class="value">1,240</span>
-                                <span class="label">Calories</span>
-                            </div>
+                            <div class="preview-stat stat-distance"><span class="value">42.5 km</span><span class="label">Distance</span></div>
+                            <div class="preview-stat stat-time"><span class="value">2:15:30</span><span class="label">Time</span></div>
+                            <div class="preview-stat stat-elevation"><span class="value">850 m</span><span class="label">Elevation</span></div>
+                            <div class="preview-stat stat-speed"><span class="value">18.8 km/h</span><span class="label">Avg Speed</span></div>
+                            <div class="preview-stat stat-hr"><span class="value">145 bpm</span><span class="label">Avg HR</span></div>
+                            <div class="preview-stat stat-calories"><span class="value">1,240</span><span class="label">Calories</span></div>
+                            <div class="preview-stat stat-power"><span class="value">185 W</span><span class="label">Avg Power</span></div>
+                            <div class="preview-stat stat-cadence"><span class="value">82 rpm</span><span class="label">Cadence</span></div>
                         </div>
                         <div class="preview-footer">🚴 FIT READER</div>
                     </div>
@@ -941,23 +897,15 @@
                 <!-- Style 3: Minimal -->
                 <div class="share-style-card" onclick="generateShareImage('minimal')">
                     <div class="share-style-preview minimal-preview">
+                        <div class="preview-map-bg"></div>
                         <div>
                             <div class="big-num">42.5</div>
                             <div class="big-label">Kilometers</div>
                         </div>
                         <div class="mini-stats">
-                            <div class="stat">
-                                <span class="v">2:15:30</span>
-                                <span class="l">Time</span>
-                            </div>
-                            <div class="stat">
-                                <span class="v">850m</span>
-                                <span class="l">Elevation</span>
-                            </div>
-                            <div class="stat">
-                                <span class="v">18.8</span>
-                                <span class="l">Speed</span>
-                            </div>
+                            <div class="stat stat-time"><span class="v" style="color:#facc15;">2:15:30</span><span class="l">Time</span></div>
+                            <div class="stat stat-elevation"><span class="v" style="color:#34d399;">850m</span><span class="l">Elevation</span></div>
+                            <div class="stat stat-speed"><span class="v" style="color:#f87171;">18.8</span><span class="l">Speed</span></div>
                         </div>
                         <div class="footer">🚴 FIT READER</div>
                     </div>
@@ -976,15 +924,12 @@
                 </div>
             </div>
 
-            <!-- ── Preview + Download Button ── -->
             <div class="share-result-container" id="shareResultContainer" style="display:none;">
                 <img id="sharePreviewImage" class="preview-img" src="" alt="Share preview" />
                 <div class="download-row">
                     <span class="transparent-badge" id="transparentBadge" style="display:none;">✨ Transparent background - overlay on any photo</span>
                     <button class="btn btn-secondary" onclick="closeShareModal()">Close</button>
-                    <button class="btn btn-download" onclick="downloadShareImage()">
-                        ⬇️ Download Image
-                    </button>
+                    <button class="btn btn-download" onclick="downloadShareImage()">⬇️ Download Image</button>
                 </div>
             </div>
         </div>
@@ -1098,14 +1043,12 @@
                 currentShareUrl = URL.createObjectURL(blob);
                 document.getElementById('shareLoading').classList.remove('active');
                 
-                // Show preview and download button
                 const resultContainer = document.getElementById('shareResultContainer');
                 resultContainer.style.display = 'flex';
                 
                 const previewImg = document.getElementById('sharePreviewImage');
                 previewImg.src = currentShareUrl;
                 
-                // Show transparent badge if transparent style
                 const badge = document.getElementById('transparentBadge');
                 if (style === 'transparent') {
                     badge.style.display = 'inline-block';
@@ -1155,21 +1098,16 @@
             }
         });
 
-        // ── DELETE RIDE FUNCTION ──────────────────────────────────
+        // ── DELETE RIDE ──────────────────────────────────────────
         function deleteRide() {
             const rideId = {{ ride.id }};
             if (!confirm('Are you sure you want to delete this ride? This action cannot be undone.')) {
                 return;
             }
             
-            document.getElementById('toast').textContent = 'Deleting ride...';
-            document.getElementById('toast').className = 'toast show';
-            
             fetch(`/ride/${rideId}`, {
                 method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             })
             .then(response => response.json())
             .then(data => {
@@ -1179,7 +1117,7 @@
                         window.location.href = '/dashboard';
                     }, 1500);
                 } else {
-                    showToast('❌ Failed to delete ride: ' + (data.error || 'Unknown error'), 'error');
+                    showToast('❌ Failed to delete ride', 'error');
                 }
             })
             .catch(error => {
