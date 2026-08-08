@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
+        /* ── All your existing styles remain the same ── */
         :root {
             --bg: #f7f7f9;
             --card: #ffffff;
@@ -110,6 +111,9 @@
         .btn-secondary:hover { background: var(--text); }
         .btn-download { background: #22c55e; color: white; }
         .btn-download:hover { background: #16a34a; transform: scale(1.02); }
+        /* ── Delete button ── */
+        .btn-delete { background: #ef4444; color: white; }
+        .btn-delete:hover { background: #dc2626; transform: scale(1.02); }
 
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px,1fr)); gap: 10px; margin: 25px 0; }
         .stat-card { background: var(--bg); padding: 14px 10px; border-radius: var(--radius); text-align: center; border: 1px solid var(--line); transition: background var(--transition), border-color var(--transition); }
@@ -647,6 +651,7 @@
                     <a href="/dashboard" class="btn btn-dashboard">📊 Dashboard</a>
                     <button class="btn btn-share" onclick="openShareModal()">📤 Share</button>
                     <button class="btn btn-print" onclick="window.print()">🖨️ Print / PDF</button>
+                    <button class="btn btn-delete" onclick="deleteRide()">🗑️ Delete</button>
                 </div>
             </div>
 
@@ -870,7 +875,7 @@
             </div>
             
             <div class="share-styles-grid">
-                <!-- Style 1: Map + Stats (Transparent) -->
+                <!-- Style 1: Map + Stats -->
                 <div class="share-style-card" onclick="generateShareImage('strava')">
                     <div class="share-style-preview strava-preview">
                         <div class="preview-title">🚴 FIT READER</div>
@@ -895,7 +900,7 @@
                     <div class="share-style-name">🗺️ Map + Stats</div>
                 </div>
 
-                <!-- Style 2: Clean Stats (Transparent) -->
+                <!-- Style 2: Clean Stats -->
                 <div class="share-style-card" onclick="generateShareImage('clean')">
                     <div class="share-style-preview clean-preview">
                         <div class="preview-header">
@@ -933,7 +938,7 @@
                     <div class="share-style-name">📊 Clean Stats</div>
                 </div>
 
-                <!-- Style 3: Minimal (Transparent) -->
+                <!-- Style 3: Minimal -->
                 <div class="share-style-card" onclick="generateShareImage('minimal')">
                     <div class="share-style-preview minimal-preview">
                         <div>
@@ -959,7 +964,7 @@
                     <div class="share-style-name">✨ Minimal</div>
                 </div>
 
-                <!-- Style 4: Pure Transparent -->
+                <!-- Style 4: Transparent -->
                 <div class="share-style-card" onclick="generateShareImage('transparent')">
                     <div class="share-style-preview transparent-preview">
                         <div class="transparent-label">
@@ -1149,6 +1154,39 @@
                 closeShareModal();
             }
         });
+
+        // ── DELETE RIDE FUNCTION ──────────────────────────────────
+        function deleteRide() {
+            const rideId = {{ ride.id }};
+            if (!confirm('Are you sure you want to delete this ride? This action cannot be undone.')) {
+                return;
+            }
+            
+            document.getElementById('toast').textContent = 'Deleting ride...';
+            document.getElementById('toast').className = 'toast show';
+            
+            fetch(`/ride/${rideId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'deleted') {
+                    showToast('🗑️ Ride deleted successfully!', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1500);
+                } else {
+                    showToast('❌ Failed to delete ride: ' + (data.error || 'Unknown error'), 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Delete error:', error);
+                showToast('❌ Failed to delete ride', 'error');
+            });
+        }
 
         // ── Leaflet Map ────────────────────────────────────
         let mapInstance = null;
