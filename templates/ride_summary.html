@@ -498,14 +498,25 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            min-height: 200px;
         }
         .transparent-preview .transparent-label {
-            color: #666;
-            font-size: 0.5rem;
+            color: #333;
+            font-size: 0.6rem;
             font-weight: 600;
-            background: rgba(255,255,255,0.8);
-            padding: 4px 12px;
-            border-radius: 4px;
+            background: rgba(255,255,255,0.9);
+            padding: 6px 14px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .transparent-preview .transparent-label span {
+            color: #fc4c02;
+        }
+        .transparent-preview .transparent-label .sub {
+            font-size: 0.4rem;
+            color: #666;
+            margin-top: 2px;
         }
 
         /* ── Share Result with Download Button ── */
@@ -945,7 +956,10 @@
                 <!-- Style 4: Transparent (for Instagram Stories) -->
                 <div class="share-style-card" onclick="generateShareImage('transparent')">
                     <div class="share-style-preview transparent-preview">
-                        <div class="transparent-label">✨ Transparent</div>
+                        <div class="transparent-label">
+                            ✨ <span>FIT READER</span>
+                            <div class="sub">Overlay on any photo</div>
+                        </div>
                     </div>
                     <div class="share-style-name">✨ Transparent</div>
                 </div>
