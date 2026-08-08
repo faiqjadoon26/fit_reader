@@ -393,6 +393,7 @@
         }
         .gps-status.active { background: rgba(72,187,120,0.9); color: #fff; border-color: #48bb78; box-shadow: 0 0 20px rgba(72,187,120,0.3); }
         .gps-status.paused { background: rgba(237,137,54,0.9); color: #fff; border-color: #ed8936; box-shadow: 0 0 20px rgba(237,137,54,0.3); }
+        .gps-status.auto-paused { background: rgba(245,158,11,0.9); color: #fff; border-color: #f59e0b; box-shadow: 0 0 20px rgba(245,158,11,0.3); }
         .gps-status.error { background: rgba(229,62,62,0.9); color: #fff; border-color: #e53e3e; box-shadow: 0 0 20px rgba(229,62,62,0.3); }
 
         .map-style-row {
@@ -455,6 +456,9 @@
             color: #ff8a5c; 
             text-shadow: 0 0 30px rgba(252,76,2,0.3);
             font-variant-numeric: tabular-nums;
+        }
+        .modal-stat-primary .record-stat-value.auto-paused { 
+            color: #facc15; 
         }
         .modal-stat-speed {
             grid-column: span 1; 
@@ -526,12 +530,24 @@
         #recTemp { color: #6ee7b7; }
         #recTimer { color: #ff8a5c; }
         #recTimer.paused { color: #facc15; }
+        #recTimer.auto-paused { color: #f59e0b; animation: pulse-timer 1s ease-in-out infinite; }
+        
+        @keyframes pulse-timer {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
         
         .record-modal-message {
             position: absolute; bottom: 58px; left: 0; right: 0; z-index: 1000;
             text-align: center; color: #facc15; font-size: 0.85rem; font-weight: 600;
             background: rgba(0,0,0,0.6); padding: 6px 12px; min-height: 1.4em;
             pointer-events: none; backdrop-filter: blur(4px);
+        }
+        .record-modal-message.auto-paused {
+            color: #f59e0b;
+            background: rgba(0,0,0,0.8);
+            border-top: 2px solid #f59e0b;
+            border-bottom: 2px solid #f59e0b;
         }
         .record-modal-controls {
             position: absolute; bottom: 0; left: 0; right: 0; z-index: 1000;
@@ -573,6 +589,10 @@
             width: 10px; height: 10px; border-radius: 50%; background: #22c55e;
             animation: pulse 1.5s ease-in-out infinite; flex-shrink: 0;
             box-shadow: 0 0 20px rgba(34,197,94,0.5);
+        }
+        .pulse-dot.auto-paused {
+            background: #f59e0b;
+            box-shadow: 0 0 20px rgba(245,158,11,0.5);
         }
         @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.7)} }
         .minimized-expand { color: #94a3b8; font-size: 0.8rem; margin-left: 4px; }
@@ -921,7 +941,7 @@
 
     <!-- MINIMIZED RECORD BAR -->
     <div class="record-minimized-bar" id="recordMinimizedBar" onclick="reopenRecordModal()">
-        <span class="pulse-dot"></span>
+        <span class="pulse-dot" id="minimizedDot"></span>
         <span id="minimizedText">Recording... 00:00:00</span>
         <span class="minimized-expand">▲</span>
     </div>
@@ -1135,6 +1155,16 @@
         let recMap = null, recPolyline = null, recMarker = null, recArrow = null;
         let mapInitialized = false;
         let currentMapStyle = 'standard';
+        
+        // ── AUTO-PAUSE STATE ──────────────────────────────────
+        let autoPause = {
+            isAutoPaused: false,
+            speedCheckInterval: null,
+            zeroSpeedStartTime: null,
+            autoPauseStartTime: null,
+            autoPauseTotalMs: 0,
+            lastSpeed: 0
+        };
 
         // ── Temperature polling state ──────────────────────
         let tempPollInterval = null;
@@ -1930,8 +1960,15 @@
 
         function currentElapsedMs() {
             if (!recStartTime) return 0;
-            if (recIsPaused) return recElapsedBeforePause;
-            return recElapsedBeforePause + (Date.now() - recStartTime);
+            // If auto-paused, subtract the auto-pause time from total
+            if (recIsPaused) {
+                return recElapsedBeforePause;
+            }
+            let elapsed = recElapsedBeforePause + (Date.now() - recStartTime);
+            if (autoPause.isAutoPaused && autoPause.autoPauseStartTime) {
+                elapsed -= (Date.now() - autoPause.autoPauseStartTime);
+            }
+            return elapsed;
         }
 
         function updateRecordUI() {
@@ -1939,12 +1976,16 @@
             document.getElementById('recTimer').textContent = durationStr;
             document.getElementById('recDistance').innerHTML = recTotalDistanceKm.toFixed(2) + ' <span class="stat-unit">km</span>';
             const minimizedText = document.getElementById('minimizedText');
-            if (minimizedText) minimizedText.textContent = `Recording... ${durationStr} · ${recTotalDistanceKm.toFixed(2)} km`;
+            if (minimizedText) {
+                const status = autoPause.isAutoPaused ? '⏸️ Auto-Paused' : '🔴 Recording';
+                minimizedText.textContent = `${status} ${durationStr} · ${recTotalDistanceKm.toFixed(2)} km`;
+            }
             
             const elapsedHours = currentElapsedMs() / 3600000;
             const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
             
-            if (recIsPaused) {
+            // Show avg speed when paused, current speed when recording
+            if (recIsPaused || autoPause.isAutoPaused) {
                 document.getElementById('recSpeed').textContent = avgSpeed.toFixed(1);
                 document.getElementById('recSpeed').classList.add('paused');
             } else if (recLastPoint && recLastPoint.speed !== undefined) {
@@ -1953,10 +1994,28 @@
             }
             
             const timerEl = document.getElementById('recTimer');
-            if (recIsPaused) {
-                timerEl.classList.add('paused');
-            } else {
+            const messageEl = document.getElementById('recordMessage');
+            const dotEl = document.getElementById('minimizedDot');
+            
+            if (autoPause.isAutoPaused) {
+                timerEl.classList.add('auto-paused');
                 timerEl.classList.remove('paused');
+                messageEl.textContent = '⏸️ Auto-Paused - Speed 0 for 3+ seconds';
+                messageEl.className = 'record-modal-message auto-paused';
+                if (dotEl) dotEl.className = 'pulse-dot auto-paused';
+                setGpsStatus('Auto-Paused', 'auto-paused');
+            } else if (recIsPaused) {
+                timerEl.classList.add('paused');
+                timerEl.classList.remove('auto-paused');
+                messageEl.textContent = '⏸️ Paused';
+                messageEl.className = 'record-modal-message';
+                if (dotEl) dotEl.className = 'pulse-dot';
+            } else if (recIsRecording) {
+                timerEl.classList.remove('paused', 'auto-paused');
+                messageEl.textContent = '';
+                messageEl.className = 'record-modal-message';
+                if (dotEl) dotEl.className = 'pulse-dot';
+                setGpsStatus('Recording', 'active');
             }
         }
 
@@ -2028,18 +2087,26 @@
                 }
             }
             
-            if (recLastPoint) recTotalDistanceKm += haversineKm(recLastPoint.lat, recLastPoint.lng, lat, lng);
+            // ── AUTO-PAUSE CHECK ──────────────────────────────────
+            checkAutoPause(speedKmh);
             
-            recPoints.push({
-                timestamp: new Date(position.timestamp).toISOString(),
-                lat, lng,
-                altitude: altitude,
-                heading: heading,
-                speed_kmh: speedKmh,
-                heart_rate: sensorData.heartRate || 0,
-                cadence: sensorData.cadence || 0,
-                power: sensorData.power || 0
-            });
+            if (recLastPoint && !autoPause.isAutoPaused) {
+                recTotalDistanceKm += haversineKm(recLastPoint.lat, recLastPoint.lng, lat, lng);
+            }
+            
+            // Only record points if not auto-paused
+            if (!autoPause.isAutoPaused) {
+                recPoints.push({
+                    timestamp: new Date(position.timestamp).toISOString(),
+                    lat, lng,
+                    altitude: altitude,
+                    heading: heading,
+                    speed_kmh: speedKmh,
+                    heart_rate: sensorData.heartRate || 0,
+                    cadence: sensorData.cadence || 0,
+                    power: sensorData.power || 0
+                });
+            }
             
             recLastPoint = { 
                 lat, 
@@ -2049,19 +2116,78 @@
                 heading: heading 
             };
             
+            // Update map
             if (!recMap || !mapInitialized) {
                 initRecordMap(lat, lng, heading);
             } else {
                 updateRecordMap(lat, lng, heading);
             }
             
-            if (!recIsPaused) {
+            // Update speed display
+            if (!recIsPaused && !autoPause.isAutoPaused) {
                 document.getElementById('recSpeed').textContent = speedKmh.toFixed(1);
                 document.getElementById('recSpeed').classList.remove('paused');
+            } else if (autoPause.isAutoPaused) {
+                const elapsedHours = currentElapsedMs() / 3600000;
+                const avgSpeed = elapsedHours > 0 ? recTotalDistanceKm / elapsedHours : 0;
+                document.getElementById('recSpeed').textContent = avgSpeed.toFixed(1);
+                document.getElementById('recSpeed').classList.add('paused');
             }
-            setGpsStatus('GPS locked', 'active');
+            
             updateRecordUI();
             updateSensorUI();
+        }
+
+        // ── AUTO-PAUSE FUNCTION ──────────────────────────────────
+        function checkAutoPause(speedKmh) {
+            if (!recIsRecording || recIsPaused) return;
+            
+            const now = Date.now();
+            
+            if (speedKmh < 0.5) { // Speed is effectively 0
+                if (!autoPause.zeroSpeedStartTime) {
+                    autoPause.zeroSpeedStartTime = now;
+                }
+                
+                // Check if speed has been 0 for 3+ seconds
+                if (!autoPause.isAutoPaused && (now - autoPause.zeroSpeedStartTime) >= 3000) {
+                    // Auto-pause!
+                    autoPause.isAutoPaused = true;
+                    autoPause.autoPauseStartTime = now;
+                    autoPause.autoPauseTotalMs = 0;
+                    
+                    // Stop GPS watch temporarily
+                    if (recWatchId !== null) {
+                        navigator.geolocation.clearWatch(recWatchId);
+                        recWatchId = null;
+                    }
+                    
+                    // Update UI
+                    updateRecordUI();
+                    showToast('⏸️ Auto-paused - you stopped moving', 'info');
+                }
+            } else {
+                // Moving again - resume from auto-pause
+                if (autoPause.isAutoPaused) {
+                    // Resume recording
+                    autoPause.isAutoPaused = false;
+                    autoPause.autoPauseTotalMs += (now - autoPause.autoPauseStartTime);
+                    autoPause.autoPauseStartTime = null;
+                    autoPause.zeroSpeedStartTime = null;
+                    
+                    // Restart GPS watch
+                    if (recWatchId === null) {
+                        startGpsWatch();
+                    }
+                    
+                    // Resume timer
+                    recStartTime = now;
+                    
+                    updateRecordUI();
+                    showToast('▶️ Auto-resumed - you\'re moving again', 'info');
+                }
+                autoPause.zeroSpeedStartTime = null;
+            }
         }
 
         function onGpsError(error) {
@@ -2090,19 +2216,24 @@
             recIsPaused = false;
             recIsRecording = false;
             recStartTime = null;
+            autoPause.isAutoPaused = false;
+            autoPause.zeroSpeedStartTime = null;
+            autoPause.autoPauseStartTime = null;
+            autoPause.autoPauseTotalMs = 0;
             resetTemperatureState();
             teardownRecordMap();
             document.getElementById('recordModal').style.display = 'flex';
             document.getElementById('recordMinimizedBar').style.display = 'none';
             setGpsStatus('Loading map...', '');
             document.getElementById('recordMessage').textContent = 'Press "Start" when ready.';
+            document.getElementById('recordMessage').className = 'record-modal-message';
             document.getElementById('recStartRecordingBtn').style.display = 'inline-block';
             document.getElementById('recPauseBtn').style.display = 'none';
             document.getElementById('recResumeBtn').style.display = 'none';
             document.getElementById('recStopBtn').style.display = 'none';
             document.getElementById('recDiscardBtn').style.display = 'none';
             document.getElementById('recTimer').textContent = '00:00:00';
-            document.getElementById('recTimer').classList.remove('paused');
+            document.getElementById('recTimer').classList.remove('paused', 'auto-paused');
             document.getElementById('recSpeed').textContent = '0.0';
             document.getElementById('recSpeed').classList.remove('paused');
             document.getElementById('recDistance').innerHTML = '0.00 <span class="stat-unit">km</span>';
@@ -2110,6 +2241,7 @@
             document.getElementById('recCadence').textContent = '--';
             document.getElementById('recPower').textContent = '--';
             document.getElementById('recTemp').textContent = '--';
+            document.getElementById('minimizedDot').className = 'pulse-dot';
             if (profileData.default_activity_type) {
                 document.getElementById('recRideTypeSelect').value = profileData.default_activity_type;
             }
@@ -2134,12 +2266,17 @@
             if (!('geolocation' in navigator)) { showToast('❌ Geolocation not supported', 'error'); return; }
             recIsRecording = true;
             recStartTime = Date.now();
+            autoPause.isAutoPaused = false;
+            autoPause.zeroSpeedStartTime = null;
+            autoPause.autoPauseStartTime = null;
+            autoPause.autoPauseTotalMs = 0;
             startTemperaturePolling(recStartTime);
             document.getElementById('recStartRecordingBtn').style.display = 'none';
             document.getElementById('recPauseBtn').style.display = 'inline-block';
             document.getElementById('recStopBtn').style.display = 'inline-block';
             document.getElementById('recDiscardBtn').style.display = 'inline-block';
             document.getElementById('recordMessage').textContent = '';
+            document.getElementById('recordMessage').className = 'record-modal-message';
             setGpsStatus('Acquiring GPS...', 'active');
             if (!recMap || !mapInitialized) {
                 navigator.geolocation.getCurrentPosition(
@@ -2168,7 +2305,7 @@
         }
 
         function pauseRecording() {
-            if (!recIsRecording || recIsPaused) return;
+            if (!recIsRecording || recIsPaused || autoPause.isAutoPaused) return;
             recIsPaused = true;
             recElapsedBeforePause += Date.now() - recStartTime;
             if (recWatchId !== null) { navigator.geolocation.clearWatch(recWatchId); recWatchId = null; }
@@ -2181,6 +2318,7 @@
             document.getElementById('recSpeed').textContent = avgSpeed.toFixed(1);
             document.getElementById('recSpeed').classList.add('paused');
             document.getElementById('recTimer').classList.add('paused');
+            updateRecordUI();
         }
 
         function resumeRecording() {
@@ -2206,6 +2344,7 @@
             }
             document.getElementById('recSpeed').classList.remove('paused');
             document.getElementById('recTimer').classList.remove('paused');
+            updateRecordUI();
         }
 
         function stopGpsWatch() {
@@ -2222,7 +2361,7 @@
             document.getElementById('recStopBtn').style.display = 'none';
             document.getElementById('recDiscardBtn').style.display = 'none';
             document.getElementById('recTimer').textContent = '00:00:00';
-            document.getElementById('recTimer').classList.remove('paused');
+            document.getElementById('recTimer').classList.remove('paused', 'auto-paused');
             document.getElementById('recDistance').innerHTML = '0.00 <span class="stat-unit">km</span>';
             document.getElementById('recSpeed').textContent = '0.0';
             document.getElementById('recSpeed').classList.remove('paused');
@@ -2230,18 +2369,31 @@
             document.getElementById('recCadence').textContent = '--';
             document.getElementById('recPower').textContent = '--';
             document.getElementById('recTemp').textContent = '--';
+            document.getElementById('recordMessage').textContent = '';
+            document.getElementById('recordMessage').className = 'record-modal-message';
+            document.getElementById('minimizedDot').className = 'pulse-dot';
             setGpsStatus('GPS idle', '');
             document.getElementById('recordModal').style.display = 'none';
             document.getElementById('recordMinimizedBar').style.display = 'none';
             teardownRecordMap();
             resetTemperatureState();
+            autoPause.isAutoPaused = false;
+            autoPause.zeroSpeedStartTime = null;
+            autoPause.autoPauseStartTime = null;
+            autoPause.autoPauseTotalMs = 0;
         }
 
         async function stopRecording() {
             if (!recIsRecording) return;
             stopGpsWatch();
             stopTemperaturePolling();
-            if (recPoints.length < 2) { showToast('❌ Not enough GPS data', 'error'); recIsRecording = false; resetRecordUI(); return; }
+            // Only save if we have enough points
+            if (recPoints.length < 2) { 
+                showToast('❌ Not enough GPS data', 'error'); 
+                recIsRecording = false; 
+                resetRecordUI(); 
+                return; 
+            }
             const statusDiv = document.getElementById('recordMessage');
             statusDiv.textContent = 'Saving ride...';
             document.getElementById('recStopBtn').disabled = true;
