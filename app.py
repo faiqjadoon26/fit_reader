@@ -394,9 +394,10 @@ def parse_ride(file_path, profile):
         except:
             moving_time_seconds = len(df)
 
-    hours = moving_time_seconds // 3600
-    minutes = (moving_time_seconds % 3600) // 60
-    seconds = moving_time_seconds % 60
+    # 🔧 FIX: Convert to int before formatting
+    hours = int(moving_time_seconds // 3600)
+    minutes = int((moving_time_seconds % 3600) // 60)
+    seconds = int(moving_time_seconds % 60)
     total_time_formatted = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
     # ── Elevation ──────────────────────────────────────────
@@ -777,9 +778,9 @@ def fix_times():
                 except:
                     total_seconds = len(timestamps)
                 
-                hours = total_seconds // 3600
-                minutes = (total_seconds % 3600) // 60
-                seconds = total_seconds % 60
+                hours = int(total_seconds // 3600)
+                minutes = int((total_seconds % 3600) // 60)
+                seconds = int(total_seconds % 60)
                 time_formatted = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
                 
                 conn = get_db_connection()
@@ -870,9 +871,10 @@ def save_live_ride():
             except:
                 moving_time_seconds = len(points)
 
-        hours = moving_time_seconds // 3600
-        minutes = (moving_time_seconds % 3600) // 60
-        seconds = moving_time_seconds % 60
+        # 🔧 FIX: Convert to int before formatting
+        hours = int(moving_time_seconds // 3600)
+        minutes = int((moving_time_seconds % 3600) // 60)
+        seconds = int(moving_time_seconds % 60)
         total_time_formatted = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
         # ── Distance ──────────────────────────────────────────
