@@ -755,7 +755,7 @@ def club():
         return jsonify({"error": "Invalid ride type"}), 400
     return jsonify(get_all_users_stats(ride_type))
 
-# ─── FIX EXISTING RIDES - Recalculate times ──────────────────
+# ─── FIX EXISTING RIDES - Recalculate moving time ──────────────
 @app.route('/fix-times', methods=['POST'])
 @login_required
 def fix_times():
@@ -767,20 +767,32 @@ def fix_times():
         try:
             streams = ride.get('streams', {})
             timestamps = streams.get('timestamps', [])
+            speeds = streams.get('speed', [])
             
-            if timestamps and len(timestamps) > 1:
-                try:
+            if timestamps and len(timestamps) > 1 and speeds and len(speeds) == len(timestamps):
+                # Compute moving time (speed > 0.5 km/h)
+                moving_time_seconds = 0
+                for i in range(1, len(timestamps)):
+                    if speeds[i] > 0.5 or speeds[i-1] > 0.5:
+                        try:
+                            t1 = datetime.strptime(timestamps[i-1], '%H:%M:%S')
+                            t2 = datetime.strptime(timestamps[i], '%H:%M:%S')
+                            diff = (t2 - t1).total_seconds()
+                            if diff > 0:
+                                moving_time_seconds += diff
+                        except:
+                            pass
+                # Fallback to elapsed if no moving time
+                if moving_time_seconds == 0:
                     first = datetime.strptime(timestamps[0], '%H:%M:%S')
                     last = datetime.strptime(timestamps[-1], '%H:%M:%S')
-                    total_seconds = int((last - first).total_seconds())
-                    if total_seconds < 0:
-                        total_seconds = len(timestamps)
-                except:
-                    total_seconds = len(timestamps)
+                    moving_time_seconds = int((last - first).total_seconds())
+                    if moving_time_seconds < 0:
+                        moving_time_seconds = len(timestamps)
                 
-                hours = int(total_seconds // 3600)
-                minutes = int((total_seconds % 3600) // 60)
-                seconds = int(total_seconds % 60)
+                hours = int(moving_time_seconds // 3600)
+                minutes = int((moving_time_seconds % 3600) // 60)
+                seconds = int(moving_time_seconds % 60)
                 time_formatted = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
                 
                 conn = get_db_connection()
@@ -792,7 +804,7 @@ def fix_times():
                         '{total_time_formatted}', %s::jsonb
                     )
                     WHERE username = %s AND id = %s
-                """, (json.dumps(total_seconds), json.dumps(time_formatted), username, ride['id']))
+                """, (json.dumps(moving_time_seconds), json.dumps(time_formatted), username, ride['id']))
                 conn.commit()
                 cur.close()
                 conn.close()
@@ -800,9 +812,10 @@ def fix_times():
                 results["updated"].append({
                     "id": ride['id'],
                     "filename": ride['filename'],
-                    "old_time": "00:00:00",
                     "new_time": time_formatted
                 })
+            else:
+                results["errors"].append(f"Ride {ride['id']}: missing timestamps or speed data")
         except Exception as e:
             results["errors"].append(f"Ride {ride['id']}: {str(e)}")
     
