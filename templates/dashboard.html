@@ -310,6 +310,18 @@
         .upload-btn:hover { background: #000; }
         .upload-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+        /* Recalculate button area */
+        .recalc-section {
+            background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+            padding: 0.8rem 1rem; margin-bottom: 1rem; display: flex; align-items: center; flex-wrap: wrap; gap: 12px;
+            transition: background var(--transition), border-color var(--transition);
+        }
+        .recalc-section .recalc-status {
+            font-size: 0.8rem; color: var(--text-soft); flex: 1;
+        }
+        .recalc-section .recalc-status.success { color: #48bb78; }
+        .recalc-section .recalc-status.error { color: #fc8181; }
+
         .rides-section { background: transparent; }
         .rides-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 6px; }
         .rides-header h2 { font-size: 1rem; font-weight: 800; }
@@ -717,6 +729,12 @@
                     <input type="file" id="fileInput" accept=".fit" />
                 </div>
                 <div id="uploadStatus" style="margin-top:8px;font-size:0.8rem;color:var(--text-soft);"></div>
+            </div>
+
+            <!-- NEW: Recalculate All Rides button -->
+            <div class="recalc-section">
+                <button onclick="recalculateAllRides()" class="upload-btn" style="background:var(--orange); padding:8px 20px; font-size:0.85rem;" id="recalcBtn">🔄 Recalculate All Rides</button>
+                <span id="recalcStatus" class="recalc-status">Ready</span>
             </div>
 
             <div class="rides-section">
@@ -1595,6 +1613,51 @@
             } catch (error) {
                 console.error(error);
                 showToast('❌ Failed to save profile', 'error');
+            }
+        }
+
+        // ── NEW: Recalculate All Rides ─────────────────────
+        async function recalculateAllRides() {
+            const btn = document.getElementById('recalcBtn');
+            const statusSpan = document.getElementById('recalcStatus');
+            
+            if (btn.disabled) return;
+            btn.disabled = true;
+            btn.textContent = '⏳ Recalculating...';
+            statusSpan.textContent = 'Updating rides...';
+            statusSpan.className = 'recalc-status';
+            
+            try {
+                const response = await fetch('/recalculate-all', { method: 'POST' });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    let msg = `✅ Updated ${data.updated} rides.`;
+                    if (data.skipped > 0) msg += ` ${data.skipped} skipped.`;
+                    if (data.errors && data.errors.length) {
+                        msg += ` Errors: ${data.errors.join('; ')}`;
+                        statusSpan.className = 'recalc-status error';
+                    } else {
+                        statusSpan.className = 'recalc-status success';
+                    }
+                    statusSpan.textContent = msg;
+                    showToast('✅ Recalculation complete', 'success');
+                    // Reload rides to show updated data
+                    await loadRides();
+                } else {
+                    const errMsg = data.error || 'Unknown error';
+                    statusSpan.textContent = `❌ Failed: ${errMsg}`;
+                    statusSpan.className = 'recalc-status error';
+                    showToast(`❌ Recalculation failed`, 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                statusSpan.textContent = '❌ Network error';
+                statusSpan.className = 'recalc-status error';
+                showToast('❌ Recalculation failed', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔄 Recalculate All Rides';
             }
         }
 
