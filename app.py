@@ -1190,8 +1190,8 @@ def generate_minimal_style(summary, ride_type_info, route, width, height):
     
     stats = [
         ("⏱️", summary.get('total_time_formatted', '00:00:00'), '#facc15'),
-        ("⛰️", f"{summary.get('elevation_gain', 0)}m", '#34d399'),
-        ("⚡", f"{summary.get('avg_speed', 0)} km/h", '#f87171'),
+        ("⛰️", f"{summary.get('elevation_gain', 0):.0f}m", '#34d399'),
+        ("⚡", f"{summary.get('avg_speed', 0):.1f} km/h", '#f87171'),
     ]
     
     y = 850
