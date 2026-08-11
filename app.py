@@ -361,24 +361,30 @@ def parse_ride(file_path, profile):
     df = pd.DataFrame(data_points)
     df.dropna(subset=['timestamp'], inplace=True)
 
+    # Ensure speed column exists
+    if 'speed' in df.columns:
+        df['speed_kmh'] = pd.to_numeric(df['speed'], errors='coerce').fillna(0) * 3.6
+    else:
+        df['speed_kmh'] = 0.0
+
     # ── Calculate MOVING TIME (only when speed > 0) ──────────
     moving_time_seconds = 0
-    if len(df) > 1 and 'speed' in df.columns:
-        # Convert speed to km/h for threshold
-        speeds = df['speed_kmh'].fillna(0)
-        timestamps = df['timestamp']
-        
-        for i in range(1, len(df)):
-            # If speed is > 0.5 km/h, count the interval as moving time
-            if speeds.iloc[i] > 0.5 or speeds.iloc[i-1] > 0.5:
-                try:
-                    time_diff = (timestamps.iloc[i] - timestamps.iloc[i-1]).total_seconds()
-                    if time_diff > 0:
-                        moving_time_seconds += time_diff
-                except:
-                    pass
-    
-    # If no speed data, fallback to elapsed time
+    if len(df) > 1 and df['speed_kmh'].sum() > 0:
+        try:
+            speeds = df['speed_kmh'].fillna(0)
+            timestamps = df['timestamp']
+            for i in range(1, len(df)):
+                if speeds.iloc[i] > 0.5 or speeds.iloc[i-1] > 0.5:
+                    try:
+                        time_diff = (timestamps.iloc[i] - timestamps.iloc[i-1]).total_seconds()
+                        if time_diff > 0:
+                            moving_time_seconds += time_diff
+                    except:
+                        pass
+        except Exception as e:
+            print(f"Moving time calculation error: {e}")
+
+    # Fallback to elapsed time if no moving time
     if moving_time_seconds == 0 and len(df) > 0:
         try:
             first_ts = df['timestamp'].iloc[0]
@@ -393,17 +399,13 @@ def parse_ride(file_path, profile):
     seconds = moving_time_seconds % 60
     total_time_formatted = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
+    # ── Elevation ──────────────────────────────────────────
     if 'enhanced_altitude' in df.columns:
         df['elevation'] = pd.to_numeric(df['enhanced_altitude'], errors='coerce').fillna(0)
     elif 'altitude' in df.columns:
         df['elevation'] = pd.to_numeric(df['altitude'], errors='coerce').fillna(0)
     else:
         df['elevation'] = 0.0
-
-    if 'speed' in df.columns:
-        df['speed_kmh'] = pd.to_numeric(df['speed'], errors='coerce').fillna(0) * 3.6
-    else:
-        df['speed_kmh'] = 0.0
 
     if 'cadence' in df.columns:
         df['cadence'] = pd.to_numeric(df['cadence'], errors='coerce').fillna(0)
@@ -820,13 +822,13 @@ def save_live_ride():
         if ride_type not in VALID_RIDE_TYPES:
             ride_type = 'cycling'
 
-        # ── Extract temperature stream ──────────────────────
         temperature_stream = data.get('temperature', [])
         temperature_values = [t['temp_c'] for t in temperature_stream if 'temp_c' in t]
         temperature_timestamps = [t['timestamp'] for t in temperature_stream if 'temp_c' in t]
 
         profile = get_user_profile(session['user']['username'])
 
+        # Extract point data
         timestamps = [p['timestamp'] for p in points]
         speeds_kmh = [float(p.get('speed_kmh', 0)) for p in points]
         hr_list = [int(p.get('heart_rate', 0)) for p in points]
@@ -837,40 +839,43 @@ def save_live_ride():
         # ── Calculate MOVING TIME (only when speed > 0) ──────
         moving_time_seconds = 0
         if len(points) > 1 and speeds_kmh:
-            for i in range(1, len(points)):
-                # If speed is > 0.5 km/h, count the interval as moving time
-                if speeds_kmh[i] > 0.5 or speeds_kmh[i-1] > 0.5:
-                    try:
-                        first_ts = points[i-1].get('timestamp')
-                        last_ts = points[i].get('timestamp')
-                        if first_ts and last_ts:
-                            if isinstance(first_ts, str):
-                                first_dt = datetime.fromisoformat(first_ts.replace('Z', '+00:00'))
-                                last_dt = datetime.fromisoformat(last_ts.replace('Z', '+00:00'))
-                                time_diff = (last_dt - first_dt).total_seconds()
-                                if time_diff > 0:
-                                    moving_time_seconds += time_diff
-                    except:
-                        pass
-        
-        # If no moving time, fallback to elapsed time
+            try:
+                for i in range(1, len(points)):
+                    if speeds_kmh[i] > 0.5 or speeds_kmh[i-1] > 0.5:
+                        try:
+                            first_ts = points[i-1].get('timestamp')
+                            last_ts = points[i].get('timestamp')
+                            if first_ts and last_ts:
+                                if isinstance(first_ts, str):
+                                    first_dt = datetime.fromisoformat(first_ts.replace('Z', '+00:00'))
+                                    last_dt = datetime.fromisoformat(last_ts.replace('Z', '+00:00'))
+                                    time_diff = (last_dt - first_dt).total_seconds()
+                                    if time_diff > 0:
+                                        moving_time_seconds += time_diff
+                        except:
+                            pass
+            except Exception as e:
+                print(f"Moving time error: {e}")
+
+        # Fallback to elapsed time
         if moving_time_seconds == 0 and len(points) > 1:
-            first_ts = points[0].get('timestamp')
-            last_ts = points[-1].get('timestamp')
-            if first_ts and last_ts:
-                try:
+            try:
+                first_ts = points[0].get('timestamp')
+                last_ts = points[-1].get('timestamp')
+                if first_ts and last_ts:
                     if isinstance(first_ts, str):
                         first_dt = datetime.fromisoformat(first_ts.replace('Z', '+00:00'))
                         last_dt = datetime.fromisoformat(last_ts.replace('Z', '+00:00'))
                         moving_time_seconds = int((last_dt - first_dt).total_seconds())
-                except:
-                    moving_time_seconds = len(points)
+            except:
+                moving_time_seconds = len(points)
 
         hours = moving_time_seconds // 3600
         minutes = (moving_time_seconds % 3600) // 60
         seconds = moving_time_seconds % 60
         total_time_formatted = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
 
+        # ── Distance ──────────────────────────────────────────
         total_dist = 0.0
         for i in range(1, len(points)):
             p1, p2 = points[i-1], points[i]
@@ -896,7 +901,6 @@ def save_live_ride():
         ftp = float(profile.get('ftp', 200))
         zone_distribution = classify_power_zones(power_list, ftp)
 
-        # ── Temperature stats ──────────────────────────────
         if temperature_values:
             avg_temp = round(sum(temperature_values) / len(temperature_values), 1)
             min_temp = round(min(temperature_values), 1)
@@ -906,7 +910,6 @@ def save_live_ride():
             avg_temp = min_temp = max_temp = None
             has_temperature = False
 
-        # ── Elevation stats ──────────────────────────────────
         if elevation_list:
             min_elevation = round(min(elevation_list), 1)
             max_elevation = round(max(elevation_list), 1)
@@ -1043,7 +1046,6 @@ def load_font(size):
     return ImageFont.load_default()
 
 def draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 200)):
-    """Draw the GPS route on the image"""
     if not route or len(route) < 2:
         return
     
@@ -1065,25 +1067,22 @@ def draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 200)):
         points.append((x, y))
     
     if len(points) > 1:
-        # Draw the route line with glow effect
         for width_mult in [3, 2, 1]:
             draw.line(points, fill=(252, 76, 2, 60 // width_mult), width=12 * width_mult, joint="curve")
         draw.line(points, fill=color, width=6, joint="curve")
         
-        # Draw start marker (green)
         r = 16
         draw.ellipse([points[0][0]-r, points[0][1]-r, points[0][0]+r, points[0][1]+r], 
                     fill=(72, 187, 120, 255))
         draw.ellipse([points[0][0]-r//2, points[0][1]-r//2, points[0][0]+r//2, points[0][1]+r//2], 
                     fill=(72, 187, 120, 255))
-        # Draw finish marker (orange)
         draw.ellipse([points[-1][0]-r, points[-1][1]-r, points[-1][0]+r, points[-1][1]+r], 
                     fill=(252, 76, 2, 255))
         draw.ellipse([points[-1][0]-r//2, points[-1][1]-r//2, points[-1][0]+r//2, points[-1][1]+r//2], 
                     fill=(252, 76, 2, 255))
 
+# ── All share styles with transparent backgrounds ────────────
 def generate_strava_style(summary, ride_type_info, route, width, height):
-    """Strava-style - COMPLETELY TRANSPARENT background with route and stats"""
     img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 220))
@@ -1122,7 +1121,6 @@ def generate_strava_style(summary, ride_type_info, route, width, height):
     return img
 
 def generate_clean_style(summary, ride_type_info, route, width, height):
-    """Clean stats - COMPLETELY TRANSPARENT background"""
     img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 160))
@@ -1171,7 +1169,6 @@ def generate_clean_style(summary, ride_type_info, route, width, height):
     return img
 
 def generate_minimal_style(summary, ride_type_info, route, width, height):
-    """Minimal style - COMPLETELY TRANSPARENT background"""
     img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 140))
@@ -1210,7 +1207,7 @@ def generate_minimal_style(summary, ride_type_info, route, width, height):
     return img
 
 def generate_transparent_style(summary, ride_type_info, route, width, height):
-    """PURE TRANSPARENT - just stats, no map background"""
+    """Pure transparent – no route, just stats on transparent background"""
     img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     
