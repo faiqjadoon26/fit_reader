@@ -25,7 +25,7 @@ def get_db_connection():
     # Use environment variable first, fallback to your new database URL
     database_url = os.environ.get('DATABASE_URL')
     if not database_url:
-        # Hardcoded for fit_reader_db2 (for local testing only!)
+        # Hardcoded for fit_reader_db2 (for local testing or if env var is missing)
         database_url = "postgresql://fit_reader_user:8TI3fxtXc71yDnj6GBUzU6tyPWx97Hvt@dpg-dabjdbu1egvs73b13emg-a/fit_reader_db2"
         print("[DB] Using hardcoded URL - remove for production!")
     conn = psycopg2.connect(database_url, sslmode='require')
@@ -1022,19 +1022,32 @@ def share_image(ride_id):
         ride_type = ride.get('ride_type', 'cycling')
         ride_type_info = next((t for t in RIDE_TYPES_INFO if t['id'] == ride_type), RIDE_TYPES_INFO[0])
         route = ride.get('route', [])
+        streams = ride.get('streams', {})
+
+        # ── Compute max cadence and max heart rate ──
+        cadence_list = streams.get('cadence', [])
+        max_cadence = max(cadence_list) if cadence_list else 0
+        # Prefer summary max_hr if available, else compute from streams
+        if summary.get('max_hr'):
+            max_hr = summary['max_hr']
+        else:
+            hr_list = streams.get('heart_rate', [])
+            max_hr = max(hr_list) if hr_list else 0
+
+        moving_time = summary.get('total_time_formatted', '00:00:00')
 
         width, height = 1080, 1920
         
         if style == 'strava':
-            img = generate_strava_style(summary, ride_type_info, route, width, height)
+            img = generate_strava_style(summary, ride_type_info, route, width, height, max_cadence, max_hr, moving_time)
         elif style == 'clean':
-            img = generate_clean_style(summary, ride_type_info, route, width, height)
+            img = generate_clean_style(summary, ride_type_info, route, width, height, max_cadence, max_hr, moving_time)
         elif style == 'minimal':
-            img = generate_minimal_style(summary, ride_type_info, route, width, height)
+            img = generate_minimal_style(summary, ride_type_info, route, width, height, max_cadence, max_hr, moving_time)
         elif style == 'transparent':
-            img = generate_transparent_style(summary, ride_type_info, route, width, height)
+            img = generate_transparent_style(summary, ride_type_info, route, width, height, max_cadence, max_hr, moving_time)
         else:
-            img = generate_strava_style(summary, ride_type_info, route, width, height)
+            img = generate_strava_style(summary, ride_type_info, route, width, height, max_cadence, max_hr, moving_time)
 
         buffer = BytesIO()
         img.save(buffer, format='PNG', optimize=True)
@@ -1100,7 +1113,7 @@ def draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 200)):
                     fill=(252, 76, 2, 255))
 
 # ── All share styles with transparent backgrounds ────────────
-def generate_strava_style(summary, ride_type_info, route, width, height):
+def generate_strava_style(summary, ride_type_info, route, width, height, max_cadence, max_hr, moving_time):
     img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 220))
@@ -1114,9 +1127,11 @@ def generate_strava_style(summary, ride_type_info, route, width, height):
     
     stats = [
         ("Distance", f"{summary.get('distance_km', 0):.1f} km", '#60a5fa'),
-        ("Time", summary.get('total_time_formatted', '00:00:00'), '#facc15'),
+        ("Time", moving_time, '#facc15'),
         ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m", '#34d399'),
         ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h", '#f87171'),
+        ("Max Cadence", f"{max_cadence:.0f} rpm" if max_cadence else "—", '#a78bfa'),
+        ("Max HR", f"{max_hr:.0f} bpm" if max_hr else "—", '#f472b6'),
     ]
     
     y_start = 350
@@ -1138,7 +1153,7 @@ def generate_strava_style(summary, ride_type_info, route, width, height):
     
     return img
 
-def generate_clean_style(summary, ride_type_info, route, width, height):
+def generate_clean_style(summary, ride_type_info, route, width, height, max_cadence, max_hr, moving_time):
     img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 160))
@@ -1151,13 +1166,15 @@ def generate_clean_style(summary, ride_type_info, route, width, height):
     
     stats = [
         ("Distance", f"{summary.get('distance_km', 0):.1f} km", '#60a5fa'),
-        ("Time", summary.get('total_time_formatted', '00:00:00'), '#facc15'),
+        ("Time", moving_time, '#facc15'),
         ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m", '#34d399'),
         ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h", '#f87171'),
         ("Avg HR", f"{summary.get('avg_hr', 0):.0f} bpm" if summary.get('avg_hr') else "—", '#fb923c'),
         ("Calories", f"{summary.get('total_calories', 0)}", '#f472b6'),
         ("Avg Power", f"{summary.get('avg_power', 0):.0f} W", '#c084fc'),
-        ("Cadence", f"{summary.get('avg_cadence', 0):.0f} rpm", '#22d3ee'),
+        ("Avg Cadence", f"{summary.get('avg_cadence', 0):.0f} rpm", '#22d3ee'),
+        ("Max Cadence", f"{max_cadence:.0f} rpm" if max_cadence else "—", '#a78bfa'),
+        ("Max HR", f"{max_hr:.0f} bpm" if max_hr else "—", '#f472b6'),
     ]
     
     font_label = load_font(28)
@@ -1186,7 +1203,7 @@ def generate_clean_style(summary, ride_type_info, route, width, height):
     
     return img
 
-def generate_minimal_style(summary, ride_type_info, route, width, height):
+def generate_minimal_style(summary, ride_type_info, route, width, height, max_cadence, max_hr, moving_time):
     img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
     draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 140))
@@ -1207,27 +1224,42 @@ def generate_minimal_style(summary, ride_type_info, route, width, height):
     draw.text((width//2 - km_w//2, 550), "km", font=font_med, fill=(200,200,205,255))
     
     stats = [
-        ("⏱️", summary.get('total_time_formatted', '00:00:00'), '#facc15'),
+        ("⏱️", moving_time, '#facc15'),
         ("⛰️", f"{summary.get('elevation_gain', 0):.0f}m", '#34d399'),
         ("⚡", f"{summary.get('avg_speed', 0):.1f} km/h", '#f87171'),
+        ("❤️", f"{max_hr:.0f} bpm" if max_hr else "—", '#f472b6'),
+        ("🔄", f"{max_cadence:.0f} rpm" if max_cadence else "—", '#a78bfa'),
     ]
     
     y = 850
     x_positions = [200, 540, 880]
-    for i, (icon, value, color) in enumerate(stats):
+    # First three stats
+    for i in range(3):
         x = x_positions[i]
-        text = f"{icon} {value}"
+        text = f"{stats[i][0]} {stats[i][1]}"
         bbox = draw.textbbox((0, 0), text, font=font_small)
         text_w = bbox[2] - bbox[0]
         draw.text((x - text_w//2 + 2, y + 2), text, font=font_small, fill=(0,0,0,80))
-        draw.text((x - text_w//2, y), text, font=font_small, fill=color)
+        draw.text((x - text_w//2, y), text, font=font_small, fill=stats[i][2])
+    
+    # Extra stats (Max HR and Max Cadence) below
+    extra_y = y + 100
+    extra_x1, extra_x2 = width//3, 2*width//3
+    for i in range(3, 5):
+        x = extra_x1 if i==3 else extra_x2
+        text = f"{stats[i][0]} {stats[i][1]}"
+        bbox = draw.textbbox((0, 0), text, font=font_small)
+        text_w = bbox[2] - bbox[0]
+        draw.text((x - text_w//2 + 2, extra_y + 2), text, font=font_small, fill=(0,0,0,80))
+        draw.text((x - text_w//2, extra_y), text, font=font_small, fill=stats[i][2])
     
     return img
 
-def generate_transparent_style(summary, ride_type_info, route, width, height):
-    """Pure transparent – no route, just stats on transparent background"""
+def generate_transparent_style(summary, ride_type_info, route, width, height, max_cadence, max_hr, moving_time):
+    """Pure transparent – route drawn, stats on transparent background"""
     img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
+    draw_route_on_image(draw, route, width, height, color=(252, 76, 2, 140))
     
     font_large = load_font(80)
     font_medium = load_font(55)
@@ -1241,7 +1273,7 @@ def generate_transparent_style(summary, ride_type_info, route, width, height):
     
     stats = [
         ("Distance", f"{summary.get('distance_km', 0):.1f} km", '#60a5fa'),
-        ("Time", summary.get('total_time_formatted', '00:00:00'), '#facc15'),
+        ("Time", moving_time, '#facc15'),
         ("Elevation", f"{summary.get('elevation_gain', 0):.0f} m", '#34d399'),
         ("Avg Speed", f"{summary.get('avg_speed', 0):.1f} km/h", '#f87171'),
     ]
@@ -1271,6 +1303,10 @@ def generate_transparent_style(summary, ride_type_info, route, width, height):
         extra_stats.append(f"🔥 {summary['total_calories']} cal")
     if summary.get('avg_power'):
         extra_stats.append(f"⚡ {summary['avg_power']:.0f} W")
+    if max_hr:
+        extra_stats.append(f"❤️ Max {max_hr:.0f} bpm")
+    if max_cadence:
+        extra_stats.append(f"🔄 Max {max_cadence:.0f} rpm")
     
     if extra_stats:
         extra_text = "  •  ".join(extra_stats)
