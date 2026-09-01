@@ -22,9 +22,12 @@ app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024
 
 # ── Database Connection ───────────────────────────────────────
 def get_db_connection():
+    # Use environment variable first, fallback to your new database URL
     database_url = os.environ.get('DATABASE_URL')
     if not database_url:
-        raise ValueError("DATABASE_URL environment variable not set!")
+        # Hardcoded for fit_reader_db2 (for local testing only!)
+        database_url = "postgresql://fit_reader_user:8TI3fxtXc71yDnj6GBUzU6tyPWx97Hvt@dpg-dabjdbu1egvs73b13emg-a/fit_reader_db2"
+        print("[DB] Using hardcoded URL - remove for production!")
     conn = psycopg2.connect(database_url, sslmode='require')
     return conn
 
